@@ -1,8 +1,14 @@
-import { IService } from '../../../../core/types/Service/interface';
-import { IStylist } from '../../../../core/types/Stylist/interfaces';
-import { IUser } from '../../../../core/types/User/interfaces';
-
-export interface IStylistResponse extends IStylist {
-  user: Omit<IUser, 'password'>;
-  services?: IService[];
+export interface IStylistResponse {
+  id: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
+  services?: {
+    id: string;
+    name: string;
+    price: number;
+  }[];
 }

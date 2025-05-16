@@ -1,9 +1,7 @@
-import { AppointmentStatusName } from '../../../../core/types/Appointment/enums';
-
 export interface IAppointmentBrief {
   id: string;
   dateTime: Date;
-  status: AppointmentStatusName;
+  status: string;
   stylistName?: string;
   serviceName: string;
 }

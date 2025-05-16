@@ -1,8 +1,13 @@
-import { IClient } from '../../../../core/types/Client/interfaces';
-import { IUser } from '../../../../core/types/User/interfaces';
 import { IAppointmentBrief } from '../../../Appointments/dto/response/IAppointmentBrief.response';
 
-export interface IClientResponse extends IClient {
-  user: Omit<IUser, 'password'>;
+export interface IClientResponse {
+  id: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
+  preferences?: string[];
   appointments?: IAppointmentBrief[];
 }

@@ -1,5 +1,7 @@
-import { ICreateUserDto } from '../../../Users/dto/request/ICreateUser';
-
-export interface ICreateStylistDto extends ICreateUserDto {
+export interface ICreateStylistDto {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
   serviceIds?: string[];
 }

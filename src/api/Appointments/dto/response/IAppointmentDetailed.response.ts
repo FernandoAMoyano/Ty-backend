@@ -1,9 +1,8 @@
-import { AppointmentStatusName } from '../../../../core/types/Appointment/enums';
-import { IAppointment } from '../../../../core/types/Appointment/interface';
-import { IPayment } from '../../../../core/types/Payment/interfaces';
-import { IService } from '../../../../core/types/Service/interface';
-
-export interface IAppointmentDetailedResponse extends IAppointment {
+export interface IAppointmentDetailedResponse {
+  id: string;
+  dateTime: Date;
+  duration: number;
+  status: string;
   client: {
     id: string;
     name: string;
@@ -16,8 +15,17 @@ export interface IAppointmentDetailedResponse extends IAppointment {
     email: string;
     phone: string;
   };
-  services: IService[];
-  status: AppointmentStatusName;
+  services: {
+    id: string;
+    name: string;
+    price: number;
+  }[];
   totalPrice: number;
-  payments?: IPayment[];
+  payments?: {
+    id: string;
+    amount: number;
+    status: string;
+    method?: string;
+    paymentDate?: Date;
+  }[];
 }
