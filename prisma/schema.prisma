@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,7 +7,171 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums
+model Role {
+  id          String   @id @default(uuid())
+  name        RoleName @unique
+  description String?
+  createdAt   DateTime @default(now())
+  users       User[]
+}
+
+model User {
+  id             String         @id @default(uuid())
+  name           String
+  email          String         @unique
+  phone          String
+  password       String
+  isActive       Boolean        @default(true)
+  profilePicture String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  roleId         String
+  appointments   Appointment[]
+  client         Client?
+  notifications  Notification[]
+  stylist        Stylist?
+  role           Role           @relation(fields: [roleId], references: [id])
+}
+
+model Client {
+  id           String        @id @default(uuid())
+  preferences  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  userId       String        @unique
+  appointments Appointment[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Stylist {
+  id           String        @id @default(uuid())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  userId       String        @unique
+  appointments Appointment[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  services     Service[]     @relation("StylistToService")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  services    Service[]
+}
+
+model Service {
+  id                String        @id @default(uuid())
+  name              String
+  description       String
+  duration          Int
+  durationVariation Int           @default(0)
+  price             Decimal       @db.Decimal(10, 2)
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  categoryId        String
+  category          Category      @relation(fields: [categoryId], references: [id])
+  appointments      Appointment[] @relation("AppointmentToService")
+  stylists          Stylist[]     @relation("StylistToService")
+}
+
+model AppointmentStatus {
+  id           String        @id @default(uuid())
+  name         String
+  description  String?
+  appointments Appointment[]
+}
+
+model Appointment {
+  id          String            @id @default(uuid())
+  dateTime    DateTime
+  duration    Int
+  confirmedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  userId      String
+  clientId    String
+  stylistId   String?
+  scheduleId  String
+  statusId    String
+  client      Client            @relation(fields: [clientId], references: [id])
+  schedule    Schedule          @relation(fields: [scheduleId], references: [id])
+  status      AppointmentStatus @relation(fields: [statusId], references: [id])
+  stylist     Stylist?          @relation(fields: [stylistId], references: [id])
+  user        User              @relation(fields: [userId], references: [id])
+  payments    Payment[]
+  services    Service[]         @relation("AppointmentToService")
+}
+
+model Schedule {
+  id           String        @id @default(uuid())
+  dayOfWeek    DayOfWeek
+  startTime    String
+  endTime      String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  holidayId    String?
+  appointments Appointment[]
+  holiday      Holiday?      @relation(fields: [holidayId], references: [id])
+}
+
+model Holiday {
+  id          String              @id @default(uuid())
+  name        String
+  date        DateTime            @db.Date
+  description String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  schedules   Schedule[]
+  exceptions  ScheduleException[]
+}
+
+model ScheduleException {
+  id                 String   @id @default(uuid())
+  exceptionDate      DateTime @db.Date
+  startTimeException String
+  endTimeException   String
+  reason             String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  holidayId          String?
+  holiday            Holiday? @relation(fields: [holidayId], references: [id])
+}
+
+model NotificationStatus {
+  id            String         @id @default(uuid())
+  name          String
+  description   String?
+  notifications Notification[]
+}
+
+model Notification {
+  id        String             @id @default(uuid())
+  type      NotificationType
+  message   String
+  sentAt    DateTime?
+  createdAt DateTime           @default(now())
+  userId    String
+  statusId  String
+  status    NotificationStatus @relation(fields: [statusId], references: [id])
+  user      User               @relation(fields: [userId], references: [id])
+}
+
+model Payment {
+  id            String         @id @default(uuid())
+  amount        Decimal        @db.Decimal(10, 2)
+  status        PaymentStatus
+  method        PaymentMethod?
+  paymentDate   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  appointmentId String
+  appointment   Appointment    @relation(fields: [appointmentId], references: [id])
+}
+
 enum RoleName {
   ADMIN
   CLIENT
@@ -48,198 +209,4 @@ enum PaymentMethod {
   DEBIT_CARD
   TRANSFER
   ONLINE
-}
-
-// Modelos
-model Role {
-  id          String   @id @default(uuid())
-  name        RoleName @unique
-  description String?
-  createdAt   DateTime @default(now())
-  
-  // Relaciones
-  users       User[]
-}
-
-model User {
-  id             String         @id @default(uuid())
-  name           String
-  email          String         @unique
-  phone          String
-  password       String
-  isActive       Boolean        @default(true)
-  profilePicture String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  
-  // Relaciones
-  roleId         String
-  role           Role           @relation(fields: [roleId], references: [id])
-  client         Client?
-  stylist        Stylist?
-  appointments   Appointment[]
-  notifications  Notification[]
-}
-
-model Client {
-  id          String        @id @default(uuid())
-  preferences String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  
-  // Relaciones
-  userId      String        @unique
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  appointments Appointment[]
-}
-
-model Stylist {
-  id           String        @id @default(uuid())
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  
-  // Relaciones
-  userId       String        @unique
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  services     Service[]     @relation("StylistToService")
-  appointments Appointment[]
-}
-
-model Category {
-  id          String    @id @default(uuid())
-  name        String
-  description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  // Relaciones
-  services    Service[]
-}
-
-model Service {
-  id                String          @id @default(uuid())
-  name              String
-  description       String
-  duration          Int
-  durationVariation Int             @default(0)
-  price             Decimal         @db.Decimal(10, 2)
-  isActive          Boolean         @default(true)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  
-  // Relaciones
-  categoryId        String
-  category          Category        @relation(fields: [categoryId], references: [id])
-  stylists          Stylist[]       @relation("StylistToService")
-  appointments      Appointment[]   @relation("AppointmentToService")
-}
-
-model AppointmentStatus {
-  id          String        @id @default(uuid())
-  name        String
-  description String?
-  
-  // Relaciones
-  appointments Appointment[]
-}
-
-model Appointment {
-  id           String             @id @default(uuid())
-  dateTime     DateTime
-  duration     Int
-  confirmedAt  DateTime?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  
-  // Relaciones
-  userId       String
-  user         User               @relation(fields: [userId], references: [id])
-  clientId     String
-  client       Client             @relation(fields: [clientId], references: [id])
-  stylistId    String?
-  stylist      Stylist?           @relation(fields: [stylistId], references: [id])
-  scheduleId   String
-  schedule     Schedule           @relation(fields: [scheduleId], references: [id])
-  statusId     String
-  status       AppointmentStatus  @relation(fields: [statusId], references: [id])
-  services     Service[]          @relation("AppointmentToService")
-  payments     Payment[]
-}
-
-model Schedule {
-  id          String        @id @default(uuid())
-  dayOfWeek   DayOfWeek
-  startTime   String        // HH:MM format
-  endTime     String        // HH:MM format
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  
-  // Relaciones
-  holidayId   String?
-  holiday     Holiday?      @relation(fields: [holidayId], references: [id])
-  appointments Appointment[]
-}
-
-model Holiday {
-  id           String             @id @default(uuid())
-  name         String
-  date         DateTime           @db.Date
-  description  String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  
-  // Relaciones
-  schedules    Schedule[]
-  exceptions   ScheduleException[]
-}
-
-model ScheduleException {
-  id                 String    @id @default(uuid())
-  exceptionDate      DateTime  @db.Date
-  startTimeException String    // HH:MM format
-  endTimeException   String    // HH:MM format
-  reason             String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  
-  // Relaciones
-  holidayId          String?
-  holiday            Holiday?  @relation(fields: [holidayId], references: [id])
-}
-
-model NotificationStatus {
-  id            String         @id @default(uuid())
-  name          String
-  description   String?
-  
-  // Relaciones
-  notifications Notification[]
-}
-
-model Notification {
-  id        String           @id @default(uuid())
-  type      NotificationType
-  message   String
-  sentAt    DateTime?
-  createdAt DateTime         @default(now())
-  
-  // Relaciones
-  userId    String
-  user      User             @relation(fields: [userId], references: [id])
-  statusId  String
-  status    NotificationStatus @relation(fields: [statusId], references: [id])
-}
-
-model Payment {
-  id            String        @id @default(uuid())
-  amount        Decimal       @db.Decimal(10, 2)
-  status        PaymentStatus
-  method        PaymentMethod?
-  paymentDate   DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  
-  // Relaciones
-  appointmentId String
-  appointment   Appointment   @relation(fields: [appointmentId], references: [id])
 }

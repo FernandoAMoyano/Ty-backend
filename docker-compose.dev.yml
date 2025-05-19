@@ -6,13 +6,18 @@ services:
     container_name: turnity-db-dev
     restart: always
     ports:
-      - "5432:5432"
+      - "5432:5432"  # O "5433:5432" si tienes conflictos con el puerto
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_DATABASE}
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - turnity-network-dev
 
@@ -24,7 +29,7 @@ services:
       - "5050:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@turnity.com
-      PGADMIN_DEFAULT_PASSWORD: adminpassword
+      PGADMIN_DEFAULT_PASSWORD: admin123
     volumes:
       - pgadmin_data_dev:/var/lib/pgadmin
     depends_on:
@@ -42,23 +47,46 @@ services:
       - "3000:3000"
       - "9229:9229" # Para debugging
     environment:
-      - NODE_ENV=${NODE_ENV}
+      # Variables de servidor
       - PORT=${PORT}
+      - NODE_ENV=${NODE_ENV}
+      
+      # Variables de base de datos
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_DATABASE=${DB_DATABASE}
+      
+      # URL de conexión para Prisma
+      - DATABASE_URL=${DATABASE_URL}
+      
+      # Variables de JWT
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRATION=${JWT_EXPIRATION}
+      
+      # Variables de correo
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USER=${MAIL_USER}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM=${MAIL_FROM}
     volumes:
       - .:/app
       - /app/node_modules
+      - prisma_dev:/app/node_modules/.prisma
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - turnity-network-dev
-    command: npm run dev
+    command: >
+      sh -c "
+        echo 'Waiting for database to be ready...' &&
+        npx prisma migrate dev --name init --skip-generate &&
+        echo 'Database migrations completed!' &&
+        npm run dev
+      "
 
 networks:
   turnity-network-dev:
@@ -67,3 +95,4 @@ networks:
 volumes:
   postgres_data_dev:
   pgadmin_data_dev:
+  prisma_dev:
