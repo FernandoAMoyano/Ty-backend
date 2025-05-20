@@ -6,7 +6,7 @@ services:
     container_name: turnity-db-dev
     restart: always
     ports:
-      - "5432:5432"  # O "5433:5432" si tienes conflictos con el puerto
+      - "5432:5432"  
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -28,8 +28,8 @@ services:
     ports:
       - "5050:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@turnity.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     volumes:
       - pgadmin_data_dev:/var/lib/pgadmin
     depends_on:

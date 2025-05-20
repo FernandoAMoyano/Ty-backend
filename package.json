@@ -5,6 +5,8 @@
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/config/server.ts",
     "build": "tsc",
+
+
     "prisma:studio": "prisma studio",
     "prisma:format": "prisma format",
     "prisma:generate": "prisma generate",
@@ -14,11 +16,17 @@
     "prisma:migrate:reset": "prisma migrate reset",
     "prisma:db:seed": "ts-node prisma/seed.ts",
     "prisma:db:push": "prisma db push",
+
+
     "test": "jest",
     "test:watch": "jest --watch",
+
+    
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
+
+
     "docker:dev:up": "docker-compose -f docker-compose.dev.yml up",
     "docker:dev:down": "docker-compose -f docker-compose.dev.yml down",
     "docker:dev:build": "docker-compose -f docker-compose.dev.yml build",
