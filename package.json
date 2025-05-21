@@ -15,7 +15,9 @@
     "prisma:migrate:status": "prisma migrate status",
     "prisma:migrate:reset": "prisma migrate reset",
     "prisma:db:seed": "ts-node prisma/seed.ts",
+    "prisma:db:seed:docker": "docker exec -it turnity-api-dev npx prisma db seed",
     "prisma:db:push": "prisma db push",
+    "prisma:generate:client:docker":"docker exec -it turnity-api-dev sh -c 'cd /app && npx prisma generate'",
 
 
     "test": "jest",
@@ -34,6 +36,7 @@
     "docker:prod:down": "docker-compose down",
     "docker:prod:build": "docker-compose build",
     "docker:clean": "docker system prune -af"
+    
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",
@@ -78,5 +81,7 @@
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
+  },"prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }

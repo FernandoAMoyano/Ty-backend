@@ -7,6 +7,24 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando el sembrado de la base de datos...');
 
+  // Limpiar datos existentes
+
+  console.log('🧹 Limpiando datos existentes...');
+  await prisma.payment.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.notificationStatus.deleteMany();
+  await prisma.scheduleException.deleteMany();
+  await prisma.holiday.deleteMany();
+  await prisma.appointment.deleteMany();
+  await prisma.appointmentStatus.deleteMany();
+  await prisma.service.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.stylist.deleteMany();
+  await prisma.client.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.role.deleteMany();
+  await prisma.schedule.deleteMany();
+
   //Creación de  roles
 
   const adminRole = await prisma.role.create({
