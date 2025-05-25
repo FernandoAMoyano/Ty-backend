@@ -5,8 +5,6 @@
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/config/server.ts",
     "build": "tsc",
-
-
     "prisma:studio": "prisma studio",
     "prisma:format": "prisma format",
     "prisma:generate": "prisma generate",
@@ -17,18 +15,12 @@
     "prisma:db:seed": "ts-node prisma/seed.ts",
     "prisma:db:seed:docker": "docker exec -it turnity-api-dev npx prisma db seed",
     "prisma:db:push": "prisma db push",
-    "prisma:generate:client:docker":"docker exec -it turnity-api-dev sh -c 'cd /app && npx prisma generate'",
-
-
+    "prisma:generate:client:docker": "docker exec -it turnity-api-dev sh -c 'cd /app && npx prisma generate'",
     "test": "jest",
     "test:watch": "jest --watch",
-
-    
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
-
-
     "docker:dev:up": "docker-compose -f docker-compose.dev.yml up",
     "docker:dev:down": "docker-compose -f docker-compose.dev.yml down",
     "docker:dev:build": "docker-compose -f docker-compose.dev.yml build",
@@ -36,7 +28,6 @@
     "docker:prod:down": "docker-compose down",
     "docker:prod:build": "docker-compose build",
     "docker:clean": "docker system prune -af"
-    
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",
@@ -81,7 +72,8 @@
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
-  },"prisma": {
+  },
+  "prisma": {
     "seed": "ts-node prisma/seed.ts"
   }
 }
