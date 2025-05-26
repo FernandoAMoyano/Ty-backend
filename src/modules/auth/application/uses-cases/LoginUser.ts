@@ -1,7 +1,9 @@
 import { UserRepository } from '../../domain/repositories/User';
 import { HashService } from '../services/HashService';
 import { JwtPayload, JwtService } from '../services/JwtService';
-import { LoginDto, LoginResponseDto, UserDto } from '../dto/AuthDto';
+import { LoginDto } from '../dto/Request/LoginDto';
+import { LoginResponseDto } from '../dto/Response/LoginResponseDto';
+import { UserDto } from '../dto/Response/UserDto';
 import { isValidEmail } from '../../../../shared/utils/validation';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
