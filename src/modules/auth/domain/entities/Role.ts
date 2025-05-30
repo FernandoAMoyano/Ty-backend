@@ -1,37 +1,38 @@
+import { RoleName } from '@prisma/client';
 import { generateUuid } from '../../../../shared/utils/uuid';
 
-export enum SystemRoles {
+/* export enum SystemRoles {
   ADMIN = 'ADMIN',
   STYLIST = 'STYLIST',
   CLIENT = 'CLIENT',
   RECEPTIONIST = 'RECEPTIONIST',
-}
+} */
 
 export class Role {
   constructor(
     public id: string,
-    public name: SystemRoles,
+    public name: RoleName,
     public description?: string,
     public createdAt: Date = new Date(),
   ) {}
 
-  static create(name: SystemRoles, description?: string): Role {
+  static create(name: RoleName, description?: string): Role {
     return new Role(generateUuid(), name, description);
   }
 
   isAdmin(): boolean {
-    return this.name === SystemRoles.ADMIN;
+    return this.name === RoleName.ADMIN;
   }
 
   isStylist(): boolean {
-    return this.name === SystemRoles.STYLIST;
+    return this.name === RoleName.STYLIST;
   }
 
   isClient(): boolean {
-    return this.name === SystemRoles.CLIENT;
+    return this.name === RoleName.CLIENT;
   }
 
-  isReceptionist(): boolean {
-    return this.name === SystemRoles.RECEPTIONIST;
-  }
+  /*  isReceptionist(): boolean {
+    return this.name === RoleName.RECEPTIONIST;
+  } */
 }

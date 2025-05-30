@@ -16,11 +16,15 @@
     "prisma:db:seed:docker": "docker exec -it turnity-api-dev npx prisma db seed",
     "prisma:db:push": "prisma db push",
     "prisma:generate:client:docker": "docker exec -it turnity-api-dev sh -c 'cd /app && npx prisma generate'",
+
+    
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
+
+
     "docker:dev:up": "docker-compose -f docker-compose.dev.yml up",
     "docker:dev:down": "docker-compose -f docker-compose.dev.yml down",
     "docker:dev:build": "docker-compose -f docker-compose.dev.yml build",
