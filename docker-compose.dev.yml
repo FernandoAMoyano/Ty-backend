@@ -61,8 +61,10 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       
       # Variables de JWT
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_ACCESS_EXPIRY=${JWT_ACCESS_EXPIRY}
+      - JWT_REFRESH_EXPIRY=${JWT_REFRESH_EXPIRY}
       
       # Variables de correo
       - MAIL_HOST=${MAIL_HOST}
