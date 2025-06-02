@@ -20,6 +20,10 @@ export class Role {
     return new Role(generateUuid(), name, description);
   }
 
+  static fromPersistence(id: string, name: RoleName, description?: string, createdAt?: Date): Role {
+    return new Role(id, name, description, createdAt);
+  }
+
   isAdmin(): boolean {
     return this.name === RoleName.ADMIN;
   }
@@ -30,6 +34,15 @@ export class Role {
 
   isClient(): boolean {
     return this.name === RoleName.CLIENT;
+  }
+
+  toPersistence() {
+    return {
+      id: this.id,
+      name: this.name,
+      description: this.description,
+      createdAt: this.createdAt,
+    };
   }
 
   /*  isReceptionist(): boolean {
