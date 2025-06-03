@@ -1,73 +1,52 @@
-import { UserRepository } from '../../../src/modules/auth/domain/repositories/User';
-import { RoleRepository } from '../../../src/modules/auth/domain/repositories/Rol';
-import { HashService } from '../../../src/modules/auth/application/services/HashService';
-import { JwtService } from '../../../src/modules/auth/application/services/JwtService';
+import { ChangeUserPassword } from '../../../src/modules/auth/application/uses-cases/ChangeUserPassword';
+import { UpdateUserProfile } from '../../../src/modules/auth/application/uses-cases/UpdateUserProfile';
 import { AuthService } from '../../../src/modules/auth/application/services/AuthService';
-import { RoleName } from '@prisma/client';
-import { Role } from '../../../src/modules/auth/domain/entities/Role';
-import { User } from '../../../src/modules/auth/domain/entities/User';
-import { ValidationError } from '../../../src/shared/exceptions/ValidationError';
-import { UnauthorizedError } from '../../../src/shared/exceptions/UnauthorizedError';
+import { GetUserProfile } from '../../../src/modules/auth/application/uses-cases/GetUserProfile';
+import { RefreshToken } from '../../../src/modules/auth/application/uses-cases/RefreshToken';
+import { RegisterUser } from '../../../src/modules/auth/application/uses-cases/RegisterUser';
+import { LoginUser } from '../../../src/modules/auth/application/uses-cases/LoginUser';
+import { LoginDto } from '../../../src/modules/auth/application/dto/Request/LoginDto';
+import { LoginResponseDto } from '../../../src/modules/auth/application/dto/Response/LoginResponseDto';
 import { generateUuid } from '../../../src/shared/utils/uuid';
-import { ConflictError } from '../../../src/shared/exceptions/ConflictError';
-
+import { RegisterDto } from '../../../src/modules/auth/application/dto/Request/RegisterDto';
+import { UserDto } from '../../../src/modules/auth/application/dto/Response/UserDto';
+import { UpdateProfileDto } from '../../../src/modules/auth/application/dto/Request/UpdateProfileDto';
+import { ChangePasswordDto } from '../../../src/modules/auth/application/dto/Request/ChangePasswordDto';
 describe('AuthService Unit Tests', () => {
   let authService: AuthService;
-  let mockUserRepository: jest.Mocked<UserRepository>;
-  let mockRoleRepository: jest.Mocked<RoleRepository>;
-  let mockHashService: jest.Mocked<HashService>;
-  let mockJwtService: jest.Mocked<JwtService>;
 
-  // Add mocks for use case classes
-  let mockLoginUser: any;
-  let mockRegisterUser: any;
-  let mockRefreshToken: any;
-  let mockGetUserProfile: any;
-  let mockUpdateUserProfile: any;
-  let mockChangeUserPassword: any;
+  let mockLoginUser: jest.Mocked<LoginUser>;
+  let mockRegisterUser: jest.Mocked<RegisterUser>;
+  let mockRefreshToken: jest.Mocked<RefreshToken>;
+  let mockGetUserProfile: jest.Mocked<GetUserProfile>;
+  let mockUpdateUserProfile: jest.Mocked<UpdateUserProfile>;
+  let mockChangeUserPassword: jest.Mocked<ChangeUserPassword>;
 
   beforeEach(() => {
-    mockUserRepository = {
-      findById: jest.fn(),
-      findByEmail: jest.fn(),
-      existsByEmail: jest.fn(),
-      save: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      findAll: jest.fn(),
-      findByRole: jest.fn(),
-    };
+    mockLoginUser = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<LoginUser>;
 
-    mockRoleRepository = {
-      findById: jest.fn(),
-      findByName: jest.fn(),
-      findAll: jest.fn(),
-      save: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    };
+    mockRegisterUser = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<RegisterUser>;
 
-    mockHashService = {
-      hash: jest.fn(),
-      compare: jest.fn(),
-    };
+    mockRefreshToken = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<RefreshToken>;
 
-    mockJwtService = {
-      generateAccessToken: jest.fn(),
-      generateRefreshToken: jest.fn(),
-      verifyAccessToken: jest.fn(),
-      verifyRefreshToken: jest.fn(),
-    };
+    mockGetUserProfile = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<GetUserProfile>;
 
-    // Create simple jest.fn() mocks for each use case dependency
-    mockLoginUser = { execute: jest.fn() };
-    mockRegisterUser = { execute: jest.fn() };
-    mockRefreshToken = { execute: jest.fn() };
-    mockGetUserProfile = { execute: jest.fn() };
-    mockUpdateUserProfile = { execute: jest.fn() };
-    mockChangeUserPassword = { execute: jest.fn() };
+    mockUpdateUserProfile = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<UpdateUserProfile>;
 
-    // Pass all 6 required arguments to AuthService
+    mockChangeUserPassword = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<ChangeUserPassword>;
+
     authService = new AuthService(
       mockLoginUser,
       mockRegisterUser,
@@ -78,289 +57,257 @@ describe('AuthService Unit Tests', () => {
     );
   });
 
-  describe('login', () => {
-    const validLoginDto = {
-      email: 'test@example.com',
-      password: 'TestPass123!',
-    };
-
-    it('should login successfully with valid credentials', async () => {
-      const mockRole = Role.create(RoleName.CLIENT);
-      const mockUser = User.create(
-        mockRole.id, // roleId
-        'John Doe',
-        'test@example.com',
-        '+1234567890',
-        'hashedPassword',
-      );
-
-      mockUserRepository.findByEmail.mockResolvedValue(mockUser);
-      mockHashService.compare.mockResolvedValue(true);
-      mockRoleRepository.findById.mockResolvedValue(mockRole);
-      mockJwtService.generateAccessToken.mockReturnValue('access-token');
-      mockJwtService.generateRefreshToken.mockReturnValue('refresh-token');
-
-      const result = await authService.loginService(validLoginDto);
-
-      expect(result).toHaveProperty('token', 'access-token');
-      expect(result).toHaveProperty('refreshToken', 'refresh-token');
-      expect(result).toHaveProperty('user');
-      expect(result.user.email).toBe('test@example.com');
-    });
-
-    it('should throw ValidationError for invalid email', async () => {
-      const invalidLoginDto = {
-        email: 'invalid-email',
+  describe('loginService', () => {
+    it('should delegate to LoginUser use case', async () => {
+      const loginDto: LoginDto = {
+        email: 'test@example.com',
         password: 'TestPass123!',
       };
 
-      await expect(authService.loginService(invalidLoginDto)).rejects.toThrow(ValidationError);
+      const expectedResponse: LoginResponseDto = {
+        token: 'access-token',
+        refreshToken: 'refresh-token',
+        user: {
+          id: generateUuid(),
+          name: 'John Doe',
+          email: 'test@example.com',
+          phone: '+1234567890',
+          isActive: true,
+          role: {
+            id: generateUuid(),
+            name: 'CLIENT',
+            description: 'Client role',
+          },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      };
+
+      mockLoginUser.execute.mockResolvedValue(expectedResponse);
+
+      const result = await authService.loginService(loginDto);
+
+      expect(mockLoginUser.execute).toHaveBeenCalledWith(loginDto);
+      expect(result).toBe(expectedResponse);
+      expect(result.token).toBe('access-token');
+      expect(result.user.email).toBe('test@example.com');
     });
 
-    it('should throw UnauthorizedError for non-existent user', async () => {
-      mockUserRepository.findByEmail.mockResolvedValue(null);
+    it('should handle login errors from use case', async () => {
+      const loginDto: LoginDto = {
+        email: 'test@example.com',
+        password: 'WrongPassword123!',
+      };
 
-      await expect(authService.loginService(validLoginDto)).rejects.toThrow(UnauthorizedError);
-    });
+      const error = new Error('Invalid credentials');
+      mockLoginUser.execute.mockRejectedValue(error);
 
-    it('should throw UnauthorizedError for invalid password', async () => {
-      const mockRole = Role.create(RoleName.CLIENT);
-      const mockUser = User.create(
-        mockRole.id,
-        'John Doe',
-        'test@example.com',
-        '+1234567890',
-        'hashedPassword',
-      );
+      await expect(authService.loginService(loginDto)).rejects.toThrow('Invalid credentials');
 
-      mockUserRepository.findByEmail.mockResolvedValue(mockUser);
-      mockHashService.compare.mockResolvedValue(false);
-
-      await expect(authService.loginService(validLoginDto)).rejects.toThrow(UnauthorizedError);
-    });
-
-    it('should throw UnauthorizedError for inactive user', async () => {
-      const mockRole = Role.create(RoleName.CLIENT);
-      const mockUser = User.create(
-        mockRole.id,
-        'John Doe',
-        'test@example.com',
-        '+1234567890',
-        'hashedPassword',
-      );
-      mockUser.deactivate();
-
-      mockUserRepository.findByEmail.mockResolvedValue(mockUser);
-
-      await expect(authService.loginService(validLoginDto)).rejects.toThrow(UnauthorizedError);
+      expect(mockLoginUser.execute).toHaveBeenCalledWith(loginDto);
     });
   });
 
-  describe('register', () => {
-    const validRegisterDto = {
-      name: 'John Doe',
-      email: 'test@example.com',
-      phone: '+1234567890',
-      password: 'TestPass123!',
-      roleId: generateUuid(),
-    };
-
-    it('should register user successfully', async () => {
-      const mockRole = Role.create(RoleName.CLIENT);
-      const mockUser = User.create(
-        validRegisterDto.roleId,
-        validRegisterDto.name,
-        validRegisterDto.email,
-        validRegisterDto.phone,
-        'hashedPassword',
-      );
-
-      mockUserRepository.existsByEmail.mockResolvedValue(false);
-      mockRoleRepository.findById.mockResolvedValue(mockRole);
-      mockHashService.hash.mockResolvedValue('hashedPassword');
-      mockUserRepository.save.mockResolvedValue(mockUser);
-
-      const result = await authService.registerService(validRegisterDto);
-
-      expect(result.email).toBe(validRegisterDto.email);
-      expect(result.name).toBe(validRegisterDto.name);
-      expect(mockUserRepository.save).toHaveBeenCalled();
-    });
-
-    it('should throw ConflictError for existing email', async () => {
-      mockUserRepository.existsByEmail.mockResolvedValue(true);
-
-      await expect(authService.registerService(validRegisterDto)).rejects.toThrow(ConflictError);
-    });
-
-    it('should throw ValidationError for invalid email', async () => {
-      const invalidRegisterDto = {
-        ...validRegisterDto,
-        email: 'invalid-email',
+  describe('registerService', () => {
+    it('should delegate to RegisterUser use case', async () => {
+      const registerDto: RegisterDto = {
+        name: 'John Doe',
+        email: 'test@example.com',
+        phone: '+1234567890',
+        password: 'TestPass123!',
+        roleId: generateUuid(),
       };
 
-      await expect(authService.registerService(invalidRegisterDto)).rejects.toThrow(
-        ValidationError,
-      );
-    });
-
-    it('should throw ValidationError for weak password', async () => {
-      const invalidRegisterDto = {
-        ...validRegisterDto,
-        password: '123',
+      const expectedUser: UserDto = {
+        id: generateUuid(),
+        name: 'John Doe',
+        email: 'test@example.com',
+        phone: '+1234567890',
+        isActive: true,
+        role: {
+          id: generateUuid(),
+          name: 'CLIENT',
+          description: 'Client role',
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
-      await expect(authService.registerService(invalidRegisterDto)).rejects.toThrow(
-        ValidationError,
-      );
-    });
-  });
+      mockRegisterUser.execute.mockResolvedValue(expectedUser);
 
-  describe('refreshToken', () => {
-    it('should refresh token with valid refresh token', async () => {
-      const mockUser = User.create(
-        generateUuid(),
-        'John Doe',
-        'test@example.com',
-        '+1234567890',
-        'hashedPassword',
-      );
-      const mockRole = Role.create(RoleName.CLIENT);
+      const result = await authService.registerService(registerDto);
 
-      const mockPayload = {
-        userId: mockUser.id,
-        roleId: mockRole.id,
-        email: mockUser.email,
-      };
-
-      mockJwtService.verifyRefreshToken.mockReturnValue(mockPayload);
-      mockUserRepository.findById.mockResolvedValue(mockUser);
-      mockRoleRepository.findById.mockResolvedValue(mockRole);
-      mockJwtService.generateAccessToken.mockReturnValue('new-access-token');
-      mockJwtService.generateRefreshToken.mockReturnValue('new-refresh-token');
-
-      const result = await authService.refreshTokenService('valid-refresh-token');
-
-      expect(result).toHaveProperty('token', 'new-access-token');
-      expect(result).toHaveProperty('refreshToken', 'new-refresh-token');
-      expect(result).toHaveProperty('user');
-    });
-
-    it('should throw UnauthorizedError for invalid refresh token', async () => {
-      mockJwtService.verifyRefreshToken.mockImplementation(() => {
-        throw new Error('Invalid token');
-      });
-
-      await expect(authService.refreshTokenService('invalid-token')).rejects.toThrow(
-        UnauthorizedError,
-      );
-    });
-  });
-
-  describe('getUserProfile', () => {
-    it('should return user profile successfully', async () => {
-      const mockUser = User.create(
-        generateUuid(),
-        'John Doe',
-        'test@example.com',
-        '+1234567890',
-        'hashedPassword',
-      );
-      const mockRole = Role.create(RoleName.CLIENT);
-
-      mockUserRepository.findById.mockResolvedValue(mockUser);
-      mockRoleRepository.findById.mockResolvedValue(mockRole);
-
-      const result = await authService.getUserProfileService(mockUser.id);
-
+      expect(mockRegisterUser.execute).toHaveBeenCalledWith(registerDto);
+      expect(result).toBe(expectedUser);
       expect(result.email).toBe('test@example.com');
       expect(result.name).toBe('John Doe');
-      expect(result.role.name).toBe(RoleName.CLIENT);
     });
 
-    it('should throw NotFoundError for non-existent user', async () => {
-      mockUserRepository.findById.mockResolvedValue(null);
+    it('should handle registration errors from use case', async () => {
+      const registerDto: RegisterDto = {
+        name: 'John Doe',
+        email: 'existing@example.com',
+        phone: '+1234567890',
+        password: 'TestPass123!',
+        roleId: generateUuid(),
+      };
 
-      await expect(authService.getUserProfileService('non-existent-id')).rejects.toThrow(
-        'User not found',
+      const error = new Error('Email already exists');
+      mockRegisterUser.execute.mockRejectedValue(error);
+
+      await expect(authService.registerService(registerDto)).rejects.toThrow(
+        'Email already exists',
       );
+
+      expect(mockRegisterUser.execute).toHaveBeenCalledWith(registerDto);
     });
   });
 
-  describe('updateProfile', () => {
-    it('should update user profile successfully', async () => {
-      const mockUser = User.create(
-        generateUuid(),
-        'John Doe',
-        'test@example.com',
-        '+1234567890',
-        'hashedPassword',
-      );
-      const mockRole = Role.create(RoleName.CLIENT);
+  describe('refreshTokenService', () => {
+    it('should delegate to RefreshToken use case', async () => {
+      const refreshToken = 'valid-refresh-token';
+      const expectedResponse: LoginResponseDto = {
+        token: 'new-access-token',
+        refreshToken: 'new-refresh-token',
+        user: {
+          id: generateUuid(),
+          name: 'John Doe',
+          email: 'test@example.com',
+          phone: '+1234567890',
+          isActive: true,
+          role: {
+            id: generateUuid(),
+            name: 'CLIENT',
+          },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      };
 
-      const updateDto = {
+      mockRefreshToken.execute.mockResolvedValue(expectedResponse);
+
+      const result = await authService.refreshTokenService(refreshToken);
+
+      expect(mockRefreshToken.execute).toHaveBeenCalledWith(refreshToken);
+      expect(result).toBe(expectedResponse);
+      expect(result.token).toBe('new-access-token');
+    });
+
+    it('should handle invalid refresh token from use case', async () => {
+      const invalidToken = 'invalid-refresh-token';
+      const error = new Error('Invalid refresh token');
+
+      mockRefreshToken.execute.mockRejectedValue(error);
+
+      await expect(authService.refreshTokenService(invalidToken)).rejects.toThrow(
+        'Invalid refresh token',
+      );
+
+      expect(mockRefreshToken.execute).toHaveBeenCalledWith(invalidToken);
+    });
+  });
+
+  describe('getUserProfileService', () => {
+    it('should delegate to GetUserProfile use case', async () => {
+      const userId = generateUuid();
+      const expectedUser: UserDto = {
+        id: userId,
+        name: 'John Doe',
+        email: 'test@example.com',
+        phone: '+1234567890',
+        isActive: true,
+        role: {
+          id: generateUuid(),
+          name: 'CLIENT',
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockGetUserProfile.execute.mockResolvedValue(expectedUser);
+
+      const result = await authService.getUserProfileService(userId);
+
+      expect(mockGetUserProfile.execute).toHaveBeenCalledWith(userId);
+      expect(result).toBe(expectedUser);
+      expect(result.id).toBe(userId);
+    });
+
+    it('should handle user not found from use case', async () => {
+      const userId = 'non-existent-id';
+      const error = new Error('User not found');
+
+      mockGetUserProfile.execute.mockRejectedValue(error);
+
+      await expect(authService.getUserProfileService(userId)).rejects.toThrow('User not found');
+
+      expect(mockGetUserProfile.execute).toHaveBeenCalledWith(userId);
+    });
+  });
+
+  describe('updateProfileService', () => {
+    it('should delegate to UpdateUserProfile use case', async () => {
+      const userId = generateUuid();
+      const updateDto: UpdateProfileDto = {
         name: 'Jane Doe',
         phone: '+0987654321',
       };
 
-      mockUserRepository.findById.mockResolvedValue(mockUser);
-      mockUserRepository.update.mockResolvedValue(mockUser);
-      mockRoleRepository.findById.mockResolvedValue(mockRole);
+      const expectedUser: UserDto = {
+        id: userId,
+        name: 'Jane Doe',
+        email: 'test@example.com',
+        phone: '+0987654321',
+        isActive: true,
+        role: {
+          id: generateUuid(),
+          name: 'CLIENT',
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      const result = await authService.updateProfileService(mockUser.id, updateDto);
+      mockUpdateUserProfile.execute.mockResolvedValue(expectedUser);
 
+      const result = await authService.updateProfileService(userId, updateDto);
+
+      expect(mockUpdateUserProfile.execute).toHaveBeenCalledWith(userId, updateDto);
+      expect(result).toBe(expectedUser);
       expect(result.name).toBe('Jane Doe');
-      expect(mockUserRepository.update).toHaveBeenCalled();
+      expect(result.phone).toBe('+0987654321');
     });
   });
 
-  describe('changePassword', () => {
-    it('should change password successfully', async () => {
-      const mockUser = User.create(
-        generateUuid(),
-        'John Doe',
-        'test@example.com',
-        '+1234567890',
-        'hashedPassword',
-      );
-
-      const changePasswordDto = {
+  describe('changePasswordService', () => {
+    it('should delegate to ChangeUserPassword use case', async () => {
+      const userId = generateUuid();
+      const changePasswordDto: ChangePasswordDto = {
         currentPassword: 'OldPass123!',
         newPassword: 'NewPass123!',
       };
 
-      mockUserRepository.findById.mockResolvedValue(mockUser);
-      mockHashService.compare.mockResolvedValue(true);
-      mockHashService.hash.mockResolvedValue('newHashedPassword');
-      mockUserRepository.update.mockResolvedValue(mockUser);
+      mockChangeUserPassword.execute.mockResolvedValue();
 
-      await authService.changePasswordService(mockUser.id, changePasswordDto);
+      await authService.changePasswordService(userId, changePasswordDto);
 
-      expect(mockHashService.compare).toHaveBeenCalledWith('OldPass123!', 'hashedPassword');
-      expect(mockHashService.hash).toHaveBeenCalledWith('NewPass123!');
-      expect(mockUserRepository.update).toHaveBeenCalled();
+      expect(mockChangeUserPassword.execute).toHaveBeenCalledWith(userId, changePasswordDto);
     });
 
-    it('should throw UnauthorizedError for incorrect current password', async () => {
-      const mockUser = User.create(
-        generateUuid(),
-        'John Doe',
-        'test@example.com',
-        '+1234567890',
-        'hashedPassword',
-      );
-
-      const changePasswordDto = {
+    it('should handle incorrect current password from use case', async () => {
+      const userId = generateUuid();
+      const changePasswordDto: ChangePasswordDto = {
         currentPassword: 'WrongPass123!',
         newPassword: 'NewPass123!',
       };
 
-      mockUserRepository.findById.mockResolvedValue(mockUser);
-      mockHashService.compare.mockResolvedValue(false);
+      const error = new Error('Current password is incorrect');
+      mockChangeUserPassword.execute.mockRejectedValue(error);
 
-      await expect(
-        authService.changePasswordService(mockUser.id, changePasswordDto),
-      ).rejects.toThrow(UnauthorizedError);
+      await expect(authService.changePasswordService(userId, changePasswordDto)).rejects.toThrow(
+        'Current password is incorrect',
+      );
+
+      expect(mockChangeUserPassword.execute).toHaveBeenCalledWith(userId, changePasswordDto);
     });
   });
 });
