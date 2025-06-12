@@ -36,7 +36,6 @@ describe('Role Entity', () => {
       expect(adminRole.isAdmin()).toBe(true);
       expect(adminRole.isStylist()).toBe(false);
       expect(adminRole.isClient()).toBe(false);
-      //expect(adminRole.isReceptionist()).toBe(false);
     });
 
     it('should correctly identify stylist role', () => {
@@ -45,7 +44,6 @@ describe('Role Entity', () => {
       expect(stylistRole.isAdmin()).toBe(false);
       expect(stylistRole.isStylist()).toBe(true);
       expect(stylistRole.isClient()).toBe(false);
-      //expect(stylistRole.isReceptionist()).toBe(false);
     });
 
     it('should correctly identify client role', () => {
@@ -54,17 +52,7 @@ describe('Role Entity', () => {
       expect(clientRole.isAdmin()).toBe(false);
       expect(clientRole.isStylist()).toBe(false);
       expect(clientRole.isClient()).toBe(true);
-      //expect(clientRole.isReceptionist()).toBe(false);
     });
-
-    /*  it('should correctly identify receptionist role', () => {
-      const receptionistRole = Role.create(RoleName.RECEPTIONIST);
-
-      expect(receptionistRole.isAdmin()).toBe(false);
-      expect(receptionistRole.isStylist()).toBe(false);
-      expect(receptionistRole.isClient()).toBe(false);
-      expect(receptionistRole.isReceptionist()).toBe(true);
-    }); */
   });
 
   describe('Role Persistence', () => {

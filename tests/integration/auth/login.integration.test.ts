@@ -1,31 +1,12 @@
 import request from 'supertest';
 import app from '../../../src/app';
-import {
-  setupTestDatabase,
-  teardownTestDatabase,
-  cleanupTestDatabase,
-} from '../../setup/test-database';
 
 describe('Login Integration Tests', () => {
-  let testData: any;
-
-  beforeAll(async () => {
-    testData = await setupTestDatabase();
-  });
-
-  afterAll(async () => {
-    await teardownTestDatabase();
-  });
-
-  afterEach(async () => {
-    await cleanupTestDatabase();
-  });
-
   describe('POST /api/v1/auth/login', () => {
     it('should login with valid credentials', async () => {
       const response = await request(app).post('/api/v1/auth/login').send({
         email: 'admin@turnity.com',
-        password: 'Admin123!',
+        password: 'admin123', // ✅ Contraseña correcta del seed
       });
 
       expect(response.status).toBe(200);
@@ -51,7 +32,7 @@ describe('Login Integration Tests', () => {
     it('should validate email format', async () => {
       const response = await request(app).post('/api/v1/auth/login').send({
         email: 'invalid-email',
-        password: 'Admin123!',
+        password: 'admin123',
       });
 
       expect(response.status).toBe(400);
@@ -62,7 +43,7 @@ describe('Login Integration Tests', () => {
     it('should reject empty email', async () => {
       const response = await request(app).post('/api/v1/auth/login').send({
         email: '',
-        password: 'Admin123!',
+        password: 'admin123',
       });
 
       expect(response.status).toBe(400);
@@ -82,7 +63,7 @@ describe('Login Integration Tests', () => {
     it('should reject login for non-existent user', async () => {
       const response = await request(app).post('/api/v1/auth/login').send({
         email: 'nonexistent@turnity.com',
-        password: 'Admin123!',
+        password: 'admin123',
       });
 
       expect(response.status).toBe(401);

@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { AuthContainer } from './modules/auth/infrastructure/config/AuthContainer';
 import { errorHandler } from './shared/middleware/ErrorHandler';
-import prisma from './shared/config/Prisma';
+import { prisma } from './shared/config/Prisma';
 
 class App {
   public app: express.Application;
@@ -53,7 +53,7 @@ class App {
     this.app.use('/api/v1/auth', this.authContainer.authRoutes.getRouter());
 
     // 404 handler
-    this.app.use('*', (req, res) => {
+    this.app.use('/*splat', (req, res) => {
       res.status(404).json({
         success: false,
         message: `Route ${req.originalUrl} not found`,

@@ -14,46 +14,49 @@ export class AuthRoutes {
   }
 
   private setupRoutes(): void {
-    // Rutas públicas - Usando .bind() para mantener el contexto
-    this.router.post(
-      '/login',
-      this.asyncHandler(this.authController.login.bind(this.authController)),
-    );
+    // Rutas públicas - Usando arrow functions para mejor binding
+    this.router.post('/login', (req, res, next) => {
+      this.authController.login(req, res).catch(next);
+    });
 
-    this.router.post(
-      '/register',
-      this.asyncHandler(this.authController.register.bind(this.authController)),
-    );
+    this.router.post('/register', (req, res, next) => {
+      this.authController.register(req, res).catch(next);
+    });
 
-    this.router.post(
-      '/refresh-token',
-      this.asyncHandler(this.authController.refreshToken.bind(this.authController)),
-    );
+    this.router.post('/refresh-token', (req, res, next) => {
+      this.authController.refreshToken(req, res).catch(next);
+    });
 
     // Rutas protegidas
     this.router.get(
       '/profile',
-      this.authMiddleware.authenticate.bind(this.authMiddleware),
-      this.asyncHandler(this.authController.getProfile.bind(this.authController)),
+      (req, res, next) => {
+        this.authMiddleware.authenticate(req, res, next);
+      },
+      (req, res, next) => {
+        this.authController.getProfile(req, res).catch(next);
+      },
     );
 
     this.router.put(
       '/profile',
-      this.authMiddleware.authenticate.bind(this.authMiddleware),
-      this.asyncHandler(this.authController.updateProfile.bind(this.authController)),
+      (req, res, next) => {
+        this.authMiddleware.authenticate(req, res, next);
+      },
+      (req, res, next) => {
+        this.authController.updateProfile(req, res).catch(next);
+      },
     );
 
     this.router.put(
       '/change-password',
-      this.authMiddleware.authenticate.bind(this.authMiddleware),
-      this.asyncHandler(this.authController.changePassword.bind(this.authController)),
+      (req, res, next) => {
+        this.authMiddleware.authenticate(req, res, next);
+      },
+      (req, res, next) => {
+        this.authController.changePassword(req, res).catch(next);
+      },
     );
-  }
-
-  private asyncHandler(fn: any) {
-    return (req: any, res: any, next: any) => {
-      Promise.resolve(fn(req, res, next)).catch(next);
-    };
   }
 
   getRouter(): Router {
