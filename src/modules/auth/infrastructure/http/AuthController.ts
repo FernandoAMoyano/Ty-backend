@@ -1,114 +1,147 @@
-import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../../application/services/AuthService';
-import { AppError } from '../../../../shared/exceptions/AppError';
+import { Request, Response } from 'express';
 import { LoginDto } from '../../application/dto/Request/LoginDto';
 import { RegisterDto } from '../../application/dto/Request/RegisterDto';
 import { UpdateProfileDto } from '../../application/dto/Request/UpdateProfileDto';
 import { ChangePasswordDto } from '../../application/dto/Request/ChangePasswordDto';
+import { LoginUser } from '../../application/uses-cases/LoginUser';
+import { RegisterUser } from '../../application/uses-cases/RegisterUser';
+import { RefreshToken } from '../../application/uses-cases/RefreshToken';
+import { GetUserProfile } from '../../application/uses-cases/GetUserProfile';
+import { UpdateUserProfile } from '../../application/uses-cases/UpdateUserProfile';
+import { ChangeUserPassword } from '../../application/uses-cases/ChangeUserPassword';
+import { AuthenticatedRequest } from './AuthMiddleware';
 
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private loginUser: LoginUser,
+    private registerUser: RegisterUser,
+    private refreshTokenUseCase: RefreshToken,
+    private getUserProfile: GetUserProfile,
+    private updateUserProfile: UpdateUserProfile,
+    private changeUserPassword: ChangeUserPassword,
+  ) {}
 
-  login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async login(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const loginDto: LoginDto = req.body;
-      const result = await this.authService.loginService(loginDto);
+      const result = await this.loginUser.execute(loginDto);
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
-        message: 'Login successful',
         data: result,
+        message: 'Login successful',
       });
     } catch (error) {
-      next(error);
+      throw error;
     }
-  };
+  }
 
-  register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async register(req: Request, res: Response): Promise<Response | void> {
     try {
       const registerDto: RegisterDto = req.body;
-      const user = await this.authService.registerService(registerDto);
+      const result = await this.registerUser.execute(registerDto);
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
+        data: result,
         message: 'User registered successfully',
-        data: user,
       });
     } catch (error) {
-      next(error);
+      throw error;
     }
-  };
+  }
 
-  refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async refreshToken(req: Request, res: Response): Promise<Response | void> {
     try {
       const { refreshToken } = req.body;
-      const result = await this.authService.refreshTokenService(refreshToken);
 
-      res.status(200).json({
-        success: true,
-        message: 'Token refreshed successfully',
-        data: result,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  getProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userId = req.user?.userId;
-      if (!userId) {
-        throw new AppError('User ID not found', 401);
+      if (!refreshToken) {
+        return res.status(400).json({
+          success: false,
+          message: 'Refresh token is required',
+        });
       }
 
-      const user = await this.authService.getUserProfileService(userId);
+      const result = await this.refreshTokenUseCase.execute(refreshToken);
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
-        message: 'Profile retrieved successfully',
-        data: user,
+        data: result,
+        message: 'Token refreshed successfully',
       });
     } catch (error) {
-      next(error);
+      throw error;
     }
-  };
+  }
 
-  updateProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getProfile(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
-      const userId = req.user?.userId;
+      // Validación explícita del userId
+      const userId = req.user?.userId || req.params.userId;
+
       if (!userId) {
-        throw new AppError('User ID not found', 401);
+        return res.status(400).json({
+          success: false,
+          message: 'User ID is required',
+        });
+      }
+
+      const result = await this.getUserProfile.execute(userId);
+
+      return res.status(200).json({
+        success: true,
+        data: result,
+        message: 'Profile retrieved successfully',
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateProfile(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+    try {
+      const userId = req.user?.userId || req.params.userId;
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID is required',
+        });
       }
 
       const updateDto: UpdateProfileDto = req.body;
-      const user = await this.authService.updateProfileService(userId, updateDto);
+      const result = await this.updateUserProfile.execute(userId, updateDto);
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
+        data: result,
         message: 'Profile updated successfully',
-        data: user,
       });
     } catch (error) {
-      next(error);
+      throw error;
     }
-  };
+  }
 
-  changePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async changePassword(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const userId = req.user?.userId;
+
       if (!userId) {
-        throw new AppError('User ID not found', 401);
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+        });
       }
 
       const changePasswordDto: ChangePasswordDto = req.body;
-      await this.authService.changePasswordService(userId, changePasswordDto);
+      await this.changeUserPassword.execute(userId, changePasswordDto);
 
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: 'Password changed successfully',
       });
     } catch (error) {
-      next(error);
+      throw error;
     }
-  };
+  }
 }

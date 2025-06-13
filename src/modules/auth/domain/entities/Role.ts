@@ -1,13 +1,6 @@
 import { RoleName } from '@prisma/client';
 import { generateUuid } from '../../../../shared/utils/uuid';
 
-/* export enum SystemRoles {
-  ADMIN = 'ADMIN',
-  STYLIST = 'STYLIST',
-  CLIENT = 'CLIENT',
-  RECEPTIONIST = 'RECEPTIONIST',
-} */
-
 export class Role {
   constructor(
     public id: string,
@@ -18,6 +11,10 @@ export class Role {
 
   static create(name: RoleName, description?: string): Role {
     return new Role(generateUuid(), name, description);
+  }
+
+  static fromPersistence(id: string, name: RoleName, description?: string, createdAt?: Date): Role {
+    return new Role(id, name, description, createdAt);
   }
 
   isAdmin(): boolean {
@@ -32,7 +29,12 @@ export class Role {
     return this.name === RoleName.CLIENT;
   }
 
-  /*  isReceptionist(): boolean {
-    return this.name === RoleName.RECEPTIONIST;
-  } */
+  toPersistence() {
+    return {
+      id: this.id,
+      name: this.name,
+      description: this.description,
+      createdAt: this.createdAt,
+    };
+  }
 }

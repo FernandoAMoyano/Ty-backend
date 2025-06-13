@@ -14,24 +14,47 @@ export class AuthRoutes {
   }
 
   private setupRoutes(): void {
-    // Rutas públicas
-    this.router.post('/login', this.authController.login);
-    this.router.post('/register', this.authController.register);
-    this.router.post('/refresh-token', this.authController.refreshToken);
+    this.router.post('/login', (req, res, next) => {
+      this.authController.login(req, res).catch(next);
+    });
+
+    this.router.post('/register', (req, res, next) => {
+      this.authController.register(req, res).catch(next);
+    });
+
+    this.router.post('/refresh-token', (req, res, next) => {
+      this.authController.refreshToken(req, res).catch(next);
+    });
 
     // Rutas protegidas
-    this.router.get('/profile', this.authMiddleware.authenticate, this.authController.getProfile);
+    this.router.get(
+      '/profile',
+      (req, res, next) => {
+        this.authMiddleware.authenticate(req, res, next);
+      },
+      (req, res, next) => {
+        this.authController.getProfile(req, res).catch(next);
+      },
+    );
 
     this.router.put(
       '/profile',
-      this.authMiddleware.authenticate,
-      this.authController.updateProfile,
+      (req, res, next) => {
+        this.authMiddleware.authenticate(req, res, next);
+      },
+      (req, res, next) => {
+        this.authController.updateProfile(req, res).catch(next);
+      },
     );
 
     this.router.put(
       '/change-password',
-      this.authMiddleware.authenticate,
-      this.authController.changePassword,
+      (req, res, next) => {
+        this.authMiddleware.authenticate(req, res, next);
+      },
+      (req, res, next) => {
+        this.authController.changePassword(req, res).catch(next);
+      },
     );
   }
 

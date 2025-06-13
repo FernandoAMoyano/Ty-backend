@@ -1,18 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 
-//Casos de uso
-import { LoginUser } from '../../application/uses-cases/LoginUser';
-import { RegisterUser } from '../../application/uses-cases/RegisterUser';
-import { RefreshToken } from '../../application/uses-cases/RefreshToken';
-import { GetUserProfile } from '../../application/uses-cases/GetUserProfile';
-import { UpdateUserProfile } from '../../application/uses-cases/UpdateUserProfile';
-import { ChangeUserPassword } from '../../application/uses-cases/ChangeUserPassword';
-
-// Services y resto de dependencias...
-import { AuthService } from '../../application/services/AuthService';
+// Services y dependencias
 import { HashService } from '../../application/services/HashService';
 import { JwtService } from '../../application/services/JwtService';
 import { PrismaUserRepository } from '../persistence/PrismaUserRepository';
+import { PrismaRoleRepository } from '../persistence/PrismaRolRepository';
 import { BcryptHashService } from '../services/BcryptHashService';
 import { JwtTokenService } from '../services/JwtTokenService';
 import { AuthController } from '../http/AuthController';
@@ -20,14 +12,26 @@ import { AuthMiddleware } from '../http/AuthMiddleware';
 import { AuthRoutes } from '../http/AuthRoutes';
 import { UserRepository } from '../../domain/repositories/User';
 import { RoleRepository } from '../../domain/repositories/Rol';
-import { PrismaRoleRepository } from '../persistence/PrismaRolRepository';
+
+import { LoginUser } from '../../application/uses-cases/LoginUser';
+import { RegisterUser } from '../../application/uses-cases/RegisterUser';
+import { RefreshToken } from '../../application/uses-cases/RefreshToken';
+import { GetUserProfile } from '../../application/uses-cases/GetUserProfile';
+import { UpdateUserProfile } from '../../application/uses-cases/UpdateUserProfile';
+import { ChangeUserPassword } from '../../application/uses-cases/ChangeUserPassword';
 
 export class AuthContainer {
   private static instance: AuthContainer;
-  private _authService: AuthService;
   private _authController: AuthController;
   private _authMiddleware: AuthMiddleware;
   private _authRoutes: AuthRoutes;
+
+  private _loginUser: LoginUser;
+  private _registerUser: RegisterUser;
+  private _refreshToken: RefreshToken;
+  private _getUserProfile: GetUserProfile;
+  private _updateUserProfile: UpdateUserProfile;
+  private _changeUserPassword: ChangeUserPassword;
 
   constructor(private prisma: PrismaClient) {
     this.setupDependencies();
@@ -50,40 +54,62 @@ export class AuthContainer {
     const jwtService: JwtService = new JwtTokenService();
 
     // Use Cases
-    const loginUser = new LoginUser(userRepository, hashService, jwtService);
-    const registerUser = new RegisterUser(userRepository, roleRepository, hashService);
-    const refreshToken = new RefreshToken(userRepository, roleRepository, jwtService);
-    const getUserProfile = new GetUserProfile(userRepository, roleRepository);
-    const updateUserProfile = new UpdateUserProfile(userRepository, roleRepository);
-    const changeUserPassword = new ChangeUserPassword(userRepository, hashService);
+    this._loginUser = new LoginUser(userRepository, hashService, jwtService);
+    this._registerUser = new RegisterUser(userRepository, roleRepository, hashService);
+    this._refreshToken = new RefreshToken(userRepository, roleRepository, jwtService);
+    this._getUserProfile = new GetUserProfile(userRepository, roleRepository);
+    this._updateUserProfile = new UpdateUserProfile(userRepository, roleRepository);
+    this._changeUserPassword = new ChangeUserPassword(userRepository, hashService);
 
-    // Application Service (orquesta los use cases)
-    this._authService = new AuthService(
-      loginUser,
-      registerUser,
-      refreshToken,
-      getUserProfile,
-      updateUserProfile,
-      changeUserPassword,
+    // HTTP Layer - Inyectamos los casos de uso directamente
+    this._authController = new AuthController(
+      this._loginUser,
+      this._registerUser,
+      this._refreshToken,
+      this._getUserProfile,
+      this._updateUserProfile,
+      this._changeUserPassword,
     );
 
-    // HTTP Layer
-    this._authController = new AuthController(this._authService);
     this._authMiddleware = new AuthMiddleware(jwtService);
     this._authRoutes = new AuthRoutes(this._authController, this._authMiddleware);
   }
 
-  // Getters...
-  get authService(): AuthService {
-    return this._authService;
-  }
+  // Getters para acceso externo
   get authController(): AuthController {
     return this._authController;
   }
+
   get authMiddleware(): AuthMiddleware {
     return this._authMiddleware;
   }
+
   get authRoutes(): AuthRoutes {
     return this._authRoutes;
+  }
+
+  // Getters para casos de uso (opcional, para testing o uso directo)
+  get loginUser(): LoginUser {
+    return this._loginUser;
+  }
+
+  get registerUser(): RegisterUser {
+    return this._registerUser;
+  }
+
+  get refreshToken(): RefreshToken {
+    return this._refreshToken;
+  }
+
+  get getUserProfile(): GetUserProfile {
+    return this._getUserProfile;
+  }
+
+  get updateUserProfile(): UpdateUserProfile {
+    return this._updateUserProfile;
+  }
+
+  get changeUserPassword(): ChangeUserPassword {
+    return this._changeUserPassword;
   }
 }

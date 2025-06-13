@@ -1,6 +1,7 @@
-import { PrismaClient, RoleName } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { Role } from '../../domain/entities/Role';
 import { RoleRepository } from '../../domain/repositories/Rol';
+import { RoleName } from '@prisma/client';
 
 export class PrismaRoleRepository implements RoleRepository {
   constructor(private prisma: PrismaClient) {}

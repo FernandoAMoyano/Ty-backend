@@ -2,23 +2,18 @@ import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../../application/services/JwtService';
 import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
 
-// Extender Request para incluir user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        userId: string;
-        roleId: string;
-        email: string;
-      };
-    }
-  }
+export interface AuthenticatedRequest extends Request {
+  user?: {
+    userId: string;
+    roleId: string;
+    email: string;
+  };
 }
 
 export class AuthMiddleware {
   constructor(private jwtService: JwtService) {}
 
-  authenticate = (req: Request, res: Response, next: NextFunction): void => {
+  authenticate = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     try {
       const authHeader = req.headers.authorization;
 
@@ -42,7 +37,7 @@ export class AuthMiddleware {
   };
 
   authorize = (allowedRoles: string[]) => {
-    return (req: Request, res: Response, next: NextFunction): void => {
+    return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
       try {
         if (!req.user) {
           throw new UnauthorizedError('Authentication required');

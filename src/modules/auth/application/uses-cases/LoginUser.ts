@@ -7,7 +7,6 @@ import { UserDto } from '../dto/Response/UserDto';
 import { isValidEmail } from '../../../../shared/utils/validation';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
-import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 
 export class LoginUser {
   constructor(
@@ -25,30 +24,33 @@ export class LoginUser {
       throw new ValidationError('Password is required');
     }
 
-    const user = await this.userRepository.findByEmail(loginDto.email);
-    if (!user) {
+    const userWithRole = await this.userRepository.findByEmailWithRole(loginDto.email);
+    if (!userWithRole) {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    if (!user.isActive) {
+    if (!userWithRole.isActive) {
       throw new UnauthorizedError('User account is inactive');
     }
 
-    const isValidPassword = await this.hashService.compare(loginDto.password, user.password);
+    const isValidPassword = await this.hashService.compare(
+      loginDto.password,
+      userWithRole.password,
+    );
     if (!isValidPassword) {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    const role = await this.userRepository.findById(user.roleId);
+    const role = userWithRole.role;
     if (!role) {
-      throw new NotFoundError('Role', user.roleId);
+      throw new UnauthorizedError('Invalid credentials'); // No revelar detalles internos
     }
 
     // Generar tokens
     const jwtPayload: JwtPayload = {
-      userId: user.id,
-      roleId: user.roleId,
-      email: user.email,
+      userId: userWithRole.id,
+      roleId: userWithRole.roleId,
+      email: userWithRole.email,
     };
 
     const token = this.jwtService.generateAccessToken(jwtPayload);
@@ -57,7 +59,7 @@ export class LoginUser {
     return {
       token,
       refreshToken,
-      user: this.mapUserToDto(user, role),
+      user: this.mapUserToDto(userWithRole, role),
     };
   }
 
