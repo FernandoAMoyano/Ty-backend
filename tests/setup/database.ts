@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Solo limpiar usuarios de test, NADA MÁS
+// Solo limpiar usuarios de test
 export const cleanupTestUsers = async () => {
   try {
     // Solo eliminar usuarios que contengan "test" en el email

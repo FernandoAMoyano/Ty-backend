@@ -1,13 +1,6 @@
 import { RoleName } from '@prisma/client';
 import { generateUuid } from '../../../../shared/utils/uuid';
 
-/* export enum SystemRoles {
-  ADMIN = 'ADMIN',
-  STYLIST = 'STYLIST',
-  CLIENT = 'CLIENT',
-  RECEPTIONIST = 'RECEPTIONIST',
-} */
-
 export class Role {
   constructor(
     public id: string,
@@ -44,8 +37,4 @@ export class Role {
       createdAt: this.createdAt,
     };
   }
-
-  /*  isReceptionist(): boolean {
-    return this.name === RoleName.RECEPTIONIST;
-  } */
 }

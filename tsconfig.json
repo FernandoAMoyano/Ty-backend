@@ -13,8 +13,10 @@
     "resolveJsonModule": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "types": ["node", "express"]
   },
-  "include": ["src/**/*", "/tests/**/*"],
+  "include": ["src/**/*", "src/types/**/*", "/tests/**/*"],
   "exclude": ["node_modules", "dist",]
 }

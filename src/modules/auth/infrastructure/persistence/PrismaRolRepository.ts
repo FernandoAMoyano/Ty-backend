@@ -1,14 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { Role } from '../../domain/entities/Role';
 import { RoleRepository } from '../../domain/repositories/Rol';
-
-// Enum local temporal
-enum RoleName {
-  ADMIN,
-  CLIENT,
-  STYLIST,
-  RECEPTIONIST = 'RECEPTIONIST',
-}
+import { RoleName } from '@prisma/client';
 
 export class PrismaRoleRepository implements RoleRepository {
   constructor(private prisma: PrismaClient) {}
@@ -49,7 +42,7 @@ export class PrismaRoleRepository implements RoleRepository {
     });
 
     return rolesData.map(
-      (roleData: Role) =>
+      (roleData) =>
         new Role(
           roleData.id,
           roleData.name as RoleName,

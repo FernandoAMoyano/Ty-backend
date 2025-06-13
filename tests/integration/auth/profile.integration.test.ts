@@ -122,7 +122,6 @@ describe('Profile Integration Tests', () => {
 
       expect(response.status).toBe(500);
       expect(response.body.success).toBe(false);
-      /* expect(response.body.message).toContain('User name cannot be empty');*/
       expect(response.body.message).toContain('Internal server error');
     });
   });

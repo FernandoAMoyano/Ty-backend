@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-
 import { LoginDto } from '../../application/dto/Request/LoginDto';
 import { RegisterDto } from '../../application/dto/Request/RegisterDto';
 import { UpdateProfileDto } from '../../application/dto/Request/UpdateProfileDto';
@@ -10,6 +9,7 @@ import { RefreshToken } from '../../application/uses-cases/RefreshToken';
 import { GetUserProfile } from '../../application/uses-cases/GetUserProfile';
 import { UpdateUserProfile } from '../../application/uses-cases/UpdateUserProfile';
 import { ChangeUserPassword } from '../../application/uses-cases/ChangeUserPassword';
+import { AuthenticatedRequest } from './AuthMiddleware';
 
 export class AuthController {
   constructor(
@@ -21,7 +21,7 @@ export class AuthController {
     private changeUserPassword: ChangeUserPassword,
   ) {}
 
-  async login(req: Request, res: Response): Promise<Response | void> {
+  async login(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const loginDto: LoginDto = req.body;
       const result = await this.loginUser.execute(loginDto);
@@ -32,7 +32,6 @@ export class AuthController {
         message: 'Login successful',
       });
     } catch (error) {
-      // El middleware de errores se encargará del manejo
       throw error;
     }
   }
@@ -75,7 +74,7 @@ export class AuthController {
     }
   }
 
-  async getProfile(req: Request, res: Response): Promise<Response | void> {
+  async getProfile(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       // Validación explícita del userId
       const userId = req.user?.userId || req.params.userId;
@@ -99,7 +98,7 @@ export class AuthController {
     }
   }
 
-  async updateProfile(req: Request, res: Response): Promise<Response | void> {
+  async updateProfile(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const userId = req.user?.userId || req.params.userId;
 
@@ -123,7 +122,7 @@ export class AuthController {
     }
   }
 
-  async changePassword(req: Request, res: Response): Promise<Response | void> {
+  async changePassword(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const userId = req.user?.userId;
 

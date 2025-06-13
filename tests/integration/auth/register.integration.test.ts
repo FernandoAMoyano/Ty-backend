@@ -34,13 +34,10 @@ describe('Register Integration Tests', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
-      /*   expect(response.body.data.user.name).toBe('Test User');
-      expect(response.body.data.user.role.name).toBe('CLIENT');
-      expect(response.body.data.user.isActive).toBe(true); */
 
-      expect(response.body.data.name).toBe('Test User'); // ✅ sin .user
-      expect(response.body.data.role.name).toBe('CLIENT'); // ✅ sin .user
-      expect(response.body.data.isActive).toBe(true); // ✅ sin .user
+      expect(response.body.data.name).toBe('Test User');
+      expect(response.body.data.role.name).toBe('CLIENT');
+      expect(response.body.data.isActive).toBe(true);
     });
 
     it('should reject duplicate email', async () => {

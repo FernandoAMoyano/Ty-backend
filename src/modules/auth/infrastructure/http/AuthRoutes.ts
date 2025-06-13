@@ -14,7 +14,6 @@ export class AuthRoutes {
   }
 
   private setupRoutes(): void {
-    // Rutas públicas - Usando arrow functions para mejor binding
     this.router.post('/login', (req, res, next) => {
       this.authController.login(req, res).catch(next);
     });

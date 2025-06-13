@@ -26,7 +26,6 @@ export class AuthContainer {
   private _authMiddleware: AuthMiddleware;
   private _authRoutes: AuthRoutes;
 
-  // Use Cases (ahora públicos para acceso directo)
   private _loginUser: LoginUser;
   private _registerUser: RegisterUser;
   private _refreshToken: RefreshToken;

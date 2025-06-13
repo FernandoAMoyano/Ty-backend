@@ -47,7 +47,6 @@ export class PrismaUserRepository implements UserRepository {
     );
   }
 
-  // ✅ NUEVO MÉTODO: findByEmailWithRole
   async findByEmailWithRole(email: string): Promise<any | null> {
     const userData = await this.prisma.user.findUnique({
       where: { email: email.toLowerCase() },

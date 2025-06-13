@@ -51,17 +51,11 @@ export const createTestUser = async (roleType: 'CLIENT' | 'ADMIN' | 'STYLIST' = 
     throw new Error(`Registro falló: ${response.status}`);
   }
 
-  console.log('API Response➡️➡️➡️:', JSON.stringify(response.body, null, 2));
   return response.body.data;
 };
 
 export const loginTestUser = async () => {
   const userData = await createTestUser('CLIENT');
-
-  // DEBUG TEMPORAL:
-  console.log('🔍 userData completo:', JSON.stringify(userData, null, 2));
-  console.log('🔍 userData.user:', userData.user);
-  console.log('🔍 userData.email:', userData.email);
 
   const response = await request(app)
     .post('/api/v1/auth/login')

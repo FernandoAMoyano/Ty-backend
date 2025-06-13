@@ -22,7 +22,7 @@ describe('Change Password Integration Tests', () => {
 
       // Verificar que puede loguearse con la nueva password
       const newLoginResponse = await request(app).post('/api/v1/auth/login').send({
-        email: loginResult.user.email, // ✅ Email del resultado del login
+        email: loginResult.user.email,
         password: 'NewSecurePass456!',
       });
 
@@ -30,7 +30,7 @@ describe('Change Password Integration Tests', () => {
 
       // Verificar que no puede loguearse con la password antigua
       const oldLoginResponse = await request(app).post('/api/v1/auth/login').send({
-        email: loginResult.user.email, // ✅ Email del resultado del login
+        email: loginResult.user.email,
         password: 'TestPass123!',
       });
 
