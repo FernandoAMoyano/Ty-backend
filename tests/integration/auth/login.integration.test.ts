@@ -6,7 +6,7 @@ describe('Login Integration Tests', () => {
     it('should login with valid credentials', async () => {
       const response = await request(app).post('/api/v1/auth/login').send({
         email: 'admin@turnity.com',
-        password: 'admin123', // ✅ Contraseña correcta del seed
+        password: 'admin123',
       });
 
       expect(response.status).toBe(200);

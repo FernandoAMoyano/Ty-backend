@@ -29,7 +29,7 @@ describe('Register Integration Tests', () => {
           email: `test-${Date.now()}@example.com`, // Email único
           phone: '+1234567890',
           password: 'TestPass123!',
-          roleId: clientRoleId, // ✅ Usar roleId real
+          roleId: clientRoleId, // Usar roleId real
         });
 
       expect(response.status).toBe(201);

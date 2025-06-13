@@ -1,5 +1,5 @@
 import request from 'supertest';
-import app from '../../../src/app'; // Importación directa
+import app from '../../../src/app';
 import { loginTestUser } from '../../setup/helpers';
 
 describe('Refresh Token Integration Tests', () => {

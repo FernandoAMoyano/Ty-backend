@@ -6,7 +6,7 @@ describe('Change Password Integration Tests', () => {
   describe('PUT /api/v1/auth/change-password', () => {
     it('should change password with valid current password', async () => {
       // Crear usuario de test y hacer login
-      const loginResult = await loginTestUser(); // ✅ Sin parámetros
+      const loginResult = await loginTestUser();
 
       const response = await request(app)
         .put('/api/v1/auth/change-password')
@@ -38,7 +38,7 @@ describe('Change Password Integration Tests', () => {
     });
 
     it('should reject wrong current password', async () => {
-      const loginResult = await loginTestUser(); // ✅ Sin parámetros
+      const loginResult = await loginTestUser();
 
       const response = await request(app)
         .put('/api/v1/auth/change-password')
@@ -54,7 +54,7 @@ describe('Change Password Integration Tests', () => {
     });
 
     it('should validate new password requirements', async () => {
-      const loginResult = await loginTestUser(); // ✅ Sin parámetros
+      const loginResult = await loginTestUser();
 
       const response = await request(app)
         .put('/api/v1/auth/change-password')
@@ -80,8 +80,7 @@ describe('Change Password Integration Tests', () => {
     });
 
     it('should reject request with missing fields', async () => {
-      const loginResult = await loginTestUser(); // ✅ Sin parámetros
-
+      const loginResult = await loginTestUser();
       const response = await request(app)
         .put('/api/v1/auth/change-password')
         .set('Authorization', `Bearer ${loginResult.token}`)
