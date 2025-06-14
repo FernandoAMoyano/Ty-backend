@@ -5,10 +5,9 @@ export const errorHandler = (
   error: Error,
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ): void => {
-  console.error('Error:', error);
-
+  /* console.error('Error:', error); */
   if (error instanceof AppError) {
     res.status(error.statusCode).json({
       success: false,

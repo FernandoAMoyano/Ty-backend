@@ -29,6 +29,8 @@ module.exports = {
   // Environment
   testEnvironmentOptions: {
     NODE_ENV: 'test',
+    LOG_LEVEL: 'silent',
+    PRISMA_LOG_LEVEL: 'silent',
   },
 
   // Ignore patterns
@@ -37,7 +39,7 @@ module.exports = {
   // Mock configuration
   clearMocks: true,
   resetMocks: true,
-  verbose: true,
+  verbose: false,
   detectOpenHandles: true,
   forceExit: true,
 
