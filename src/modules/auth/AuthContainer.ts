@@ -1,24 +1,21 @@
 import { PrismaClient } from '@prisma/client';
-
-// Services y dependencias
-import { HashService } from '../../application/services/HashService';
-import { JwtService } from '../../application/services/JwtService';
-import { PrismaUserRepository } from '../persistence/PrismaUserRepository';
-import { PrismaRoleRepository } from '../persistence/PrismaRolRepository';
-import { BcryptHashService } from '../services/BcryptHashService';
-import { JwtTokenService } from '../services/JwtTokenService';
-import { AuthController } from '../http/AuthController';
-import { AuthMiddleware } from '../http/AuthMiddleware';
-import { AuthRoutes } from '../http/AuthRoutes';
-import { UserRepository } from '../../domain/repositories/User';
-import { RoleRepository } from '../../domain/repositories/Rol';
-
-import { LoginUser } from '../../application/uses-cases/LoginUser';
-import { RegisterUser } from '../../application/uses-cases/RegisterUser';
-import { RefreshToken } from '../../application/uses-cases/RefreshToken';
-import { GetUserProfile } from '../../application/uses-cases/GetUserProfile';
-import { UpdateUserProfile } from '../../application/uses-cases/UpdateUserProfile';
-import { ChangeUserPassword } from '../../application/uses-cases/ChangeUserPassword';
+import { AuthController } from './presentation/controllers/AuthController';
+import { AuthMiddleware } from './presentation/middleware/AuthMiddleware';
+import { AuthRoutes } from './presentation/routes/AuthRoutes';
+import { LoginUser } from './application/uses-cases/LoginUser';
+import { RegisterUser } from './application/uses-cases/RegisterUser';
+import { RefreshToken } from './application/uses-cases/RefreshToken';
+import { GetUserProfile } from './application/uses-cases/GetUserProfile';
+import { UpdateUserProfile } from './application/uses-cases/UpdateUserProfile';
+import { ChangeUserPassword } from './application/uses-cases/ChangeUserPassword';
+import { PrismaUserRepository } from './infrastructure/persistence/PrismaUserRepository';
+import { PrismaRoleRepository } from './infrastructure/persistence/PrismaRolRepository';
+import { RoleRepository } from './domain/repositories/Rol';
+import { UserRepository } from './domain/repositories/User';
+import { BcryptHashService } from './infrastructure/services/BcryptHashService';
+import { JwtTokenService } from './infrastructure/services/JwtTokenService';
+import { JwtService } from './application/services/JwtService';
+import { HashService } from './application/services/HashService';
 
 export class AuthContainer {
   private static instance: AuthContainer;
