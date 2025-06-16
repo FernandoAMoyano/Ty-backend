@@ -3,6 +3,6 @@ export interface RegisterDto {
   email: string;
   phone: string;
   password: string;
-  roleId: string;
+  roleName?: string;
   profilePicture?: string;
 }

@@ -109,13 +109,14 @@ describe('AuthService Unit Tests', () => {
   });
 
   describe('registerService', () => {
-    it('should delegate to RegisterUser use case', async () => {
+    it('should delegate to RegisterUser use case with default CLIENT role', async () => {
+      // ✅ CORREGIDO: Usar roleName en lugar de roleId
       const registerDto: RegisterDto = {
         name: 'John Doe',
         email: 'test@example.com',
         phone: '+1234567890',
         password: 'TestPass123!',
-        roleId: generateUuid(),
+        // roleName es opcional - se usará CLIENT por defecto
       };
 
       const expectedUser: UserDto = {
@@ -143,13 +144,49 @@ describe('AuthService Unit Tests', () => {
       expect(result.name).toBe('John Doe');
     });
 
+    // Test con rol específico
+    it('should delegate to RegisterUser use case with specified role', async () => {
+      const registerDto: RegisterDto = {
+        name: 'Elena Martinez',
+        email: 'elena@example.com',
+        phone: '+1234567890',
+        password: 'TestPass123!',
+        roleName: 'STYLIST', // ✅ Especificar rol
+      };
+
+      const expectedUser: UserDto = {
+        id: generateUuid(),
+        name: 'Elena Martinez',
+        email: 'elena@example.com',
+        phone: '+1234567890',
+        isActive: true,
+        role: {
+          id: generateUuid(),
+          name: 'STYLIST', // ✅ Rol específico
+          description: 'Stylist role',
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockRegisterUser.execute.mockResolvedValue(expectedUser);
+
+      const result = await authService.registerService(registerDto);
+
+      expect(mockRegisterUser.execute).toHaveBeenCalledWith(registerDto);
+      expect(result).toBe(expectedUser);
+      expect(result.email).toBe('elena@example.com');
+      expect(result.role.name).toBe('STYLIST');
+    });
+
     it('should handle registration errors from use case', async () => {
+      // ✅ CORREGIDO: Usar roleName
       const registerDto: RegisterDto = {
         name: 'John Doe',
         email: 'existing@example.com',
         phone: '+1234567890',
         password: 'TestPass123!',
-        roleId: generateUuid(),
+        roleName: 'CLIENT',
       };
 
       const error = new Error('Email already exists');
@@ -157,6 +194,28 @@ describe('AuthService Unit Tests', () => {
 
       await expect(authService.registerService(registerDto)).rejects.toThrow(
         'Email already exists',
+      );
+
+      expect(mockRegisterUser.execute).toHaveBeenCalledWith(registerDto);
+    });
+
+    //  NUEVO: Test para rol inválido
+    it('should handle invalid role error from use case', async () => {
+      const registerDto: RegisterDto = {
+        name: 'John Doe',
+        email: 'test@example.com',
+        phone: '+1234567890',
+        password: 'TestPass123!',
+        roleName: 'INVALID_ROLE',
+      };
+
+      const error = new Error(
+        'Invalid role: INVALID_ROLE. Valid roles are: CLIENT, STYLIST, ADMIN',
+      );
+      mockRegisterUser.execute.mockRejectedValue(error);
+
+      await expect(authService.registerService(registerDto)).rejects.toThrow(
+        'Invalid role: INVALID_ROLE. Valid roles are: CLIENT, STYLIST, ADMIN',
       );
 
       expect(mockRegisterUser.execute).toHaveBeenCalledWith(registerDto);

@@ -1,3 +1,4 @@
+import { RoleName } from '@prisma/client';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
@@ -25,15 +26,18 @@ export class RegisterUser {
       throw new ConflictError('Email already exists');
     }
 
-    const role = await this.roleRepository.findById(registerDto.roleId);
+    const roleNameString = registerDto.roleName || 'CLIENT';
+    const roleName = this.stringToRoleName(roleNameString);
+
+    const role = await this.roleRepository.findByName(roleName);
     if (!role) {
-      throw new NotFoundError('Role', registerDto.roleId);
+      throw new NotFoundError('Role', roleNameString);
     }
 
     // Crear usuario
     const hashedPassword = await this.hashService.hash(registerDto.password);
     const user = User.create(
-      registerDto.roleId,
+      role.id,
       registerDto.name.trim(),
       registerDto.email.toLowerCase(),
       registerDto.phone,
@@ -45,6 +49,23 @@ export class RegisterUser {
     const savedUser = await this.userRepository.save(user);
 
     return this.mapUserToDto(savedUser, role);
+  }
+
+  private stringToRoleName(roleString: string): RoleName {
+    const normalizedRole = roleString.toUpperCase();
+
+    switch (normalizedRole) {
+      case 'CLIENT':
+        return RoleName.CLIENT;
+      case 'STYLIST':
+        return RoleName.STYLIST;
+      case 'ADMIN':
+        return RoleName.ADMIN;
+      default:
+        throw new ValidationError(
+          `Invalid role: ${roleString}. Valid roles are: CLIENT, STYLIST, ADMIN`,
+        );
+    }
   }
 
   private validateRegisterDto(registerDto: RegisterDto): void {
@@ -65,8 +86,12 @@ export class RegisterUser {
         'Password must be at least 8 characters long and contain uppercase, lowercase, and number',
       );
     }
-    if (!registerDto.roleId) {
-      throw new ValidationError('Role is required');
+
+    if (registerDto.roleName) {
+      const validRoles = ['CLIENT', 'STYLIST', 'ADMIN'];
+      if (!validRoles.includes(registerDto.roleName.toUpperCase())) {
+        throw new ValidationError(`Invalid role. Valid roles are: ${validRoles.join(', ')}`);
+      }
     }
   }
 
