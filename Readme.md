@@ -1,8 +1,10 @@
 # 💇‍♀️ Turnity Backend
+---
 
 Backend API para sistema de gestión de salones de belleza construido con **Node.js**, **TypeScript**, **Express** y **Prisma**.
 
 ## 🚀 Inicio Rápido
+---
 
 ### Prerrequisitos
 - **Docker** y **Docker Compose**
@@ -41,7 +43,9 @@ La API estará disponible en: **http://localhost:3000**
 
 Endpoint de salud: **GET http://localhost:3000/health**
 
-## 📋 Scripts Disponibles
+# 📋 Scripts Disponibles
+---
+
 
 ### Docker (Recomendado)
 ```bash
@@ -64,7 +68,8 @@ npm run docker:jest:test        # Todos los tests
 npm run test                    # Tests locales (requiere DB)
 ```
 
-## 🏗️ Arquitectura
+# 🏗️ Arquitectura
+---
 
 El proyecto sigue **Clean Architecture** con estas capas:
 
@@ -77,11 +82,13 @@ src/modules/[module]/
 └── container.ts     # Dependency Injection
 ```
 
-## 🔐 API Endpoints
+# 🔐 API Endpoints
+---
+
 
 ### Autenticación
 ```
-POST   /api/v1/auth/register         # Registrar usuario
+POST   /api/v1/auth/register        # Registrar usuario
 POST   /api/v1/auth/login           # Iniciar sesión  
 POST   /api/v1/auth/refresh-token   # Renovar token
 GET    /api/v1/auth/profile         # Obtener perfil
@@ -89,7 +96,8 @@ PUT    /api/v1/auth/profile         # Actualizar perfil
 PUT    /api/v1/auth/change-password # Cambiar contraseña
 ```
 
-## 🧪 Testing
+# 🧪 Testing
+---
 
 El proyecto tiene **83 tests** con cobertura completa:
 
@@ -106,6 +114,8 @@ npm run docker:jest:test -- tests/integration/auth/login.integration.test.ts
 ```
 
 ## 🗄️ Base de Datos
+---
+
 
 ### Estructura principal:
 - **Users** - Usuarios del sistema
@@ -120,7 +130,9 @@ npm run docker:db:prisma:studio
 npm run docker:db:prisma:reset
 ```
 
-## 🔧 Desarrollo Local
+# 🔧 Desarrollo Local
+---
+
 
 Si prefieres desarrollo sin Docker:
 
@@ -139,7 +151,9 @@ npx prisma db seed
 npm run dev
 ```
 
-## 📚 Tecnologías
+# 📚 Tecnologías
+---
+
 
 - **Runtime:** Node.js + TypeScript
 - **Framework:** Express.js  
@@ -149,7 +163,9 @@ npm run dev
 - **Containerización:** Docker + Docker Compose
 - **Arquitectura:** Clean Architecture + DDD
 
-## 🤝 Contribuir
+# 🤝 Contribuir
+---
+
 
 1. Fork el proyecto
 2. Crea una rama: `git checkout -b feature/nueva-feature`

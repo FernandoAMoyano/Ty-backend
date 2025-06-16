@@ -1,14 +1,20 @@
 import { PrismaClient, RoleName } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { addDays, subDays, addHours, format, setHours, setMinutes, parseISO } from 'date-fns';
+import { addDays, subDays, addHours, format, setHours, setMinutes } from 'date-fns';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Iniciando el sembrado de la base de datos...');
 
-  // Limpiar datos existentes
+  const existingUsers = await prisma.user.count();
 
+  if (existingUsers > 0) {
+    console.log(`⚠️  Ya existen ${existingUsers} usuarios en la base de datos.`);
+    console.log('¿Deseas continuar? Esto eliminará TODOS los datos existentes.');
+  }
+
+  // Limpiar datos existentes
   console.log('🧹 Limpiando datos existentes...');
   await prisma.payment.deleteMany();
   await prisma.notification.deleteMany();
@@ -25,8 +31,8 @@ async function main() {
   await prisma.role.deleteMany();
   await prisma.schedule.deleteMany();
 
-  //Creación de  roles
-
+  // Creación de roles
+  console.log('👥 Creando roles...');
   const adminRole = await prisma.role.create({
     data: {
       name: RoleName.ADMIN,
@@ -48,9 +54,9 @@ async function main() {
     },
   });
 
-  // Creación de  usuarios
-
+  // Creación de usuarios
   console.log('👤 Creando usuarios...');
+
   // Admin
   const adminPassword = await bcrypt.hash('admin123', 10);
   const adminUser = await prisma.user.create({
@@ -63,6 +69,7 @@ async function main() {
       profilePicture: 'https://randomuser.me/api/portraits/men/1.jpg',
     },
   });
+  console.log(`✅ Admin creado: ${adminUser.email}`);
 
   // Clientes
   const clientPassword = await bcrypt.hash('client123', 10);
@@ -141,7 +148,6 @@ async function main() {
   });
 
   // Creación de categorías de servicios
-
   console.log('🏷️ Creando categorías de servicios...');
   const hairCategory = await prisma.category.create({
     data: {
@@ -165,7 +171,6 @@ async function main() {
   });
 
   // Creación de servicios
-
   console.log('💇 Creando servicios...');
   const services = await Promise.all([
     prisma.service.create({
@@ -211,7 +216,6 @@ async function main() {
   ]);
 
   // Asignación de servicios a estilistas
-
   console.log('🔄 Asignando servicios a estilistas...');
   await prisma.stylist.update({
     where: { id: stylist1.stylist!.id },
@@ -239,7 +243,6 @@ async function main() {
   });
 
   // Creación de estados de citas
-
   console.log('📋 Creando estados de citas...');
   const pendingStatus = await prisma.appointmentStatus.create({
     data: {
@@ -270,7 +273,6 @@ async function main() {
   });
 
   // Creación de horarios
-
   console.log('🕒 Creando horarios...');
   const schedules = await Promise.all([
     prisma.schedule.create({
@@ -317,12 +319,9 @@ async function main() {
     }),
   ]);
 
-  // Creación de días festivos usando date-fns
-
+  // Creación de días festivos
   console.log('🎉 Creando días festivos...');
-
-  // Navidad 2025
-  const christmasDate = new Date(2025, 11, 25); // Fecha en JavaScript (mes es 0-indexado)
+  const christmasDate = new Date(2025, 11, 25);
   const christmasHoliday = await prisma.holiday.create({
     data: {
       name: 'Navidad',
@@ -331,7 +330,7 @@ async function main() {
     },
   });
 
-  // Año Nuevo 2026
+  // Conservamos para uso futuro
   const newYearDate = new Date(2026, 0, 1);
   const newYearHoliday = await prisma.holiday.create({
     data: {
@@ -341,10 +340,8 @@ async function main() {
     },
   });
 
-  // Creación de excepciones de horario usando date-fns
+  // Creación de excepciones de horario
   console.log('⚠️ Creando excepciones de horario...');
-
-  // Nochebuena 2025
   const christmasEveDate = new Date(2025, 11, 24);
   await prisma.scheduleException.create({
     data: {
@@ -357,7 +354,6 @@ async function main() {
   });
 
   // Creación de estados de notificaciones
-
   console.log('🔔 Creando estados de notificaciones...');
   const pendingNotifStatus = await prisma.notificationStatus.create({
     data: {
@@ -380,15 +376,11 @@ async function main() {
     },
   });
 
-  // Creación de citas de ejemplo usando date-fns
+  // Creación de citas de ejemplo
   console.log('📅 Creando citas de ejemplo...');
-
-  // Fecha actual
   const today = new Date();
-
-  // Cita futura: 7 días desde hoy a las 10:00 AM
   const futureDate = addDays(today, 7);
-  const futureDateAt10 = setMinutes(setHours(futureDate, 10), 0); // Establece hora a las 10:00 AM
+  const futureDateAt10 = setMinutes(setHours(futureDate, 10), 0);
 
   const appointment1 = await prisma.appointment.create({
     data: {
@@ -399,16 +391,15 @@ async function main() {
       scheduleId: schedules[0].id,
       dateTime: futureDateAt10,
       duration: 45,
-      confirmedAt: new Date(), // La confirmación ocurre ahora
+      confirmedAt: new Date(),
       services: {
-        connect: [{ id: services[0].id }], // Corte de cabello
+        connect: [{ id: services[0].id }],
       },
     },
   });
 
-  // Cita pasada: 7 días atrás a las 15:00
   const pastDate = subDays(today, 7);
-  const pastDateAt15 = setMinutes(setHours(pastDate, 15), 0); // Establece hora a las 15:00
+  const pastDateAt15 = setMinutes(setHours(pastDate, 15), 0);
 
   const appointment2 = await prisma.appointment.create({
     data: {
@@ -419,29 +410,26 @@ async function main() {
       scheduleId: schedules[2].id,
       dateTime: pastDateAt15,
       duration: 60,
-      confirmedAt: subDays(pastDateAt15, 1), // Confirmada 1 día antes
+      confirmedAt: subDays(pastDateAt15, 1),
       services: {
-        connect: [
-          { id: services[0].id }, // Corte
-          { id: services[3].id }, // Manicura
-        ],
+        connect: [{ id: services[0].id }, { id: services[3].id }],
       },
     },
   });
 
-  // Creación de pagos usando date-fns
+  // Creación de pagos
   console.log('💰 Creando pagos...');
   await prisma.payment.create({
     data: {
       appointmentId: appointment2.id,
-      amount: 45.0, // Suma de corte + manicura
+      amount: 45.0,
       status: 'COMPLETED',
       method: 'CREDIT_CARD',
-      paymentDate: addHours(pastDateAt15, 1), // 1 hora después de la cita
+      paymentDate: addHours(pastDateAt15, 1),
     },
   });
 
-  // Creación de notificaciones usando date-fns
+  // Creación de notificaciones
   console.log('📩 Creando notificaciones...');
   await prisma.notification.create({
     data: {
@@ -449,11 +437,10 @@ async function main() {
       statusId: sentNotifStatus.id,
       type: 'APPOINTMENT_CONFIRMATION',
       message: `Tu cita para el ${format(futureDateAt10, 'dd/MM/yyyy')} a las ${format(futureDateAt10, 'HH:mm')} ha sido confirmada.`,
-      sentAt: new Date(), // Enviada ahora
+      sentAt: new Date(),
     },
   });
 
-  // Notificación de recordatorio para cita futura (programada para enviarse 1 día antes)
   const reminderDate = subDays(futureDateAt10, 1);
   await prisma.notification.create({
     data: {
@@ -461,22 +448,36 @@ async function main() {
       statusId: pendingNotifStatus.id,
       type: 'APPOINTMENT_REMINDER',
       message: `Recordatorio: Tienes una cita mañana ${format(futureDateAt10, 'dd/MM/yyyy')} a las ${format(futureDateAt10, 'HH:mm')}.`,
-      sentAt: null, // Aún no enviada
+      sentAt: null,
     },
   });
 
-  // Notificación de cita completada
   await prisma.notification.create({
     data: {
       userId: client2.id,
       statusId: sentNotifStatus.id,
       type: 'APPOINTMENT_CONFIRMATION',
       message: `¡Gracias por visitarnos! Tu cita del ${format(pastDateAt15, 'dd/MM/yyyy')} ha sido completada exitosamente.`,
-      sentAt: addHours(pastDateAt15, 2), // 2 horas después de la cita
+      sentAt: addHours(pastDateAt15, 2),
     },
   });
 
-  console.log('✅ Sembrado completado con éxito!');
+  // Resumen final
+  const finalUserCount = await prisma.user.count();
+  console.log(`✅ Sembrado completado con éxito!`);
+  console.log(`📊 Total de usuarios creados: ${finalUserCount}`);
+  console.log(`👤 Credenciales de prueba:`);
+  console.log(`🧔🏻‍♂️ Admin: admin@turnity.com / admin123`);
+  console.log(`👩🏻‍🦰 Cliente: maria@example.com / client123`);
+  console.log(`👱🏻‍♀️ Estilista: lucia@turnity.com / stylist123`);
+
+  // Log de variables no utilizadas (para debugging)
+  console.log(`🔧 Variables disponibles para uso futuro:`, {
+    adminUserId: adminUser.id,
+    pendingStatusId: pendingStatus.id,
+    cancelledStatusId: cancelledStatus.id,
+    newYearHolidayId: newYearHoliday.id,
+  });
 }
 
 main()
@@ -485,6 +486,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    // Cerrar la conexión del cliente de Prisma
     await prisma.$disconnect();
   });
