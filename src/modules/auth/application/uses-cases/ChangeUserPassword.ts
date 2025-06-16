@@ -4,7 +4,7 @@ import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedErr
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { isValidPassword } from '../../../../shared/utils/validation';
 import { UserRepository } from '../../domain/repositories/User';
-import { ChangePasswordDto } from '../dto/Request/ChangePasswordDto';
+import { ChangePasswordDto } from '../../presentation/dto/Request/ChangePasswordDto';
 
 export class ChangeUserPassword {
   constructor(

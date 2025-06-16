@@ -2,9 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { AuthContainer } from './modules/auth/infrastructure/config/AuthContainer';
 import { errorHandler } from './shared/middleware/ErrorHandler';
 import { prisma } from './shared/config/Prisma';
+import { AuthContainer } from './modules/auth/AuthContainer';
 
 class App {
   public app: express.Application;

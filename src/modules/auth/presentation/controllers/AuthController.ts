@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
-import { LoginDto } from '../../application/dto/Request/LoginDto';
-import { RegisterDto } from '../../application/dto/Request/RegisterDto';
-import { UpdateProfileDto } from '../../application/dto/Request/UpdateProfileDto';
-import { ChangePasswordDto } from '../../application/dto/Request/ChangePasswordDto';
+
 import { LoginUser } from '../../application/uses-cases/LoginUser';
 import { RegisterUser } from '../../application/uses-cases/RegisterUser';
 import { RefreshToken } from '../../application/uses-cases/RefreshToken';
 import { GetUserProfile } from '../../application/uses-cases/GetUserProfile';
 import { UpdateUserProfile } from '../../application/uses-cases/UpdateUserProfile';
 import { ChangeUserPassword } from '../../application/uses-cases/ChangeUserPassword';
-import { AuthenticatedRequest } from './AuthMiddleware';
+import { AuthenticatedRequest } from '../middleware/AuthMiddleware';
+import { RegisterDto } from '../../application/dto/Request/RegisterDto';
+import { LoginDto } from '../../application/dto/Request/LoginDto';
+import { UpdateProfileDto } from '../../application/dto/Request/UpdateProfileDto';
+import { ChangePasswordDto } from '../../application/dto/Request/ChangePasswordDto';
 
 export class AuthController {
   constructor(
