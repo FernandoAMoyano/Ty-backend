@@ -4,12 +4,11 @@ import app from '../../../src/app';
 describe('Profile Integration Tests', () => {
   describe('GET /api/v1/auth/profile', () => {
     it('should get user profile with valid token', async () => {
-      // ✅ CAMBIO: Crear un usuario nuevo para este test específico
       const registerResponse = await request(app)
         .post('/api/v1/auth/register')
         .send({
           name: 'Profile Test User',
-          email: `profile-test-${Date.now()}@example.com`, // Email único
+          email: `profile-test-${Date.now()}@example.com`,
           phone: '+1234567890',
           password: 'TestPass123!',
           roleName: 'CLIENT',
@@ -34,7 +33,7 @@ describe('Profile Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.email).toBe(registerResponse.body.data.email);
-      expect(response.body.data.name).toBe('Profile Test User'); // ✅ Nombre que sabemos que tiene
+      expect(response.body.data.name).toBe('Profile Test User');
       expect(response.body.data.role.name).toBe('CLIENT');
       expect(response.body.data).toHaveProperty('id');
       expect(response.body.data).toHaveProperty('phone');
@@ -61,7 +60,6 @@ describe('Profile Integration Tests', () => {
 
   describe('PUT /api/v1/auth/profile', () => {
     it('should update user profile successfully', async () => {
-      // Crear usuario específico para este test
       const registerResponse = await request(app)
         .post('/api/v1/auth/register')
         .send({
@@ -95,11 +93,10 @@ describe('Profile Integration Tests', () => {
       expect(updateResponse.body.success).toBe(true);
       expect(updateResponse.body.data.name).toBe('Updated Name');
       expect(updateResponse.body.data.phone).toBe('+9876543210');
-      expect(updateResponse.body.data.email).toBe(registerResponse.body.data.email); // Email no cambia
+      expect(updateResponse.body.data.email).toBe(registerResponse.body.data.email);
     });
 
     it('should get updated profile after update', async () => {
-      // Crear usuario específico para este test
       const registerResponse = await request(app)
         .post('/api/v1/auth/register')
         .send({
@@ -118,7 +115,6 @@ describe('Profile Integration Tests', () => {
 
       const validToken = loginResponse.body.data.token;
 
-      // Primero actualizar
       await request(app)
         .put('/api/v1/auth/profile')
         .set('Authorization', `Bearer ${validToken}`)
@@ -127,18 +123,16 @@ describe('Profile Integration Tests', () => {
           phone: '+9876543210',
         });
 
-      // Luego verificar que se actualizó
       const response = await request(app)
         .get('/api/v1/auth/profile')
         .set('Authorization', `Bearer ${validToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.data.name).toBe('Finally Updated Name'); // ✅ Ahora debería ser el nombre actualizado
+      expect(response.body.data.name).toBe('Finally Updated Name');
       expect(response.body.data.phone).toBe('+9876543210');
     });
 
     it('should update profile with partial data', async () => {
-      // Crear usuario específico para este test
       const registerResponse = await request(app)
         .post('/api/v1/auth/register')
         .send({
@@ -157,18 +151,15 @@ describe('Profile Integration Tests', () => {
 
       const validToken = loginResponse.body.data.token;
 
-      // Actualizar solo nombre
       const response = await request(app)
         .put('/api/v1/auth/profile')
         .set('Authorization', `Bearer ${validToken}`)
         .send({
           name: 'Partial Update Name',
-          // Solo enviar name, no phone
         });
 
       expect(response.status).toBe(200);
       expect(response.body.data.name).toBe('Partial Update Name');
-      // phone debería mantenerse igual
     });
 
     it('should reject profile update without token', async () => {
@@ -180,7 +171,6 @@ describe('Profile Integration Tests', () => {
     });
 
     it('should reject profile update with invalid data', async () => {
-      // Crear usuario específico para este test
       const registerResponse = await request(app)
         .post('/api/v1/auth/register')
         .send({
@@ -203,7 +193,7 @@ describe('Profile Integration Tests', () => {
         .put('/api/v1/auth/profile')
         .set('Authorization', `Bearer ${validToken}`)
         .send({
-          name: '', // Nombre vacío debería fallar
+          name: '',
           phone: 'invalid-phone',
         });
 

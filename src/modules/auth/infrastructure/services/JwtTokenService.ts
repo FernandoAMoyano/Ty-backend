@@ -8,7 +8,6 @@ export class JwtTokenService implements JwtService {
   private readonly refreshTokenExpiry: string;
 
   constructor() {
-    // En producción, estos valores vendrán del .env
     this.accessTokenSecret = process.env.JWT_ACCESS_SECRET || 'your-access-token-secret';
     this.refreshTokenSecret = process.env.JWT_REFRESH_SECRET || 'your-refresh-token-secret';
     this.accessTokenExpiry = process.env.JWT_ACCESS_EXPIRY || '15m';
