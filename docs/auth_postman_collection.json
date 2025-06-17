@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Turnity API",
-    "description": "Colección completa de endpoints para Turnity Backend API",
+    "name": "Turnity API v1.0",
+    "description": "Colección completa y actualizada para Turnity Backend API con soporte para roleName",
     "version": "1.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -34,10 +34,11 @@
   },
   "item": [
     {
-      "name": "🔐 Authentication",
+      "name": "Authentication",
+      "description": "Endpoints de autenticación con soporte para roleName",
       "item": [
         {
-          "name": "Register New User",
+          "name": "Register Client (Default Role)",
           "event": [
             {
               "listen": "test",
@@ -45,8 +46,12 @@
                 "exec": [
                   "if (pm.response.code === 201) {",
                   "    const response = pm.response.json();",
-                  "    console.log('Usuario registrado:', response.data.email);",
-                  "    console.log('ID del usuario:', response.data.id);",
+                  "    console.log('Cliente registrado:', response.data.email);",
+                  "    console.log('Rol asignado:', response.data.role.name);",
+                  "    pm.test('Usuario registrado correctamente', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.role.name).to.eql('CLIENT');",
+                  "    });",
                   "}"
                 ]
               }
@@ -62,36 +67,94 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Ana López\",\n  \"email\": \"ana.lopez@example.com\",\n  \"phone\": \"+5491123456789\",\n  \"password\": \"MiPassword123!\",\n  \"roleId\": \"client-role-id\"\n}"
+              "raw": "{\n  \"name\": \"Ana López\",\n  \"email\": \"ana.lopez@example.com\",\n  \"phone\": \"+5491123456789\",\n  \"password\": \"MiPassword123!\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
               "host": ["{{base_url}}"],
               "path": ["auth", "register"]
             },
-            "description": "Registra un nuevo usuario en el sistema (diferente a los del seed)"
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "POST",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"name\": \"Ana López\",\n  \"email\": \"ana.lopez@example.com\",\n  \"phone\": \"+5491123456789\",\n  \"password\": \"MiPassword123!\",\n  \"roleId\": \"client-role-id\"\n}"
-                },
-                "url": {
-                  "raw": "{{base_url}}/auth/register"
-                }
-              },
-              "status": "Created",
-              "code": 201,
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"uuid-del-usuario\",\n    \"name\": \"Ana López\",\n    \"email\": \"ana.lopez@example.com\",\n    \"phone\": \"+5491123456789\",\n    \"isActive\": true,\n    \"role\": {\n      \"id\": \"client-role-id\",\n      \"name\": \"CLIENT\",\n      \"description\": \"Cliente que puede agendar citas\"\n    },\n    \"createdAt\": \"2025-06-14T10:30:00.000Z\",\n    \"updatedAt\": \"2025-06-14T10:30:00.000Z\"\n  },\n  \"message\": \"User registered successfully\"\n}"
-            }
-          ]
+            "description": "Registra un cliente con rol por defecto (CLIENT). No requiere especificar roleName."
+          }
         },
         {
-          "name": "Login New User",
+          "name": "Register Stylist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('Estilista registrado:', response.data.email);",
+                  "    pm.test('Estilista registrado con rol correcto', function () {",
+                  "        pm.expect(response.data.role.name).to.eql('STYLIST');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Elena Martínez\",\n  \"email\": \"elena.martinez@example.com\",\n  \"phone\": \"+5491198765432\",\n  \"password\": \"StylistPass123!\",\n  \"roleName\": \"STYLIST\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Registra un estilista especificando roleName como STYLIST"
+          }
+        },
+        {
+          "name": "Register Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('Admin registrado:', response.data.email);",
+                  "    pm.test('Admin registrado con rol correcto', function () {",
+                  "        pm.expect(response.data.role.name).to.eql('ADMIN');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Roberto Admin\",\n  \"email\": \"roberto.admin@example.com\",\n  \"phone\": \"+5491167890123\",\n  \"password\": \"AdminPass123!\",\n  \"roleName\": \"ADMIN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Registra un administrador especificando roleName como ADMIN"
+          }
+        },
+        {
+          "name": "Login Client",
           "event": [
             {
               "listen": "test",
@@ -101,8 +164,12 @@
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('jwt_token', response.data.token);",
                   "    pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
-                  "    console.log('Login exitoso. Token guardado.');",
-                  "    console.log('Usuario logueado:', response.data.user.email);",
+                  "    console.log('Login exitoso:', response.data.user.email);",
+                  "    console.log('Token guardado automáticamente');",
+                  "    pm.test('Login exitoso', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.token).to.not.be.empty;",
+                  "    });",
                   "}"
                 ]
               }
@@ -125,23 +192,8 @@
               "host": ["{{base_url}}"],
               "path": ["auth", "login"]
             },
-            "description": "Autentica el usuario recién registrado"
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "POST",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"email\": \"ana.lopez@example.com\",\n  \"password\": \"MiPassword123!\"\n}"
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": \"uuid-del-usuario\",\n      \"name\": \"Ana López\",\n      \"email\": \"ana.lopez@example.com\",\n      \"role\": {\n        \"id\": \"client-role-id\",\n        \"name\": \"CLIENT\"\n      }\n    }\n  },\n  \"message\": \"Login successful\"\n}"
-            }
-          ]
+            "description": "Login con el cliente registrado. Guarda automáticamente el token."
+          }
         },
         {
           "name": "Refresh Token",
@@ -154,7 +206,10 @@
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('jwt_token', response.data.token);",
                   "    pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
-                  "    console.log('Token renovado exitosamente.');",
+                  "    console.log('Token renovado exitosamente');",
+                  "    pm.test('Token renovado', function () {",
+                  "        pm.expect(response.data.token).to.not.be.empty;",
+                  "    });",
                   "}"
                 ]
               }
@@ -177,16 +232,37 @@
               "host": ["{{base_url}}"],
               "path": ["auth", "refresh-token"]
             },
-            "description": "Renueva el JWT token usando el refresh token"
+            "description": "Renueva el JWT token usando el refresh token guardado"
           }
         }
       ]
     },
     {
       "name": "👤 Profile Management",
+      "description": "Gestión de perfiles de usuario",
       "item": [
         {
           "name": "Get Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('👤 Perfil obtenido:', response.data.name);",
+                  "    console.log('Email:', response.data.email);",
+                  "    console.log('Rol:', response.data.role.name);",
+                  "    pm.test('Perfil obtenido correctamente', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('id');",
+                  "        pm.expect(response.data).to.have.property('role');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [
@@ -202,27 +278,27 @@
               "path": ["auth", "profile"]
             },
             "description": "Obtiene el perfil del usuario autenticado"
-          },
-          "response": [
-            {
-              "name": "Success Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{jwt_token}}"
-                  }
-                ]
-              },
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"uuid-del-usuario\",\n    \"name\": \"Ana López\",\n    \"email\": \"ana.lopez@example.com\",\n    \"phone\": \"+5491123456789\",\n    \"isActive\": true,\n    \"profilePicture\": \"https://example.com/photo.jpg\",\n    \"role\": {\n      \"id\": \"client-role-id\",\n      \"name\": \"CLIENT\",\n      \"description\": \"Cliente que puede agendar citas\"\n    },\n    \"createdAt\": \"2025-06-14T10:30:00.000Z\",\n    \"updatedAt\": \"2025-06-14T10:30:00.000Z\"\n  },\n  \"message\": \"Profile retrieved successfully\"\n}"
-            }
-          ]
+          }
         },
         {
           "name": "Update Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('Perfil actualizado:', response.data.name);",
+                  "    pm.test('Perfil actualizado correctamente', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.name).to.include('Updated');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "PUT",
             "header": [
@@ -238,7 +314,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Ana María López\",\n  \"phone\": \"+5491987654321\",\n  \"profilePicture\": \"https://example.com/new-photo.jpg\"\n}"
+              "raw": "{\n  \"name\": \"Ana María López Updated\",\n  \"phone\": \"+5491987654321\",\n  \"profilePicture\": \"https://example.com/new-photo.jpg\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/profile",
@@ -250,6 +326,21 @@
         },
         {
           "name": "Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    console.log('Contraseña cambiada exitosamente');",
+                  "    pm.test('Contraseña cambiada', function () {",
+                  "        pm.expect(pm.response.json().success).to.be.true;",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "PUT",
             "header": [
@@ -278,11 +369,11 @@
       ]
     },
     {
-      "name": "🧪 Test with Seed Users",
-      "description": "Pruebas usando los usuarios creados automáticamente en el seed",
+      "name": "Quick Login (Seed Users)",
+      "description": "Login rápido con usuarios del seed para testing",
       "item": [
         {
-          "name": "Login - Cliente María (Seed)",
+          "name": "Login Admin (Seed)",
           "event": [
             {
               "listen": "test",
@@ -292,44 +383,7 @@
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('jwt_token', response.data.token);",
                   "    pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
-                  "    console.log('Login exitoso con usuario del seed');",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"maria@example.com\",\n  \"password\": \"client123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "login"]
-            },
-            "description": "Login con usuario del seed (María García)"
-          }
-        },
-        {
-          "name": "Login - Admin (Seed)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
-                  "    pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
-                  "    console.log('Login exitoso como administrador');",
+                  "    console.log('Admin login exitoso');",
                   "}"
                 ]
               }
@@ -352,11 +406,11 @@
               "host": ["{{base_url}}"],
               "path": ["auth", "login"]
             },
-            "description": "Login con usuario administrador del seed"
+            "description": "Login rápido con admin del seed"
           }
         },
         {
-          "name": "Login - Estilista Lucía (Seed)",
+          "name": "Login Client María (Seed)",
           "event": [
             {
               "listen": "test",
@@ -366,7 +420,44 @@
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('jwt_token', response.data.token);",
                   "    pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
-                  "    console.log('Login exitoso como estilista');",
+                  "    console.log('Cliente María login exitoso');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"maria@example.com\",\n  \"password\": \"client123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login rápido con cliente María del seed"
+          }
+        },
+        {
+          "name": "Login Stylist Lucía (Seed)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
+                  "    console.log('Estilista Lucía login exitoso');",
                   "}"
                 ]
               }
@@ -389,16 +480,33 @@
               "host": ["{{base_url}}"],
               "path": ["auth", "login"]
             },
-            "description": "Login con estilista del seed (Lucía Rodríguez)"
+            "description": "Login rápido con estilista Lucía del seed"
           }
         }
       ]
     },
     {
-      "name": "🚨 Error Scenarios",
+      "name": "Error Testing",
+      "description": "Tests para validar manejo de errores",
       "item": [
         {
-          "name": "Invalid Login",
+          "name": "Invalid Role Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error de rol inválido', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.false;",
+                  "    pm.expect(response.code).to.eql('VALIDATION_ERROR');",
+                  "});",
+                  "console.log('Error esperado - rol inválido');"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -409,40 +517,145 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"usuario.inexistente@example.com\",\n  \"password\": \"passwordincorrecto\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "login"]
-            },
-            "description": "Test para credenciales inválidas (debería retornar 401)"
-          }
-        },
-        {
-          "name": "Register with Duplicate Email",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"maria@example.com\",\n  \"phone\": \"+1234567890\",\n  \"password\": \"TestPass123!\",\n  \"roleId\": \"client-role-id\"\n}"
+              "raw": "{\n  \"name\": \"Invalid Role User\",\n  \"email\": \"invalid.role@example.com\",\n  \"phone\": \"+5491123456789\",\n  \"password\": \"TestPass123!\",\n  \"roleName\": \"INVALID_ROLE\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
               "host": ["{{base_url}}"],
               "path": ["auth", "register"]
             },
-            "description": "Test para email duplicado usando un email del seed (debería retornar 409)"
+            "description": "Test para rol inválido - debería retornar 400"
+          }
+        },
+        {
+          "name": "Duplicate Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error de email duplicado', function () {",
+                  "    pm.expect(pm.response.code).to.eql(409);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.false;",
+                  "    pm.expect(response.code).to.eql('CONFLICT');",
+                  "});",
+                  "console.log('Error esperado - email duplicado');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicate User\",\n  \"email\": \"maria@example.com\",\n  \"phone\": \"+5491123456789\",\n  \"password\": \"TestPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test para email duplicado usando email del seed - debería retornar 409"
+          }
+        },
+        {
+          "name": "Weak Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error de contraseña débil', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.false;",
+                  "    pm.expect(response.message).to.include('Password');",
+                  "});",
+                  "console.log('Error esperado - contraseña débil');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Weak Password User\",\n  \"email\": \"weak.password@example.com\",\n  \"phone\": \"+5491123456789\",\n  \"password\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test para contraseña débil - debería retornar 400"
+          }
+        },
+        {
+          "name": "Invalid Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error de login inválido', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.false;",
+                  "    pm.expect(response.code).to.eql('UNAUTHORIZED');",
+                  "});",
+                  "console.log('Error esperado - credenciales inválidas');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nonexistent@example.com\",\n  \"password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Test para credenciales inválidas - debería retornar 401"
           }
         },
         {
           "name": "Unauthorized Access",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error de acceso sin autorización', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});",
+                  "console.log('Error esperado - sin token');"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -451,11 +664,24 @@
               "host": ["{{base_url}}"],
               "path": ["auth", "profile"]
             },
-            "description": "Test para acceso sin token (debería retornar 401)"
+            "description": "Test para acceso sin token - debería retornar 401"
           }
         },
         {
           "name": "Invalid Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error de token inválido', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});",
+                  "console.log('Error esperado - token inválido');"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [
@@ -470,7 +696,89 @@
               "host": ["{{base_url}}"],
               "path": ["auth", "profile"]
             },
-            "description": "Test para token inválido (debería retornar 401)"
+            "description": "Test para token inválido - debería retornar 401"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Role Testing",
+      "description": "Tests específicos para validar el comportamiento de roles",
+      "item": [
+        {
+          "name": "Test Case Insensitive Roles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Rol normalizado correctamente', function () {",
+                  "        pm.expect(response.data.role.name).to.eql('CLIENT');",
+                  "    });",
+                  "    console.log('Rol normalizado de \"client\" a \"CLIENT\"');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Case Test User\",\n  \"email\": \"case.test@example.com\",\n  \"phone\": \"+5491123456789\",\n  \"password\": \"TestPass123!\",\n  \"roleName\": \"client\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test para verificar que los roles son case insensitive"
+          }
+        },
+        {
+          "name": "Default Role Assignment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Rol CLIENT asignado por defecto', function () {",
+                  "        pm.expect(response.data.role.name).to.eql('CLIENT');",
+                  "    });",
+                  "    console.log('Rol CLIENT asignado automáticamente');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Default Role User\",\n  \"email\": \"default.role@example.com\",\n  \"phone\": \"+5491123456789\",\n  \"password\": \"TestPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test para verificar que se asigna CLIENT por defecto cuando no se especifica rol"
           }
         }
       ]
@@ -482,20 +790,18 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "// Script que se ejecuta antes de cada request",
-          "console.log('Ejecutando request a:', pm.request.url);",
-          "console.log('Método:', pm.request.method);"
-        ]
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          "// Script que se ejecuta después de cada request",
-          "console.log('Response status:', pm.response.code);",
-          "console.log('Response time:', pm.response.responseTime + 'ms');"
+          "// Script global que se ejecuta antes de cada request",
+          "console.log('Ejecutando request a:', pm.request.url.toString());",
+          "console.log('Método:', pm.request.method);",
+          "",
+          "// Verificar si tenemos token para requests autenticados",
+          "const authHeader = pm.request.headers.get('Authorization');",
+          "if (authHeader && authHeader.includes('{{jwt_token}}')) {",
+          "    const token = pm.collectionVariables.get('jwt_token');",
+          "    if (!token) {",
+          "        console.log('Token no encontrado - asegúrate de hacer login primero');",
+          "    }",
+          "}"
         ]
       }
     }

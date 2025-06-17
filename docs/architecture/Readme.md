@@ -1,8 +1,8 @@
-# 🏗️ Arquitectura - Turnity Backend
+# Arquitectura - Turnity Backend
 ---
 Documentación de la arquitectura del sistema basada en **Clean Architecture** y **Domain-Driven Design**.
 
-# 📋 Índice
+# Índice
 ---
 
 - [Visión General](#-visión-general)
@@ -15,7 +15,7 @@ Documentación de la arquitectura del sistema basada en **Clean Architecture** y
 
 
 
-# 🎯 Visión General
+# Visión General
 ---
 
 Turnity Backend implementa una **arquitectura hexagonal** (Clean Architecture) que prioriza:
@@ -55,19 +55,19 @@ Turnity Backend implementa una **arquitectura hexagonal** (Clean Architecture) q
 
 
 
-# ⚖️ Principios Arquitectónicos
+# Principios Arquitectónicos
 ---
 
 ### 1. **Dependency Rule**
 Las dependencias **siempre apuntan hacia adentro**, hacia las capas de mayor nivel de abstracción.
 
 ```typescript
-// ✅ CORRECTO: Application → Domain
+// CORRECTO: Application → Domain
 class LoginUser {
   constructor(private userRepository: UserRepository) {} // Interface del domain
 }
 
-// ❌ INCORRECTO: Domain → Infrastructure
+// INCORRECTO: Domain → Infrastructure
 class User {
   constructor(private prismaClient: PrismaClient) {} // Dependencia externa
 }
@@ -77,12 +77,12 @@ class User {
 Cada clase tiene una única responsabilidad.
 
 ```typescript
-// ✅ Una responsabilidad: registrar usuarios
+// Una responsabilidad: registrar usuarios
 class RegisterUser {
   async execute(dto: RegisterDto): Promise<UserDto> {}
 }
 
-// ✅ Una responsabilidad: validar datos
+// Una responsabilidad: validar datos
 class UserValidator {
   validateEmail(email: string): boolean {}
 }
@@ -92,7 +92,7 @@ class UserValidator {
 Abierto para extensión, cerrado para modificación.
 
 ```typescript
-// ✅ Extensible sin modificar código existente
+// Extensible sin modificar código existente
 interface NotificationService {
   send(message: string): Promise<void>;
 }
@@ -103,7 +103,7 @@ class SMSNotificationService implements NotificationService {}
 
 
 
-# 📦 Estructura de Módulos
+# Estructura de Módulos
 ---
 
 Cada módulo sigue la misma estructura estándar:
@@ -156,7 +156,7 @@ src/modules/auth/
 
 
 
-# 🔄 Flujo de Datos
+# Flujo de Datos
 ---
 
 ### Request Flow (Entrada):
@@ -203,10 +203,10 @@ class PrismaUserRepository {
 
 
 
-# 🏛️ Capas del Sistema
+# Capas del Sistema
 ---
 
-### 1. **Presentation Layer** 🌐
+### 1. **Presentation Layer**
 **Responsabilidad:** Manejar comunicación HTTP y transformar datos.
 
 ```typescript
@@ -229,7 +229,7 @@ class RegisterDto {
 }
 ```
 
-### 2. **Application Layer** ⚙️
+### 2. **Application Layer** 
 **Responsabilidad:** Casos de uso y orquestación de la lógica de negocio.
 
 ```typescript
@@ -255,7 +255,7 @@ class RegisterUser {
 }
 ```
 
-### 3. **Domain Layer** 💎
+### 3. **Domain Layer** 
 **Responsabilidad:** Lógica de negocio pura y reglas del dominio.
 
 ```typescript
@@ -335,7 +335,7 @@ class JwtTokenService implements JwtService {
 
 
 
-## 🧰 Inyección de Dependencias
+## Inyección de Dependencias
 ---
 
 Cada módulo tiene un **container** que configura todas las dependencias:
@@ -369,7 +369,7 @@ export class AuthContainer {
 
 
 
-# 🎨 Patrones Utilizados
+# Patrones Utilizados
 ---
 
 ### 1. **Repository Pattern**
@@ -425,35 +425,25 @@ class LoginUser {
 
 
 
-## 📊 Beneficios de esta Arquitectura
+##  Beneficios de esta Arquitectura
 ---
 
-### ✅ **Mantenibilidad**
+###  **Mantenibilidad**
 - Código organizado y predecible
 - Cambios aislados por capas
 - Fácil localización de bugs
 
-### ✅ **Testabilidad**
+###  **Testabilidad**
 - Cada capa se puede testear independientemente
 - Mocks fáciles gracias a las interfaces
 - Tests rápidos sin dependencias externas
 
-### ✅ **Escalabilidad**
+###  **Escalabilidad**
 - Agregar nuevos módulos sin afectar existentes
 - Cambiar implementaciones sin tocar lógica de negocio
 - Facilita el trabajo en equipo
 
-### ✅ **Flexibilidad**
+###  **Flexibilidad**
 - Cambiar de base de datos sin afectar el dominio
 - Intercambiar librerías externas fácilmente
 - Adaptar a nuevos requerimientos sin reescribir
-
-
-
-## 🔗 Referencias
----
-
-- [Clean Architecture by Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
-- [Domain-Driven Design](https://martinfowler.com/tags/domain%20driven%20design.html)
-- [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
