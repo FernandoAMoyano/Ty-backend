@@ -8,7 +8,6 @@ module.exports = {
     '^.+\\.ts$': 'ts-jest',
   },
 
-  // ✅ CORREGIDO: moduleNameMapper (no moduleNameMapping)
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared/(.*)$': '<rootDir>/src/shared/$1',
@@ -53,7 +52,6 @@ module.exports = {
 
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],
 
-  // ✅ REMOVIDO: jest-junit reporter (no instalado)
   reporters: ['default'],
 
   // Coverage collection
