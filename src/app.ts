@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { errorHandler } from './shared/middleware/ErrorHandler';
 import { prisma } from './shared/config/Prisma';
 import { AuthContainer } from './modules/auth/AuthContainer';
+import { setupSwagger, addDocsHeaders, logDocsAccess } from './shared/middleware/swagger';
 
 class App {
   public app: express.Application;
@@ -49,6 +50,9 @@ class App {
       });
     });
 
+    this.app.use(addDocsHeaders);
+    this.app.use(logDocsAccess);
+    setupSwagger(this.app);
     // API routes
     this.app.use('/api/v1/auth', this.authContainer.authRoutes.getRouter());
 

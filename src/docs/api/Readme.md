@@ -1,13 +1,39 @@
-# 📚 Turnity API Documentation
+# Turnity API Documentation
 
 Documentación completa de la API REST de Turnity Backend.
 
-## 🌐 Base URL
+
+1. [[#Base URL]]
+2. [[#Autenticación]]
+3. [[#Headers requeridos]]
+4. [[#Auth Endpoints]]
+5. [[#1. Registrar Usuario]]
+6. [[#2. Iniciar Sesión]]
+7. [[#3. Renovar Token]]
+8. [[#4. Obtener Perfil]]
+9. [[#5. Actualizar Perfil]]
+10. [[#6. Cambiar Contraseña]]
+11. [[#Códigos de Estado HTTP]]
+12. [[#Roles de Usuario]]
+13. [[#Validaciones]]
+14. [[#Headers de Response]]
+15. [[#Rate Limiting]]
+16. [[#Testing con cURL]]
+17. [[#Usuarios de Prueba (Seed Data)]]
+18. [[#Ejemplos de Flujo Completo]]
+19. [[#Próximas Funcionalidades]]
+
+
+# Base URL
+---
+
 ```
 http://localhost:3000/api/v1
 ```
 
-## 🔐 Autenticación
+# Autenticación
+---
+
 
 La API utiliza **JWT (JSON Web Tokens)** para autenticación.
 
@@ -17,9 +43,10 @@ Authorization: Bearer <your-jwt-token>
 Content-Type: application/json
 ```
 
----
 
-## 🔑 Auth Endpoints
+
+# Auth Endpoints
+---
 
 ### 1. Registrar Usuario
 Crea una nueva cuenta de usuario.
@@ -28,16 +55,41 @@ Crea una nueva cuenta de usuario.
 POST /auth/register
 ```
 
-**Request Body:**
+#### **Registro básico (rol CLIENT por defecto):**
 ```json
 {
   "name": "Ana López",
   "email": "ana.lopez@example.com",
   "phone": "+5491123456789",
-  "password": "MiPassword123!",
-  "roleId": "client-role-id"
+  "password": "MiPassword123!"
 }
 ```
+
+#### **Registro con rol específico:**
+```json
+{
+  "name": "Elena Martínez",
+  "email": "elena.martinez@example.com",
+  "phone": "+5491198765432",
+  "password": "StylistPass123!",
+  "roleName": "STYLIST"
+}
+```
+
+**Campos del Request Body:**
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `name` | string | ✅ | Nombre completo del usuario |
+| `email` | string | ✅ | Email único (será normalizado a minúsculas) |
+| `phone` | string | ✅ | Teléfono en formato internacional |
+| `password` | string | ✅ | Contraseña segura (ver validaciones) |
+| `roleName` | string | ❌ | Rol del usuario. Default: `"CLIENT"` |
+| `profilePicture` | string | ❌ | URL de la foto de perfil |
+
+**Roles válidos:**
+- `"CLIENT"` - Cliente que puede agendar citas (default)
+- `"STYLIST"` - Estilista que ofrece servicios
+- `"ADMIN"` - Administrador del sistema
 
 **Response 201:**
 ```json
@@ -50,12 +102,12 @@ POST /auth/register
     "phone": "+5491123456789",
     "isActive": true,
     "role": {
-      "id": "client-role-id",
+      "id": "role-uuid",
       "name": "CLIENT",
       "description": "Cliente que puede agendar citas"
     },
-    "createdAt": "2025-06-14T10:30:00.000Z",
-    "updatedAt": "2025-06-14T10:30:00.000Z"
+    "createdAt": "2025-06-16T10:30:00.000Z",
+    "updatedAt": "2025-06-16T10:30:00.000Z"
   },
   "message": "User registered successfully"
 }
@@ -67,14 +119,21 @@ POST /auth/register
 {
   "success": false,
   "message": "Email already exists",
-  "error": "CONFLICT"
+  "code": "CONFLICT"
 }
 
-// 400 - Datos inválidos
+// 400 - Rol inválido
+{
+  "success": false,
+  "message": "Invalid role: INVALID_ROLE. Valid roles are: CLIENT, STYLIST, ADMIN",
+  "code": "VALIDATION_ERROR"
+}
+
+// 400 - Contraseña débil
 {
   "success": false,
   "message": "Password must be at least 8 characters long and contain uppercase, lowercase, and number",
-  "error": "VALIDATION_ERROR"
+  "code": "VALIDATION_ERROR"
 }
 ```
 
@@ -107,7 +166,7 @@ POST /auth/login
       "name": "Ana López",
       "email": "ana.lopez@example.com",
       "role": {
-        "id": "client-role-id",
+        "id": "role-uuid",
         "name": "CLIENT"
       }
     }
@@ -122,7 +181,7 @@ POST /auth/login
 {
   "success": false,
   "message": "Invalid credentials",
-  "error": "UNAUTHORIZED"
+  "code": "UNAUTHORIZED"
 }
 ```
 
@@ -185,12 +244,12 @@ Authorization: Bearer <your-jwt-token>
     "isActive": true,
     "profilePicture": "https://example.com/photo.jpg",
     "role": {
-      "id": "client-role-id",
+      "id": "role-uuid",
       "name": "CLIENT",
       "description": "Cliente que puede agendar citas"
     },
-    "createdAt": "2025-06-14T10:30:00.000Z",
-    "updatedAt": "2025-06-14T10:30:00.000Z"
+    "createdAt": "2025-06-16T10:30:00.000Z",
+    "updatedAt": "2025-06-16T10:30:00.000Z"
   },
   "message": "Profile retrieved successfully"
 }
@@ -232,10 +291,10 @@ Content-Type: application/json
     "profilePicture": "https://example.com/new-photo.jpg",
     "isActive": true,
     "role": {
-      "id": "client-role-id",
+      "id": "role-uuid",
       "name": "CLIENT"
     },
-    "updatedAt": "2025-06-14T11:00:00.000Z"
+    "updatedAt": "2025-06-16T11:00:00.000Z"
   },
   "message": "Profile updated successfully"
 }
@@ -278,20 +337,21 @@ Content-Type: application/json
 {
   "success": false,
   "message": "Current password is incorrect",
-  "error": "UNAUTHORIZED"
+  "code": "UNAUTHORIZED"
 }
 
 // 400 - Nueva contraseña inválida
 {
   "success": false,
   "message": "New password must be at least 8 characters long and contain uppercase, lowercase, and number",
-  "error": "VALIDATION_ERROR"
+  "code": "VALIDATION_ERROR"
 }
 ```
 
----
 
-## 📋 Códigos de Estado HTTP
+
+# Códigos de Estado HTTP
+---
 
 | Código | Significado | Uso |
 |--------|-------------|-----|
@@ -304,31 +364,39 @@ Content-Type: application/json
 | `409` | Conflict | Conflicto (ej: email duplicado) |
 | `500` | Internal Server Error | Error interno del servidor |
 
-## 🔒 Roles de Usuario
+## Roles de Usuario
 
-| Rol | Descripción | Permisos |
-|-----|-------------|----------|
-| `ADMIN` | Administrador del sistema | Acceso completo |
-| `STYLIST` | Estilista/Peluquero | Gestión de citas y servicios |
-| `CLIENT` | Cliente | Agendar citas, ver perfil |
+| Rol | Descripción | Permisos | Uso |
+|-----|-------------|----------|-----|
+| `CLIENT` | Cliente del sistema | Agendar citas, ver perfil | Default para registro |
+| `STYLIST` | Estilista/Peluquero | Gestión de citas y servicios | Profesionales |
+| `ADMIN` | Administrador | Acceso completo al sistema | Administración |
 
-## 📝 Validaciones
+# Validaciones
+---
 
-### Password
+### **Contraseña:**
 - Mínimo 8 caracteres
 - Al menos 1 mayúscula
 - Al menos 1 minúscula  
 - Al menos 1 número
+- Al menos 1 carácter especial
 
-### Email
+### **Email:**
 - Formato válido (usuario@dominio.com)
 - Único en el sistema
+- Se normaliza automáticamente a minúsculas
 
-### Phone
+### **Teléfono:**
 - Formato internacional (+1234567890)
 - Caracteres permitidos: +, números, espacios, guiones
 
-## 🔧 Headers de Response
+### **Rol:**
+- Case insensitive ("client", "CLIENT", "Client" son válidos)
+- Se normaliza automáticamente a mayúsculas
+
+# Headers de Response
+---
 
 Todas las respuestas incluyen estos headers:
 
@@ -337,14 +405,16 @@ Content-Type: application/json
 X-Powered-By: Express
 ```
 
-## 📊 Rate Limiting
+# Rate Limiting
+---
+
 
 - **Límite general:** 100 requests por minuto por IP
 - **Login/Register:** 5 intentos por minuto por IP
 
-## 🧪 Testing con cURL
+## Testing con cURL
 
-### Registrar usuario:
+### **Registrar cliente (rol por defecto):**
 ```bash
 curl -X POST http://localhost:3000/api/v1/auth/register \
   -H "Content-Type: application/json" \
@@ -352,12 +422,24 @@ curl -X POST http://localhost:3000/api/v1/auth/register \
     "name": "Roberto Silva",
     "email": "roberto.silva@example.com",
     "phone": "+5491134567890",
-    "password": "TestPass123!",
-    "roleId": "client-role-id"
+    "password": "TestPass123!"
   }'
 ```
 
-### Login:
+### **Registrar estilista:**
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Carla Mendoza",
+    "email": "carla.mendoza@example.com",
+    "phone": "+5491145678901",
+    "password": "StylistPass123!",
+    "roleName": "STYLIST"
+  }'
+```
+
+### **Login:**
 ```bash
 curl -X POST http://localhost:3000/api/v1/auth/login \
   -H "Content-Type: application/json" \
@@ -367,63 +449,122 @@ curl -X POST http://localhost:3000/api/v1/auth/login \
   }'
 ```
 
-### Obtener perfil:
+### **Obtener perfil:**
 ```bash
 curl -X GET http://localhost:3000/api/v1/auth/profile \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
+
+# Usuarios de Prueba (Seed Data)
 ---
 
-## 🧪 Usuarios de Prueba (Seed Data)
+Para testing rápido, puedes usar estos usuarios que se crean automáticamente:
 
-Para testing rápido, puedes usar estos usuarios que se crean automáticamente con el seed:
-
-### 👤 **Cliente de Prueba 1:**
+### **Cliente 1:**
 ```json
 {
   "email": "maria@example.com",
-  "password": "client123"
+  "password": "client123",
+  "role": "CLIENT"
 }
 ```
 
-### 👤 **Cliente de Prueba 2:**
+### **Cliente 2:**
 ```json
 {
   "email": "juan@example.com", 
-  "password": "client123"
+  "password": "client123",
+  "role": "CLIENT"
 }
 ```
 
-### 👨‍💼 **Administrador:**
+### **Administrador:**
 ```json
 {
   "email": "admin@turnity.com",
-  "password": "admin123"
+  "password": "admin123",
+  "role": "ADMIN"
 }
 ```
 
-### 💇‍♀️ **Estilista 1:**
+### **Estilista 1:**
 ```json
 {
   "email": "lucia@turnity.com",
-  "password": "stylist123"
+  "password": "stylist123",
+  "role": "STYLIST"
 }
 ```
 
-### 💇‍♂️ **Estilista 2:**
+### **Estilista 2:**
 ```json
 {
   "email": "carlos@turnity.com",
-  "password": "stylist123"
+  "password": "stylist123",
+  "role": "STYLIST"
+}
+```
+
+# Ejemplos de Flujo Completo
+---
+
+
+### **Flujo 1: Cliente registra y agenda cita**
+```bash
+# 1. Registrar como cliente
+POST /auth/register
+{
+  "name": "Carlos Ruiz",
+  "email": "carlos.ruiz@example.com",
+  "phone": "+5491156789012",
+  "password": "ClientPass123!"
+}
+
+# 2. Login
+POST /auth/login
+{
+  "email": "carlos.ruiz@example.com",
+  "password": "ClientPass123!"
+}
+
+# 3. Ver perfil
+GET /auth/profile
+Authorization: Bearer <token>
+```
+
+### **Flujo 2: Estilista se registra**
+```bash
+# 1. Registrar como estilista
+POST /auth/register
+{
+  "name": "Sofia Herrera",
+  "email": "sofia.herrera@example.com",
+  "phone": "+5491167890123",
+  "password": "StylistPass123!",
+  "roleName": "STYLIST"
+}
+
+# 2. Login y gestionar servicios
+POST /auth/login
+{
+  "email": "sofia.herrera@example.com",
+  "password": "StylistPass123!"
 }
 ```
 
 ---
 
-## 📞 Soporte
+## Próximas Funcionalidades
+---
 
-Para dudas o problemas con la API:
-- 📧 Email: dev@turnity.com
-- 📖 Documentación: [docs/api/](./README.md)
-- 🐛 Issues: [GitHub Issues](https://github.com/tu-repo/issues)
+La API se extenderá con estos endpoints:
+
+- **Services:** Gestión de servicios de belleza
+- **Appointments:** Sistema de citas y reservas
+- **Schedules:** Horarios de disponibilidad
+- **Notifications:** Sistema de notificaciones
+- **Payments:** Procesamiento de pagos
+
+---
+

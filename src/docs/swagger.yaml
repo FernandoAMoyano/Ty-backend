@@ -1,0 +1,669 @@
+openapi: 3.0.3
+info:
+  title: Turnity Backend API
+  description: |
+    API REST completa para Turnity - Sistema de gestión de citas para salones de belleza.
+    
+    ## Características principales:
+    - Autenticación JWT con refresh tokens
+    - Sistema de roles (CLIENT, STYLIST, ADMIN)
+    - Gestión de perfiles de usuario
+    - Validaciones robustas de seguridad
+    
+    ## Flujo de autenticación:
+    1. **Registro** - Crear cuenta con rol automático (CLIENT) o específico
+    2. **Login** - Obtener tokens de acceso y refresh
+    3. **Uso** - Acceder a endpoints protegidos con token
+    4. **Renovación** - Renovar tokens cuando expiren
+    
+    ## Roles disponibles:
+    - **CLIENT** - Cliente que puede agendar citas (rol por defecto)
+    - **STYLIST** - Estilista que ofrece servicios  
+    - **ADMIN** - Administrador del sistema
+    
+  version: 1.0.0
+  contact:
+    name: Turnity API Support
+    email: fernandomoyano21@gmail.com
+    url: https://github.com/FernandoAMoyano/Ty-backend
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Servidor de desarrollo
+  - url: https://api.turnity.com/v1
+    description: Servidor de producción
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Registrar nuevo usuario
+      description: |
+        Crea una nueva cuenta de usuario en el sistema.
+        
+        **Comportamiento de roles:**
+        - Si no se especifica `roleName`, se asigna automáticamente `CLIENT`
+        - Los roles son case-insensitive ("client", "CLIENT", "Client" son válidos)
+        - Se normaliza automáticamente a mayúsculas
+        
+        **Validaciones aplicadas:**
+        - Email único en el sistema
+        - Contraseña segura (8+ chars, mayús, minús, número, especial)
+        - Teléfono en formato internacional
+        - Rol válido (CLIENT, STYLIST, ADMIN)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              cliente_default:
+                summary: Cliente con rol por defecto
+                description: Registro básico sin especificar rol (será CLIENT)
+                value:
+                  name: "Ana López"
+                  email: "ana.lopez@example.com"
+                  phone: "+5491123456789"
+                  password: "MiPassword123!"
+              estilista:
+                summary: Estilista con rol específico
+                description: Registro de estilista especificando roleName
+                value:
+                  name: "Elena Martínez"
+                  email: "elena.martinez@example.com"
+                  phone: "+5491198765432"
+                  password: "StylistPass123!"
+                  roleName: "STYLIST"
+              admin:
+                summary: Administrador
+                description: Registro de administrador
+                value:
+                  name: "Roberto Admin"
+                  email: "roberto.admin@example.com"
+                  phone: "+5491167890123"
+                  password: "AdminPass123!"
+                  roleName: "ADMIN"
+      responses:
+        '201':
+          description: Usuario registrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+              examples:
+                cliente_registrado:
+                  summary: Cliente registrado con éxito
+                  value:
+                    success: true
+                    data:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      name: "Ana López"
+                      email: "ana.lopez@example.com"
+                      phone: "+5491123456789"
+                      isActive: true
+                      role:
+                        id: "role-uuid"
+                        name: "CLIENT"
+                        description: "Cliente que puede agendar citas"
+                      createdAt: "2025-06-16T10:30:00.000Z"
+                      updatedAt: "2025-06-16T10:30:00.000Z"
+                    message: "User registered successfully"
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                rol_invalido:
+                  summary: Rol inválido
+                  value:
+                    success: false
+                    message: "Invalid role: INVALID_ROLE. Valid roles are: CLIENT, STYLIST, ADMIN"
+                    code: "VALIDATION_ERROR"
+                password_debil:
+                  summary: Contraseña débil
+                  value:
+                    success: false
+                    message: "Password must be at least 8 characters long and contain uppercase, lowercase, and number"
+                    code: "VALIDATION_ERROR"
+        '409':
+          description: Email ya existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Email already exists"
+                code: "CONFLICT"
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Iniciar sesión
+      description: |
+        Autentica un usuario y retorna tokens de acceso.
+        
+        **Tokens retornados:**
+        - `token` - JWT de acceso (15 minutos de duración)
+        - `refreshToken` - Token para renovar acceso (7 días de duración)
+        
+        **Importante:** Guarda ambos tokens de forma segura.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              login_cliente:
+                summary: Login de cliente
+                value:
+                  email: "ana.lopez@example.com"
+                  password: "MiPassword123!"
+              login_admin_seed:
+                summary: Login con admin del seed
+                value:
+                  email: "admin@turnity.com"
+                  password: "admin123"
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Invalid credentials"
+                code: "UNAUTHORIZED"
+
+  /auth/refresh-token:
+    post:
+      tags:
+        - Authentication
+      summary: Renovar token de acceso
+      description: |
+        Renueva el token de acceso usando el refresh token.
+        
+        **Cuándo usar:**
+        - Cuando el token de acceso expire (error 401)
+        - Antes de que expire para mantener sesión activa
+        
+        **Resultado:** Nuevos tokens de acceso y refresh.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+                  description: Refresh token obtenido en el login
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Token renovado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Refresh token inválido o expirado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/profile:
+    get:
+      tags:
+        - Profile Management
+      summary: Obtener perfil del usuario
+      description: |
+        Retorna la información completa del perfil del usuario autenticado.
+        
+        **Información incluida:**
+        - Datos personales (nombre, email, teléfono)
+        - Información del rol
+        - Estado de la cuenta
+        - Fechas de creación y actualización
+      responses:
+        '200':
+          description: Perfil obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    
+    put:
+      tags:
+        - Profile Management
+      summary: Actualizar perfil del usuario
+      description: |
+        Actualiza la información del perfil del usuario autenticado.
+        
+        **Campos actualizables:**
+        - Nombre completo
+        - Número de teléfono
+        - Foto de perfil (URL)
+        
+        **No se puede cambiar:**
+        - Email (es único e inmutable)
+        - Rol (requiere permisos de admin)
+        - ID de usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+            examples:
+              actualizacion_completa:
+                summary: Actualización completa
+                value:
+                  name: "Ana María López Updated"
+                  phone: "+5491987654321"
+                  profilePicture: "https://example.com/new-photo.jpg"
+              solo_nombre:
+                summary: Solo actualizar nombre
+                value:
+                  name: "Ana María López"
+      responses:
+        '200':
+          description: Perfil actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /auth/change-password:
+    put:
+      tags:
+        - Profile Management
+      summary: Cambiar contraseña
+      description: |
+        Cambia la contraseña del usuario autenticado.
+        
+        **Seguridad:**
+        - Requiere contraseña actual para verificación
+        - La nueva contraseña debe cumplir políticas de seguridad
+        - Se invalidan todas las sesiones activas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Contraseña cambiada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Password changed successfully"
+        '400':
+          description: Nueva contraseña inválida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Contraseña actual incorrecta o no autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtenido del endpoint `/auth/login`.
+        
+        **Formato:** `Authorization: Bearer <token>`
+        
+        **Duración:** 15 minutos (usar refresh token para renovar)
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - phone
+        - password
+      properties:
+        name:
+          type: string
+          description: Nombre completo del usuario
+          example: "Ana López"
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          description: Email único (se normaliza a minúsculas)
+          example: "ana.lopez@example.com"
+        phone:
+          type: string
+          description: Teléfono en formato internacional
+          example: "+5491123456789"
+          pattern: '^\+[1-9]\d{1,14}$'
+        password:
+          type: string
+          description: Contraseña segura (8+ chars, mayús, minús, número, especial)
+          example: "MiPassword123!"
+          minLength: 8
+        roleName:
+          type: string
+          description: Rol del usuario (opcional, default: CLIENT)
+          enum: [CLIENT, STYLIST, ADMIN]
+          example: "CLIENT"
+        profilePicture:
+          type: string
+          format: uri
+          description: URL de la foto de perfil (opcional)
+          example: "https://example.com/photo.jpg"
+
+    RegisterResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/UserProfile'
+        message:
+          type: string
+          example: "User registered successfully"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email del usuario
+          example: "ana.lopez@example.com"
+        password:
+          type: string
+          description: Contraseña del usuario
+          example: "MiPassword123!"
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              description: JWT token de acceso (15 min)
+              example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            refreshToken:
+              type: string
+              description: Token para renovar acceso (7 días)
+              example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            user:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+                name:
+                  type: string
+                  example: "Ana López"
+                email:
+                  type: string
+                  example: "ana.lopez@example.com"
+                role:
+                  $ref: '#/components/schemas/Role'
+        message:
+          type: string
+          example: "Login successful"
+
+    ProfileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/UserProfile'
+        message:
+          type: string
+          example: "Profile retrieved successfully"
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nuevo nombre completo
+          example: "Ana María López Updated"
+          minLength: 1
+          maxLength: 100
+        phone:
+          type: string
+          description: Nuevo teléfono
+          example: "+5491987654321"
+          pattern: '^\+[1-9]\d{1,14}$'
+        profilePicture:
+          type: string
+          format: uri
+          description: Nueva URL de foto de perfil
+          example: "https://example.com/new-photo.jpg"
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+          description: Contraseña actual para verificación
+          example: "MiPassword123!"
+        newPassword:
+          type: string
+          description: Nueva contraseña segura
+          example: "NuevoPassword456!"
+          minLength: 8
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID único del usuario
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          description: Nombre completo
+          example: "Ana López"
+        email:
+          type: string
+          format: email
+          description: Email único
+          example: "ana.lopez@example.com"
+        phone:
+          type: string
+          description: Teléfono
+          example: "+5491123456789"
+        isActive:
+          type: boolean
+          description: Estado de la cuenta
+          example: true
+        profilePicture:
+          type: string
+          format: uri
+          description: URL de foto de perfil
+          example: "https://example.com/photo.jpg"
+          nullable: true
+        role:
+          $ref: '#/components/schemas/Role'
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha de creación
+          example: "2025-06-16T10:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Fecha de última actualización
+          example: "2025-06-16T10:30:00.000Z"
+
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID único del rol
+          example: "role-uuid"
+        name:
+          type: string
+          description: Nombre del rol
+          enum: [CLIENT, STYLIST, ADMIN]
+          example: "CLIENT"
+        description:
+          type: string
+          description: Descripción del rol
+          example: "Cliente que puede agendar citas"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: Mensaje descriptivo del error
+          example: "Email already exists"
+        code:
+          type: string
+          description: Código de error específico
+          enum: 
+            - VALIDATION_ERROR
+            - CONFLICT
+            - UNAUTHORIZED
+            - NOT_FOUND
+            - INTERNAL_ERROR
+          example: "CONFLICT"
+
+  responses:
+    UnauthorizedError:
+      description: Token no válido o faltante
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Invalid or missing token"
+            code: "UNAUTHORIZED"
+
+tags:
+  - name: Authentication
+    description: |
+      Endpoints para autenticación y gestión de sesiones.
+      
+      **Flujo típico:**
+      1. Registrar usuario con `/auth/register`
+      2. Autenticarse con `/auth/login` 
+      3. Usar token en requests protegidos
+      4. Renovar token con `/auth/refresh-token` cuando expire
+      
+  - name: Profile Management
+    description: |
+      Gestión de perfiles de usuario autenticados.
+      
+      **Funcionalidades:**
+      - Ver información del perfil
+      - Actualizar datos personales
+      - Cambiar contraseña de forma segura
+
+externalDocs:
+  description: Documentación completa en GitHub
+  url: https://github.com/tu-repo/turnity-backend
+
+
+x-code-samples:
+  - lang: curl
+    label: "Registro de cliente"
+    source: |
+      curl -X POST http://localhost:3000/api/v1/auth/register \
+        -H "Content-Type: application/json" \
+        -d '{
+          "name": "Ana López",
+          "email": "ana.lopez@example.com", 
+          "phone": "+5491123456789",
+          "password": "MiPassword123!"
+        }'
+  
+  - lang: curl
+    label: "Login"
+    source: |
+      curl -X POST http://localhost:3000/api/v1/auth/login \
+        -H "Content-Type: application/json" \
+        -d '{
+          "email": "ana.lopez@example.com",
+          "password": "MiPassword123!"
+        }'
+        
+  - lang: curl
+    label: "Obtener perfil"
+    source: |
+      curl -X GET http://localhost:3000/api/v1/auth/profile \
+        -H "Authorization: Bearer YOUR_JWT_TOKEN"

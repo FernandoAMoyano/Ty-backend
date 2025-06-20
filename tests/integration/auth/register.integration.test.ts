@@ -1,42 +1,40 @@
 import request from 'supertest';
 import app from '../../../src/app';
 
-import { RoleName } from '@prisma/client';
-import { testPrisma } from '../../setup/database';
-
 describe('Register Integration Tests', () => {
-  let clientRoleId: string;
-
-  beforeAll(async () => {
-    // Obtener el role ID del seed
-    const clientRole = await testPrisma.role.findFirst({
-      where: { name: RoleName.CLIENT },
-    });
-
-    if (!clientRole) {
-      throw new Error('Client role not found. Run seed first.');
-    }
-
-    clientRoleId = clientRole.id;
-  });
-
   describe('POST /api/v1/auth/register', () => {
-    it('should register a new user successfully', async () => {
+    it('should register a new user successfully with default CLIENT role', async () => {
       const response = await request(app)
         .post('/api/v1/auth/register')
         .send({
           name: 'Test User',
-          email: `test-${Date.now()}@example.com`, // Email único
+          email: `test-${Date.now()}@example.com`,
           phone: '+1234567890',
           password: 'TestPass123!',
-          roleId: clientRoleId, // Usar roleId real
         });
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
-
       expect(response.body.data.name).toBe('Test User');
       expect(response.body.data.role.name).toBe('CLIENT');
+      expect(response.body.data.isActive).toBe(true);
+    });
+
+    it('should register a new user with specific role', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'Stylist User',
+          email: `stylist-${Date.now()}@example.com`,
+          phone: '+1234567890',
+          password: 'TestPass123!',
+          roleName: 'STYLIST',
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.name).toBe('Stylist User');
+      expect(response.body.data.role.name).toBe('STYLIST');
       expect(response.body.data.isActive).toBe(true);
     });
 
@@ -49,7 +47,6 @@ describe('Register Integration Tests', () => {
         email: duplicateEmail,
         phone: '+1234567890',
         password: 'TestPass123!',
-        roleId: clientRoleId,
       });
 
       // Segundo registro con el mismo email
@@ -58,7 +55,6 @@ describe('Register Integration Tests', () => {
         email: duplicateEmail,
         phone: '+1234567891',
         password: 'TestPass123!',
-        roleId: clientRoleId,
       });
 
       expect(response.status).toBe(409);
@@ -73,8 +69,7 @@ describe('Register Integration Tests', () => {
           name: 'Test User',
           email: `test-password-${Date.now()}@example.com`,
           phone: '+1234567890',
-          password: '123', // Password muy simple
-          roleId: clientRoleId,
+          password: '123',
         });
 
       expect(response.status).toBe(400);
@@ -90,7 +85,6 @@ describe('Register Integration Tests', () => {
           email: `test-phone-${Date.now()}@example.com`,
           phone: 'invalid-phone',
           password: 'TestPass123!',
-          roleId: clientRoleId,
         });
 
       expect(response.status).toBe(400);
@@ -98,27 +92,27 @@ describe('Register Integration Tests', () => {
       expect(response.body.message).toContain('Valid phone is required');
     });
 
-    it('should reject invalid roleId', async () => {
+    it('should reject invalid roleName', async () => {
       const response = await request(app)
         .post('/api/v1/auth/register')
         .send({
-          name: 'Test User',
-          email: `test-role-${Date.now()}@example.com`,
+          name: 'Invalid Role User',
+          email: `invalidrole-${Date.now()}@test.com`,
           phone: '+1234567890',
           password: 'TestPass123!',
-          roleId: 'invalid-role-id',
+          roleName: 'INVALID_ROLE',
         });
 
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('Role not found');
+      expect(response.body.message).toContain('Invalid role');
+      expect(response.body.code).toBe('VALIDATION_ERROR');
     });
 
     it('should validate required fields', async () => {
       const response = await request(app)
         .post('/api/v1/auth/register')
         .send({
-          // Missing required fields
           email: `test-required-${Date.now()}@example.com`,
         });
 
@@ -132,12 +126,43 @@ describe('Register Integration Tests', () => {
         email: 'invalid-email-format',
         phone: '+1234567890',
         password: 'TestPass123!',
-        roleId: clientRoleId,
       });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('Valid email is required');
+    });
+
+    it('should register with ADMIN role', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'Admin User',
+          email: `admin-${Date.now()}@example.com`,
+          phone: '+1234567890',
+          password: 'TestPass123!',
+          roleName: 'ADMIN',
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.role.name).toBe('ADMIN');
+    });
+
+    it('should accept roleName in different cases', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'Case Test User',
+          email: `case-${Date.now()}@example.com`,
+          phone: '+1234567890',
+          password: 'TestPass123!',
+          roleName: 'client',
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.role.name).toBe('CLIENT');
     });
   });
 });
