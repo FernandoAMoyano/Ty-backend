@@ -148,7 +148,7 @@ async function main() {
   });
 
   // Creación de categorías de servicios
-  console.log('🏷️ Creando categorías de servicios...');
+  console.log('🏷️Creando categorías de servicios...');
   const hairCategory = await prisma.category.create({
     data: {
       name: 'Cabello',
