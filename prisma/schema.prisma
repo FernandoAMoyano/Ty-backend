@@ -50,7 +50,8 @@ model Stylist {
   userId       String        @unique
   appointments Appointment[]
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  services     Service[]     @relation("StylistToService")
+  stylistServices StylistService[]
+ 
 }
 
 model Category {
@@ -61,6 +62,7 @@ model Category {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   services    Service[]
+  testField String?
 }
 
 model Service {
@@ -76,7 +78,24 @@ model Service {
   categoryId        String
   category          Category      @relation(fields: [categoryId], references: [id])
   appointments      Appointment[] @relation("AppointmentToService")
-  stylists          Stylist[]     @relation("StylistToService")
+  stylistServices StylistService[]
+
+}
+
+model StylistService {
+  id           String   @id @default(uuid())
+  stylistId    String
+  serviceId    String
+  customPrice  Decimal? @db.Decimal(10, 2)
+  isOffering   Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  stylist      Stylist  @relation(fields: [stylistId], references: [id], onDelete: Cascade)
+  service      Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([stylistId, serviceId])
+  
 }
 
 model AppointmentStatus {

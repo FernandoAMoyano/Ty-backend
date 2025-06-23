@@ -217,29 +217,19 @@ async function main() {
 
   // Asignación de servicios a estilistas
   console.log('🔄 Asignando servicios a estilistas...');
-  await prisma.stylist.update({
-    where: { id: stylist1.stylist!.id },
-    data: {
-      services: {
-        connect: [
-          { id: services[0].id }, // Corte
-          { id: services[1].id }, // Tinte
-          { id: services[2].id }, // Facial
-        ],
-      },
-    },
+  await prisma.stylistService.createMany({
+    data: [
+      { stylistId: stylist1.stylist!.id, serviceId: services[0].id }, // Corte
+      { stylistId: stylist1.stylist!.id, serviceId: services[1].id }, // Tinte
+      { stylistId: stylist1.stylist!.id, serviceId: services[2].id }, // Facial
+    ],
   });
 
-  await prisma.stylist.update({
-    where: { id: stylist2.stylist!.id },
-    data: {
-      services: {
-        connect: [
-          { id: services[0].id }, // Corte
-          { id: services[3].id }, // Manicura
-        ],
-      },
-    },
+  await prisma.stylistService.createMany({
+    data: [
+      { stylistId: stylist2.stylist!.id, serviceId: services[0].id }, // Corte
+      { stylistId: stylist2.stylist!.id, serviceId: services[3].id }, // Manicura
+    ],
   });
 
   // Creación de estados de citas
