@@ -50,14 +50,12 @@ const swaggerOptions: swaggerJsdoc.Options = {
 // Generar especificación final
 export const swaggerSpecification = swaggerJsdoc(swaggerOptions);
 
-// Solo el fix esencial para .opblock-tag
 export const swaggerUiOptions = {
   swaggerOptions: {
     docExpansion: 'list',
     persistAuthorization: true,
   },
 
-  // Mínimo CSS necesario
   customCss: `
     .swagger-ui .opblock-tag {
       flex-direction:column !important;
