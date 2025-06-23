@@ -18,23 +18,18 @@ export class ServicesRoutes {
   }
 
   private setupRoutes(): void {
-    // Categories routes
     this.setupCategoryRoutes();
-
-    // Services routes
     this.setupServiceRoutes();
-
-    // Stylist-Service relationship routes
     this.setupStylistServiceRoutes();
   }
 
   private setupCategoryRoutes(): void {
-    // Public routes
+    // Rutas públicas
     this.router.get('/categories', this.categoryController.getAllCategories);
     this.router.get('/categories/active', this.categoryController.getActiveCategories);
     this.router.get('/categories/:id', this.categoryController.getCategoryById);
 
-    // Admin only routes
+    // Rutas solo de administración
     this.router.post(
       '/categories',
       this.authMiddleware.authenticate,
@@ -72,7 +67,7 @@ export class ServicesRoutes {
   }
 
   private setupServiceRoutes(): void {
-    // Public routes
+    // Rutas públicas
     this.router.get('/services', this.serviceController.getAllServices);
     this.router.get('/services/active', this.serviceController.getActiveServices);
     this.router.get('/services/:id', this.serviceController.getServiceById);
@@ -120,7 +115,7 @@ export class ServicesRoutes {
   }
 
   private setupStylistServiceRoutes(): void {
-    // Public routes - Ver qué servicios ofrece un estilista
+    // Rutas públicas - Ver qué servicios ofrece un estilista
     this.router.get(
       '/stylists/:stylistId/services',
       this.stylistServiceController.getStylistServices,
