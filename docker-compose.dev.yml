@@ -65,9 +65,9 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - MAIL_FROM=${MAIL_FROM}
     volumes:
-      - .:/app
-      - /app/node_modules
-      - prisma_dev:/app/node_modules/.prisma
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+      - prisma_dev:/usr/src/app/node_modules/.prisma
     depends_on:
       db:
         condition: service_healthy
