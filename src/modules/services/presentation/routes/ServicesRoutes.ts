@@ -3,6 +3,10 @@ import { CategoryController } from '../controllers/CategoryController';
 import { ServiceController } from '../controllers/ServiceController';
 import { StylistServiceController } from '../controllers/StylistServiceController';
 import { AuthMiddleware } from '../../../auth/presentation/middleware/AuthMiddleware';
+import { CategoryValidations } from '../validations/CategoryValidations';
+import { ServiceValidations } from '../validations/ServiceValidations';
+import { StylistServiceValidations } from '../validations/StylistServiceValidations';
+import { ValidationMiddleware } from '../middleware/ValidationMiddleware';
 
 export class ServicesRoutes {
   private router: Router;
@@ -27,13 +31,20 @@ export class ServicesRoutes {
     // Rutas públicas
     this.router.get('/categories', this.categoryController.getAllCategories);
     this.router.get('/categories/active', this.categoryController.getActiveCategories);
-    this.router.get('/categories/:id', this.categoryController.getCategoryById);
+    this.router.get(
+      '/categories/:id',
+      CategoryValidations.categoryById,
+      ValidationMiddleware.handleValidationErrors,
+      this.categoryController.getCategoryById,
+    );
 
     // Rutas solo de administración
     this.router.post(
       '/categories',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN']),
+      CategoryValidations.createCategory,
+      ValidationMiddleware.handleValidationErrors,
       this.categoryController.createCategory,
     );
 
@@ -41,6 +52,8 @@ export class ServicesRoutes {
       '/categories/:id',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN']),
+      CategoryValidations.updateCategory,
+      ValidationMiddleware.handleValidationErrors,
       this.categoryController.updateCategory,
     );
 
@@ -48,6 +61,8 @@ export class ServicesRoutes {
       '/categories/:id/activate',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN']),
+      CategoryValidations.categoryById,
+      ValidationMiddleware.handleValidationErrors,
       this.categoryController.activateCategory,
     );
 
@@ -55,6 +70,8 @@ export class ServicesRoutes {
       '/categories/:id/deactivate',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN']),
+      CategoryValidations.categoryById,
+      ValidationMiddleware.handleValidationErrors,
       this.categoryController.deactivateCategory,
     );
 
@@ -62,6 +79,8 @@ export class ServicesRoutes {
       '/categories/:id',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN']),
+      CategoryValidations.categoryById,
+      ValidationMiddleware.handleValidationErrors,
       this.categoryController.deleteCategory,
     );
   }
@@ -70,10 +89,22 @@ export class ServicesRoutes {
     // Rutas públicas
     this.router.get('/services', this.serviceController.getAllServices);
     this.router.get('/services/active', this.serviceController.getActiveServices);
-    this.router.get('/services/:id', this.serviceController.getServiceById);
-    this.router.get('/services/category/:categoryId', this.serviceController.getServicesByCategory);
+    this.router.get(
+      '/services/:id',
+      ServiceValidations.serviceById,
+      ValidationMiddleware.handleValidationErrors,
+      this.serviceController.getServiceById,
+    );
+    this.router.get(
+      '/services/category/:categoryId',
+      ServiceValidations.servicesByCategory,
+      ValidationMiddleware.handleValidationErrors,
+      this.serviceController.getServicesByCategory,
+    );
     this.router.get(
       '/services/category/:categoryId/active',
+      ServiceValidations.servicesByCategory,
+      ValidationMiddleware.handleValidationErrors,
       this.serviceController.getActiveServicesByCategory,
     );
 
@@ -82,6 +113,8 @@ export class ServicesRoutes {
       '/services',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN']),
+      ServiceValidations.createService,
+      ValidationMiddleware.handleValidationErrors,
       this.serviceController.createService,
     );
 
@@ -89,6 +122,8 @@ export class ServicesRoutes {
       '/services/:id',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN']),
+      ServiceValidations.updateService,
+      ValidationMiddleware.handleValidationErrors,
       this.serviceController.updateService,
     );
 
@@ -96,6 +131,8 @@ export class ServicesRoutes {
       '/services/:id/activate',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN']),
+      ServiceValidations.serviceById,
+      ValidationMiddleware.handleValidationErrors,
       this.serviceController.activateService,
     );
 
@@ -103,6 +140,8 @@ export class ServicesRoutes {
       '/services/:id/deactivate',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN']),
+      ServiceValidations.serviceById,
+      ValidationMiddleware.handleValidationErrors,
       this.serviceController.deactivateService,
     );
 
@@ -110,44 +149,60 @@ export class ServicesRoutes {
       '/services/:id',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN']),
+      ServiceValidations.serviceById,
+      ValidationMiddleware.handleValidationErrors,
       this.serviceController.deleteService,
     );
   }
 
   private setupStylistServiceRoutes(): void {
-    // Rutas públicas - Ver qué servicios ofrece un estilista
+    // Rutas públicas
     this.router.get(
       '/stylists/:stylistId/services',
+      StylistServiceValidations.stylistById,
+      ValidationMiddleware.handleValidationErrors,
       this.stylistServiceController.getStylistServices,
     );
     this.router.get(
       '/stylists/:stylistId/services/active',
+      StylistServiceValidations.stylistById,
+      ValidationMiddleware.handleValidationErrors,
       this.stylistServiceController.getActiveOfferings,
     );
     this.router.get(
       '/services/:serviceId/stylists',
+      StylistServiceValidations.serviceById,
+      ValidationMiddleware.handleValidationErrors,
       this.stylistServiceController.getServiceStylists,
     );
     this.router.get(
       '/services/:serviceId/stylists/offering',
+      StylistServiceValidations.serviceById,
+      ValidationMiddleware.handleValidationErrors,
       this.stylistServiceController.getStylistsOfferingService,
     );
 
     // Vistas detalladas
     this.router.get(
       '/stylists/:stylistId/services/detailed',
+      StylistServiceValidations.stylistById,
+      ValidationMiddleware.handleValidationErrors,
       this.stylistServiceController.getStylistWithServices,
     );
     this.router.get(
       '/services/:serviceId/stylists/detailed',
+      StylistServiceValidations.serviceById,
+      ValidationMiddleware.handleValidationErrors,
       this.stylistServiceController.getServiceWithStylists,
     );
 
-    // El estilista puede gestionar sus propios servicios.
+    // El estilista y el administrador pueden administrar los servicios
     this.router.post(
       '/stylists/:stylistId/services',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN', 'STYLIST']),
+      StylistServiceValidations.assignService,
+      ValidationMiddleware.handleValidationErrors,
       this.stylistServiceController.assignServiceToStylist,
     );
 
@@ -155,6 +210,8 @@ export class ServicesRoutes {
       '/stylists/:stylistId/services/:serviceId',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN', 'STYLIST']),
+      StylistServiceValidations.updateStylistService,
+      ValidationMiddleware.handleValidationErrors,
       this.stylistServiceController.updateStylistService,
     );
 
@@ -162,6 +219,8 @@ export class ServicesRoutes {
       '/stylists/:stylistId/services/:serviceId',
       this.authMiddleware.authenticate,
       this.authMiddleware.authorize(['ADMIN', 'STYLIST']),
+      StylistServiceValidations.stylistServiceParams,
+      ValidationMiddleware.handleValidationErrors,
       this.stylistServiceController.removeServiceFromStylist,
     );
   }
