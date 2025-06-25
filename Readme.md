@@ -3,8 +3,23 @@
 
 Backend API para sistema de gestión de salones de belleza construido con **Node.js**, **TypeScript**, **Express** y **Prisma**.
 
+# Índice
+---
+
+[Inicio Rápido](#-inicio-rápido)
+[Scripts disponibles](#-scripts-disponibles)
+[Arquitectura](#️-arquitectura)
+[Api Endpoints](#-api-endpoints)
+[Testing](#-testing)
+[Base de Datos](#️-base-de-datos)
+[Desarrollo local](#-desarrollo-local)
+[Tecnologias](#-tecnologías)
+[Contribuir](#-contribuir)
+[Licencia](#-licencia)
+
 ## 🚀 Inicio Rápido
 ---
+[Índice](#índice)
 
 ### Prerrequisitos
 - **Docker** y **Docker Compose**
@@ -43,6 +58,7 @@ La API estará disponible en: **http://localhost:3000**
 
 Endpoint de salud: **GET http://localhost:3000/health**
 
+[Índice](#índice)
 # 📋 Scripts Disponibles
 ---
 
@@ -55,7 +71,7 @@ npm run docker:dev:build       # Construir imagen de desarrollo
 npm run docker:jest:test       # Ejecutar tests en Docker
 ```
 
-### Base de datos
+### Base de datos PostgreSQL
 ```bash
 npm run docker:db:prisma:migrate    # Ejecutar migraciones
 npm run docker:db:prisma:seed       # Ejecutar seed inicial
@@ -70,6 +86,7 @@ npm run test                    # Tests locales (requiere DB)
 
 # 🏗️ Arquitectura
 ---
+[Índice](#índice)
 
 El proyecto sigue **Clean Architecture** con estas capas:
 
@@ -84,6 +101,7 @@ src/modules/[module]/
 
 # 🔐 API Endpoints
 ---
+[Índice](#índice)
 
 
 ### Autenticación
@@ -98,6 +116,7 @@ PUT    /api/v1/auth/change-password # Cambiar contraseña
 
 # 🧪 Testing
 ---
+[Índice](#índice)
 
 El proyecto tiene **83 tests** con cobertura completa:
 
@@ -112,6 +131,8 @@ npm run docker:jest:test
 # Tests específicos
 npm run docker:jest:test -- tests/integration/auth/login.integration.test.ts
 ```
+
+[Índice](#índice)
 
 ## 🗄️ Base de Datos
 ---
@@ -132,6 +153,7 @@ npm run docker:db:prisma:reset
 
 # 🔧 Desarrollo Local
 ---
+[Índice](#índice)
 
 
 Si prefieres desarrollo sin Docker:
@@ -153,6 +175,7 @@ npm run dev
 
 # 📚 Tecnologías
 ---
+[Índice](#índice)
 
 
 - **Runtime:** Node.js + TypeScript
@@ -165,6 +188,7 @@ npm run dev
 
 # 🤝 Contribuir
 ---
+[Índice](#índice)
 
 
 1. Fork el proyecto
@@ -174,5 +198,6 @@ npm run dev
 5. Abre un Pull Request
 
 ## 📄 Licencia
+---
+[Índice](#índice)
 
-[MIT](LICENSE)

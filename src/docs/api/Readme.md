@@ -3,37 +3,44 @@
 Documentación completa de la API REST de Turnity Backend.
 
 
-1. [[#Base URL]]
-2. [[#Autenticación]]
-3. [[#Headers requeridos]]
-4. [[#Auth Endpoints]]
-5. [[#1. Registrar Usuario]]
-6. [[#2. Iniciar Sesión]]
-7. [[#3. Renovar Token]]
-8. [[#4. Obtener Perfil]]
-9. [[#5. Actualizar Perfil]]
-10. [[#6. Cambiar Contraseña]]
-11. [[#Códigos de Estado HTTP]]
-12. [[#Roles de Usuario]]
-13. [[#Validaciones]]
-14. [[#Headers de Response]]
-15. [[#Rate Limiting]]
-16. [[#Testing con cURL]]
-17. [[#Usuarios de Prueba (Seed Data)]]
-18. [[#Ejemplos de Flujo Completo]]
-19. [[#Próximas Funcionalidades]]
+# Índice
+---
+
+1. [Base URL](#base-url)  
+2. [Autenticación](#autenticación)  
+   [2.1 Headers requeridos](#headers-requeridos)  
+3. [Auth Endpoints](#auth-endpoints)  
+    [3.1 Registrar Usuario](#1-registrar-usuario)  
+    [3.2 Iniciar Sesión](#2-iniciar-sesión)  
+    [3.3 Renovar Token](#3-renovar-token)  
+    [3.4 Obtener Perfil](#4-obtener-perfil)  
+    [3.5 Actualizar Perfil](#5-actualizar-perfil)  
+    [3.6 Cambiar Contraseña](#6-cambiar-contraseña)  
+4. [Códigos de Estado HTTP](#códigos-de-estado-http)  
+5. [Roles de Usuario](#roles-de-usuario)  
+6. [Validaciones](#validaciones)  
+7. [Headers de Response](#headers-de-response)  
+8. [Rate Limiting](#rate-limiting)  
+9. [Testing con cURL](#testing-con-curl)  
+10. [Usuarios de Prueba (Seed Data)](#usuarios-de-prueba-seed-data)  
+11. [Ejemplos de Flujo Completo](#ejemplos-de-flujo-completo)  
+12. [Próximas Funcionalidades](#próximas-funcionalidades)
 
 
 # Base URL
 ---
+- [Índice](#índice)
+
 
 ```
 http://localhost:3000/api/v1
 ```
 
+
+
 # Autenticación
 ---
-
+- [Índice](#índice)
 
 La API utiliza **JWT (JSON Web Tokens)** para autenticación.
 
@@ -47,6 +54,8 @@ Content-Type: application/json
 
 # Auth Endpoints
 ---
+- [Índice](#índice)
+
 
 ### 1. Registrar Usuario
 Crea una nueva cuenta de usuario.
@@ -137,9 +146,12 @@ POST /auth/register
 }
 ```
 
----
 
+---
 ### 2. Iniciar Sesión
+
+- [Índice](#índice)
+
 Autentica un usuario y devuelve tokens de acceso.
 
 ```http
@@ -188,6 +200,9 @@ POST /auth/login
 ---
 
 ### 3. Renovar Token
+
+- [Índice](#índice)
+
 Renueva el token de acceso usando el refresh token.
 
 ```http
@@ -221,6 +236,9 @@ POST /auth/refresh-token
 ---
 
 ### 4. Obtener Perfil
+
+- [Índice](#índice)
+
 Obtiene información del usuario autenticado.
 
 ```http
@@ -258,6 +276,9 @@ Authorization: Bearer <your-jwt-token>
 ---
 
 ### 5. Actualizar Perfil
+
+- [Índice](#índice)
+
 Actualiza información del usuario autenticado.
 
 ```http
@@ -303,6 +324,9 @@ Content-Type: application/json
 ---
 
 ### 6. Cambiar Contraseña
+
+- [Índice](#índice)
+
 Cambia la contraseña del usuario autenticado.
 
 ```http
@@ -353,6 +377,8 @@ Content-Type: application/json
 # Códigos de Estado HTTP
 ---
 
+- [Índice](#índice)
+
 | Código | Significado | Uso |
 |--------|-------------|-----|
 | `200` | OK | Operación exitosa |
@@ -366,14 +392,20 @@ Content-Type: application/json
 
 ## Roles de Usuario
 
+- [Índice](#índice)
+
 | Rol | Descripción | Permisos | Uso |
 |-----|-------------|----------|-----|
 | `CLIENT` | Cliente del sistema | Agendar citas, ver perfil | Default para registro |
 | `STYLIST` | Estilista/Peluquero | Gestión de citas y servicios | Profesionales |
 | `ADMIN` | Administrador | Acceso completo al sistema | Administración |
 
+
+
 # Validaciones
 ---
+- [Índice](#índice)
+
 
 ### **Contraseña:**
 - Mínimo 8 caracteres
@@ -395,8 +427,12 @@ Content-Type: application/json
 - Case insensitive ("client", "CLIENT", "Client" son válidos)
 - Se normaliza automáticamente a mayúsculas
 
+
+
 # Headers de Response
 ---
+
+- [Índice](#índice)
 
 Todas las respuestas incluyen estos headers:
 
@@ -408,7 +444,8 @@ X-Powered-By: Express
 # Rate Limiting
 ---
 
-
+- [Índice](#índice)
+<br>
 - **Límite general:** 100 requests por minuto por IP
 - **Login/Register:** 5 intentos por minuto por IP
 
@@ -455,9 +492,10 @@ curl -X GET http://localhost:3000/api/v1/auth/profile \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-
 # Usuarios de Prueba (Seed Data)
 ---
+
+- [Índice](#índice)
 
 Para testing rápido, puedes usar estos usuarios que se crean automáticamente:
 
@@ -506,9 +544,11 @@ Para testing rápido, puedes usar estos usuarios que se crean automáticamente:
 }
 ```
 
+
 # Ejemplos de Flujo Completo
 ---
 
+- [Índice](#índice)
 
 ### **Flujo 1: Cliente registra y agenda cita**
 ```bash
@@ -553,10 +593,13 @@ POST /auth/login
 }
 ```
 
----
+
+
 
 ## Próximas Funcionalidades
 ---
+
+- [Índice](#índice)
 
 La API se extenderá con estos endpoints:
 
@@ -566,5 +609,4 @@ La API se extenderá con estos endpoints:
 - **Notifications:** Sistema de notificaciones
 - **Payments:** Procesamiento de pagos
 
----
 
