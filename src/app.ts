@@ -6,21 +6,28 @@ import { errorHandler } from './shared/middleware/ErrorHandler';
 import { prisma } from './shared/config/Prisma';
 import { AuthContainer } from './modules/auth/AuthContainer';
 import { setupSwagger, addDocsHeaders, logDocsAccess } from './shared/middleware/swagger';
+import { ServicesContainer } from './modules/services/ServicesContainer';
 
 class App {
   public app: express.Application;
   private authContainer: AuthContainer;
+  private serviceContainer: ServicesContainer;
 
   constructor() {
     this.app = express();
     this.authContainer = AuthContainer.getInstance(prisma);
+    this.serviceContainer = ServicesContainer.getInstance(
+      prisma,
+      this.authContainer.authMiddleware,
+    );
+
     this.setupMiddleware();
     this.setupRoutes();
     this.setupErrorHandling();
   }
 
   private setupMiddleware(): void {
-    // Security
+    // Seguridad
     this.app.use(helmet());
     this.app.use(
       cors({
@@ -29,7 +36,7 @@ class App {
       }),
     );
 
-    // Parsing
+    // Analizador
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
 
@@ -53,8 +60,10 @@ class App {
     this.app.use(addDocsHeaders);
     this.app.use(logDocsAccess);
     setupSwagger(this.app);
+
     // API routes
     this.app.use('/api/v1/auth', this.authContainer.authRoutes.getRouter());
+    this.app.use('/api/v1', this.serviceContainer.servicesRoutes.getRouter());
 
     // 404 handler
     this.app.use('/*splat', (req, res) => {

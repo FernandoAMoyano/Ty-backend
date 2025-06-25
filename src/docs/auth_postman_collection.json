@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Turnity API v1.0",
+    "name": "Auth API v1.0",
     "description": "Colección completa y actualizada para Turnity Backend API con soporte para roleName",
     "version": "1.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -238,7 +238,7 @@
       ]
     },
     {
-      "name": "👤 Profile Management",
+      "name": "Profile Management",
       "description": "Gestión de perfiles de usuario",
       "item": [
         {

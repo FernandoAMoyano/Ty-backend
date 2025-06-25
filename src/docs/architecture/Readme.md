@@ -5,18 +5,19 @@ Documentación de la arquitectura del sistema basada en **Clean Architecture** y
 # Índice
 ---
 
-- [Visión General](#-visión-general)
-- [Principios Arquitectónicos](#-principios-arquitectónicos)
-- [Estructura de Módulos](#-estructura-de-módulos)
-- [Flujo de Datos](#-flujo-de-datos)
-- [Capas del Sistema](#-capas-del-sistema)
-- [Inyección de Dependencias](#-inyección-de-dependencias)
-- [Patrones Utilizados](#-patrones-utilizados)
+1. [Visión General](#visión-general)
+2. [Principios Arquitectónicos](#principios-arquitectónicos)
+3. [Estructura de Módulos](#estructura-de-módulos)
+4. [Flujo de Datos](#flujo-de-datos)
+5. [Capas del Sistema](#capas-del-sistema)
+6. [Inyección de Dependencias](#inyección-de-dependencias)
+7. [Patrones Utilizados](#patrones-utilizados)
 
 
 
 # Visión General
 ---
+- [Índice](#índice)
 
 Turnity Backend implementa una **arquitectura hexagonal** (Clean Architecture) que prioriza:
 
@@ -57,6 +58,7 @@ Turnity Backend implementa una **arquitectura hexagonal** (Clean Architecture) q
 
 # Principios Arquitectónicos
 ---
+- [Índice](#índice)
 
 ### 1. **Dependency Rule**
 Las dependencias **siempre apuntan hacia adentro**, hacia las capas de mayor nivel de abstracción.
@@ -103,8 +105,10 @@ class SMSNotificationService implements NotificationService {}
 
 
 
+
 # Estructura de Módulos
 ---
+- [Índice](#índice)
 
 Cada módulo sigue la misma estructura estándar:
 
@@ -114,17 +118,18 @@ src/modules/[module-name]/
 │   ├── controllers/       # Controladores HTTP
 │   ├── routes/            # Definición de rutas
 │   ├── middleware/        # Middleware específico
-
+│ 
 ├── application/           # Capa de Aplicación
 │   └── dto/               # Data Transfer Objects
 │   |   ├── request/       # DTOs de entrada
 │   |   └── response/      # DTOs de salida
 │   ├── use-cases/         # Casos de uso del negocio
 │   └── services/          # Servicios de aplicación
+│ 
 ├── domain/                # Capa de Dominio
 │   ├── entities/          # Entidades del dominio
-│   ├── repositories/      # Interfaces de repositorios
-│   └── services/          # Servicios de dominio
+│   └── repositories/      # Interfaces de repositorios
+│  
 ├── infrastructure/       # Capa de Infraestructura
 │   ├── persistence/       # Implementaciones de repositorios
 │   ├── services/          # Implementaciones de servicios
@@ -140,24 +145,25 @@ src/modules/auth/
 │   ├── routes/AuthRoutes.ts
 │   ├── middleware/AuthMiddleware.ts
 │   └── dto/
-│       ├── request/LoginDto.ts
-│       └── response/UserDto.ts
+│       ├── request/LoginDto.ts/...
+│       └── response/UserDto.ts/...
 ├── application/
-│   ├── use-cases/LoginUser.ts
-│   └── services/AuthService.ts
+│   ├── use-cases/LoginUser.ts/...
+│   └── services/AuthService.ts/...
 ├── domain/
-│   ├── entities/User.ts
-│   └── repositories/UserRepository.ts
+│   ├── entities/User.ts/...
+│   └── repositories/UserRepository.ts/...
 ├── infrastructure/
-│   ├── persistence/PrismaUserRepository.ts
-│   └── services/JwtTokenService.ts
+│   ├── persistence/PrismaUserRepository.ts/...
+│   └── services/JwtTokenService.ts/...
 └── container.ts
 ```
 
 
-
 # Flujo de Datos
 ---
+- [Índice](#índice)
+
 
 ### Request Flow (Entrada):
 ```
@@ -205,6 +211,7 @@ class PrismaUserRepository {
 
 # Capas del Sistema
 ---
+- [Índice](#índice)
 
 ### 1. **Presentation Layer**
 **Responsabilidad:** Manejar comunicación HTTP y transformar datos.
@@ -337,6 +344,8 @@ class JwtTokenService implements JwtService {
 
 ## Inyección de Dependencias
 ---
+- [Índice](#índice)
+
 
 Cada módulo tiene un **container** que configura todas las dependencias:
 
@@ -371,6 +380,8 @@ export class AuthContainer {
 
 # Patrones Utilizados
 ---
+
+- [Índice](#índice)
 
 ### 1. **Repository Pattern**
 Abstrae el acceso a datos del dominio.
@@ -422,7 +433,7 @@ class LoginUser {
   }
 }
 ```
-
+- [Índice](#índice)
 
 
 ##  Beneficios de esta Arquitectura
@@ -447,3 +458,5 @@ class LoginUser {
 - Cambiar de base de datos sin afectar el dominio
 - Intercambiar librerías externas fácilmente
 - Adaptar a nuevos requerimientos sin reescribir
+
+

@@ -1,0 +1,695 @@
+{
+  "info": {
+    "name": "Services API v1.0",
+    "description": "Colección para el módulo Services - Gestión de categorías, servicios y relaciones estilista-servicio",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "category_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "service_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "stylist_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Categories Management",
+      "description": "Gestión de categorías de servicios",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Success response', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(Array.isArray(response.data)).to.be.true;",
+                  "    });",
+                  "    if (response.data.length > 0) {",
+                  "        pm.collectionVariables.set('category_id', response.data[0].id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["categories"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories/active",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "active"]
+            }
+          }
+        },
+        {
+          "name": "Get Category by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Category (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('category_id', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cabello & Estilismo\",\n  \"description\": \"Servicios profesionales de corte, peinado y tratamientos capilares\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["categories"]
+            }
+          }
+        },
+        {
+          "name": "Update Category (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cabello & Estilismo Actualizada\",\n  \"description\": \"Servicios profesionales de corte, peinado y tratamientos capilares - Descripción actualizada\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate Category (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_id}}/deactivate",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_id}}", "deactivate"]
+            }
+          }
+        },
+        {
+          "name": "Activate Category (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_id}}/activate",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_id}}", "activate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Services Management",
+      "description": "Gestión de servicios",
+      "item": [
+        {
+          "name": "Get All Services",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Success response', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "    if (response.data.length > 0) {",
+                  "        pm.collectionVariables.set('service_id', response.data[0].id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/services",
+              "host": ["{{base_url}}"],
+              "path": ["services"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/services/active",
+              "host": ["{{base_url}}"],
+              "path": ["services", "active"]
+            }
+          }
+        },
+        {
+          "name": "Get Services by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/services/category/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["services", "category", "{{category_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Service by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/services/{{service_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["services", "{{service_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Service (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('service_id', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"{{category_id}}\",\n  \"name\": \"Corte Premium\",\n  \"description\": \"Corte de cabello profesional con consulta de estilo personalizada\",\n  \"duration\": 45,\n  \"durationVariation\": 15,\n  \"price\": 35.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/services",
+              "host": ["{{base_url}}"],
+              "path": ["services"]
+            }
+          }
+        },
+        {
+          "name": "Update Service (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Corte Premium Deluxe\",\n  \"description\": \"Corte de cabello profesional con consulta de estilo, lavado y peinado incluidos\",\n  \"duration\": 60,\n  \"durationVariation\": 20,\n  \"price\": 40.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/services/{{service_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["services", "{{service_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate Service (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/services/{{service_id}}/deactivate",
+              "host": ["{{base_url}}"],
+              "path": ["services", "{{service_id}}", "deactivate"]
+            }
+          }
+        },
+        {
+          "name": "Activate Service (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/services/{{service_id}}/activate",
+              "host": ["{{base_url}}"],
+              "path": ["services", "{{service_id}}", "activate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stylist-Service Management",
+      "description": "Gestión de relaciones entre estilistas y servicios",
+      "item": [
+        {
+          "name": "Get Stylist Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/stylists/{{stylist_id}}/services",
+              "host": ["{{base_url}}"],
+              "path": ["stylists", "{{stylist_id}}", "services"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Stylist Offerings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/stylists/{{stylist_id}}/services/active",
+              "host": ["{{base_url}}"],
+              "path": ["stylists", "{{stylist_id}}", "services", "active"]
+            }
+          }
+        },
+        {
+          "name": "Get Service Stylists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/services/{{service_id}}/stylists",
+              "host": ["{{base_url}}"],
+              "path": ["services", "{{service_id}}", "stylists"]
+            }
+          }
+        },
+        {
+          "name": "Get Stylists Offering Service",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/services/{{service_id}}/stylists/offering",
+              "host": ["{{base_url}}"],
+              "path": ["services", "{{service_id}}", "stylists", "offering"]
+            }
+          }
+        },
+        {
+          "name": "Assign Service to Stylist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceId\": \"{{service_id}}\",\n  \"customPrice\": 45.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/stylists/{{stylist_id}}/services",
+              "host": ["{{base_url}}"],
+              "path": ["stylists", "{{stylist_id}}", "services"]
+            }
+          }
+        },
+        {
+          "name": "Update Stylist Service",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customPrice\": 50.00,\n  \"isOffering\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/stylists/{{stylist_id}}/services/{{service_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["stylists", "{{stylist_id}}", "services", "{{service_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Remove Service from Stylist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/stylists/{{stylist_id}}/services/{{service_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["stylists", "{{stylist_id}}", "services", "{{service_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Stylist with Services (Detailed)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/stylists/{{stylist_id}}/services/detailed",
+              "host": ["{{base_url}}"],
+              "path": ["stylists", "{{stylist_id}}", "services", "detailed"]
+            }
+          }
+        },
+        {
+          "name": "Get Service with Stylists (Detailed)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/services/{{service_id}}/stylists/detailed",
+              "host": ["{{base_url}}"],
+              "path": ["services", "{{service_id}}", "stylists", "detailed"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication Setup",
+      "description": "Setup de autenticación para testing",
+      "item": [
+        {
+          "name": "Quick Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    if (response.data.user.stylist) {",
+                  "        pm.collectionVariables.set('stylist_id', response.data.user.stylist.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@turnity.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Quick Login Stylist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    pm.collectionVariables.set('stylist_id', response.data.user.stylist.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"lucia@turnity.com\",\n  \"password\": \"stylist123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Testing",
+      "description": "Tests de validación de errores",
+      "item": [
+        {
+          "name": "Invalid UUID in Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error de UUID inválido', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories/invalid-uuid",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "invalid-uuid"]
+            }
+          }
+        },
+        {
+          "name": "Non-existent Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error de categoría no encontrada', function () {",
+                  "    pm.expect(pm.response.code).to.eql(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories/123e4567-e89b-12d3-a456-426614174000",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "123e4567-e89b-12d3-a456-426614174000"]
+            }
+          }
+        },
+        {
+          "name": "Unauthorized Category Creation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error de no autorizado', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Category\",\n  \"description\": \"This should fail\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["categories"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
