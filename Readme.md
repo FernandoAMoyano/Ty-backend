@@ -173,7 +173,7 @@ npm run docker:jest:test -- tests/integration/auth/login.integration.test.ts
 
 [Índice](#índice)
 
-## 🗄️ Base de Datos
+# 🗄️ Base de Datos
 
 
 
@@ -236,7 +236,6 @@ npm run dev
 4. Push: `git push origin feature/nueva-feature`
 5. Abre un Pull Request
 
-## 📄 Licencia
-
+# 📄 Licencia
 [Índice](#índice)
 
