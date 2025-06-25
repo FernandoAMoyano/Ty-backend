@@ -1,10 +1,10 @@
 # 💇‍♀️ Turnity Backend
----
+
 
 Backend API para sistema de gestión de salones de belleza construido con **Node.js**, **TypeScript**, **Express** y **Prisma**.
 
 # Índice
----
+
 
 1. [Inicio Rápido](#-inicio-rápido)
 2. [Scripts disponibles](#-scripts-disponibles)
@@ -17,8 +17,8 @@ Backend API para sistema de gestión de salones de belleza construido con **Node
 9. [Contribuir](#-contribuir)
 10. [Licencia](#-licencia)
 
-## 🚀 Inicio Rápido
----
+# 🚀 Inicio Rápido
+
 [Índice](#índice)
 
 ### Prerrequisitos
@@ -60,7 +60,7 @@ Endpoint de salud: **GET http://localhost:3000/health**
 
 [Índice](#índice)
 # 📋 Scripts Disponibles
----
+
 
 
 ### Docker (Recomendado)
@@ -85,7 +85,7 @@ npm run test                    # Tests locales (requiere DB)
 ```
 
 # 🏗️ Arquitectura
----
+
 [Índice](#índice)
 
 El proyecto sigue **Clean Architecture** con estas capas:
@@ -94,13 +94,13 @@ El proyecto sigue **Clean Architecture** con estas capas:
 src/modules/[module]/
 ├── presentation/     # Controllers, Routes, DTOs
 ├── application/      # Use Cases, Services  
-├── domain/          # Entities, Repository Interfaces
-├── infrastructure/  # DB, External Services
-└── container.ts     # Dependency Injection
+├── domain/           # Entities, Repository Interfaces
+├── infrastructure/   # DB, External Services
+└── container.ts      # Dependency Injection
 ```
 
 # 🔐 API Endpoints
----
+
 [Índice](#índice)
 
 
@@ -114,8 +114,47 @@ PUT    /api/v1/auth/profile         # Actualizar perfil
 PUT    /api/v1/auth/change-password # Cambiar contraseña
 ```
 
+### Categorias 
+```
+GET    /api/v1/categories                    # Obtener todas las categorías
+GET    /api/v1/categories/active             # Obtener categorías activas
+GET    /api/v1/categories/:id                # Obtener categoría por ID
+POST   /api/v1/categories                    # Crear categoría (ADMIN)
+PUT    /api/v1/categories/:id                # Actualizar categoría (ADMIN)
+PATCH  /api/v1/categories/:id/activate       # Activar categoría (ADMIN)
+PATCH  /api/v1/categories/:id/deactivate     # Desactivar categoría (ADMIN)
+DELETE /api/v1/categories/:id                # Eliminar categoría (ADMIN)
+```
+
+### Servicios 
+```
+GET    /api/v1/services                             # Obtener todos los servicios
+GET    /api/v1/services/active                      # Obtener servicios activos
+GET    /api/v1/services/:id                         # Obtener servicio por ID
+GET    /api/v1/services/category/:categoryId        # Obtener servicios por categoría
+GET    /api/v1/services/category/:categoryId/active # Obtener servicios activos por categoría
+POST   /api/v1/services                             # Crear servicio (ADMIN)
+PUT    /api/v1/services/:id                         # Actualizar servicio (ADMIN)
+PATCH  /api/v1/services/:id/activate                # Activar servicio (ADMIN)
+PATCH  /api/v1/services/:id/deactivate              # Desactivar servicio (ADMIN)
+DELETE /api/v1/services/:id                         # Eliminar servicio (ADMIN)
+```
+
+### Servicios en relacion con estilistas 
+```
+GET    /api/v1/stylists/:stylistId/services            # Obtener servicios del estilista
+GET    /api/v1/stylists/:stylistId/services/active     # Obtener servicios activos del estilista
+GET    /api/v1/stylists/:stylistId/services/detailed   # Vista detallada del estilista con servicios
+GET    /api/v1/services/:serviceId/stylists            # Obtener estilistas del servicio
+GET    /api/v1/services/:serviceId/stylists/offering   # Obtener estilistas que ofrecen el servicio
+GET    /api/v1/services/:serviceId/stylists/detailed   # Vista detallada del servicio con estilistas
+POST   /api/v1/stylists/:stylistId/services            # Asignar servicio a estilista (ADMIN/STYLIST)
+PUT    /api/v1/stylists/:stylistId/services/:serviceId # Actualizar servicio del estilista (ADMIN/STYLIST)
+DELETE /api/v1/stylists/:stylistId/services/:serviceId # Remover servicio del estilista (ADMIN/STYLIST)
+```
+
 # 🧪 Testing
----
+
 [Índice](#índice)
 
 El proyecto tiene **83 tests** con cobertura completa:
@@ -135,7 +174,7 @@ npm run docker:jest:test -- tests/integration/auth/login.integration.test.ts
 [Índice](#índice)
 
 ## 🗄️ Base de Datos
----
+
 
 
 ### Estructura principal:
@@ -152,7 +191,7 @@ npm run docker:db:prisma:reset
 ```
 
 # 🔧 Desarrollo Local
----
+
 [Índice](#índice)
 
 
@@ -174,7 +213,7 @@ npm run dev
 ```
 
 # 📚 Tecnologías
----
+
 [Índice](#índice)
 
 
@@ -187,7 +226,7 @@ npm run dev
 - **Arquitectura:** Clean Architecture + DDD
 
 # 🤝 Contribuir
----
+
 [Índice](#índice)
 
 
@@ -198,6 +237,6 @@ npm run dev
 5. Abre un Pull Request
 
 ## 📄 Licencia
----
+
 [Índice](#índice)
 
