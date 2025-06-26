@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { AuthController } from '../../presentation/controllers/AuthController';
+import { AuthController } from '../controllers/AuthController';
 import { AuthMiddleware } from '../middleware/AuthMiddleware';
 
 export class AuthRoutes {
@@ -26,7 +26,6 @@ export class AuthRoutes {
       this.authController.refreshToken(req, res).catch(next);
     });
 
-    // Rutas protegidas
     this.router.get(
       '/profile',
       (req, res, next) => {
