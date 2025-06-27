@@ -4,17 +4,17 @@ Backend API para sistema de gestión de salones de belleza construido con **Node
 
 # 🟣Índice
 
-1. [Inicio Rápido](#-inicio-rápido)
-2. [Scripts disponibles](#-scripts-disponibles)
-3. [Arquitectura](#️-arquitectura)
-4. [Documentación API](#-documentación-api)
-5. [API Endpoints](#-api-endpoints)
-6. [Testing](#-testing)
-7. [Base de Datos](#️-base-de-datos)
-8. [Desarrollo local](#-desarrollo-local)
-9. [Tecnologias](#-tecnologías)
-10. [Contribuir](#-contribuir)
-11. [Licencia](#-licencia)
+1. [Inicio Rápido](#inicio-rápido)
+2. [Scripts disponibles](#scripts-disponibles)
+3. [Arquitectura](#arquitectura)
+4. [Documentación API](#documentación-api)
+5. [API Endpoints](#api-endpoints)
+6. [Testing](#testing)
+7. [Base de Datos](#base-de-datos)
+8. [Desarrollo local](#desarrollo-local)
+9. [Tecnologias](#tecnologías)
+10. [Contribuir](#contribuir)
+11. [Licencia](#licencia)
 
 # 🟣Inicio Rápido
 
