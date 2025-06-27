@@ -5,8 +5,8 @@ import morgan from 'morgan';
 import { errorHandler } from './shared/middleware/ErrorHandler';
 import { prisma } from './shared/config/Prisma';
 import { AuthContainer } from './modules/auth/AuthContainer';
-import { setupSwagger, addDocsHeaders, logDocsAccess } from './shared/middleware/swagger';
 import { ServicesContainer } from './modules/services/ServicesContainer';
+import { setupSwagger } from './shared/middleware/swagger';
 
 class App {
   public app: express.Application;
@@ -27,7 +27,6 @@ class App {
   }
 
   private setupMiddleware(): void {
-    // Seguridad
     this.app.use(helmet());
     this.app.use(
       cors({
@@ -36,18 +35,15 @@ class App {
       }),
     );
 
-    // Analizador
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
 
-    // Logging
     if (process.env.NODE_ENV !== 'test') {
       this.app.use(morgan('combined'));
     }
   }
 
   private setupRoutes(): void {
-    // Health check
     this.app.get('/health', (req, res) => {
       res.status(200).json({
         success: true,
@@ -57,16 +53,12 @@ class App {
       });
     });
 
-    this.app.use(addDocsHeaders);
-    this.app.use(logDocsAccess);
     setupSwagger(this.app);
 
-    // API routes
     this.app.use('/api/v1/auth', this.authContainer.authRoutes.getRouter());
-    this.app.use('/api/v1', this.serviceContainer.servicesRoutes.getRouter());
+    this.app.use('/api/v1/services', this.serviceContainer.servicesRoutes.getRouter());
 
-    // 404 handler
-    this.app.use('/*splat', (req, res) => {
+    this.app.use((req, res) => {
       res.status(404).json({
         success: false,
         message: `Route ${req.originalUrl} not found`,
