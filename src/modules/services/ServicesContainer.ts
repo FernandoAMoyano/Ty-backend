@@ -14,17 +14,20 @@ import { GetAvailableServicesForClient } from './application/use-cases/GetAvaila
 import { CategoryRepository } from './domain/repositories/CategoryRepository';
 import { ServiceRepository } from './domain/repositories/ServiceRepository';
 import { StylistServiceRepository } from './domain/repositories/StylistServiceRepository';
+import { StylistRepository } from './domain/repositories/StylistRepository';
 
 // Repositorios de infraestructura (implementaciones)
 import { PrismaCategoryRepository } from './infrastructure/persistence/PrismaCategoryRepository';
 import { PrismaServiceRepository } from './infrastructure/persistence/PrismaServiceRepository';
 import { PrismaStylistServiceRepository } from './infrastructure/persistence/PrismaStylistServiceRepository';
+import { PrismaStylistRepository } from './infrastructure/persistence/PrismaStylistRepository';
 
 // Capa de presentación
 import { CategoryController } from './presentation/controllers/CategoryController';
 import { ServiceController } from './presentation/controllers/ServiceController';
 import { StylistServiceController } from './presentation/controllers/StylistServiceController';
 import { ServicesRoutes } from './presentation/routes/ServicesRoutes';
+
 // Importar userRepository desde el módulo de autenticación
 import { UserRepository } from '../auth/domain/repositories/User';
 import { PrismaUserRepository } from '../auth/infrastructure/persistence/PrismaUserRepository';
@@ -72,6 +75,7 @@ export class ServicesContainer {
     const stylistServiceRepository: StylistServiceRepository = new PrismaStylistServiceRepository(
       this.prisma,
     );
+    const stylistRepository: StylistRepository = new PrismaStylistRepository(this.prisma);
     const userRepository: UserRepository = new PrismaUserRepository(this.prisma);
 
     // Servicios de aplicaciones
@@ -86,6 +90,7 @@ export class ServicesContainer {
       stylistServiceRepository,
       serviceRepository,
       userRepository,
+      stylistRepository,
     );
 
     // Casos de uso

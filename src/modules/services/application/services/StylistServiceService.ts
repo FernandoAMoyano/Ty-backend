@@ -1,6 +1,7 @@
 import { StylistService } from '../../domain/entities/StylistService';
 import { StylistServiceRepository } from '../../domain/repositories/StylistServiceRepository';
 import { ServiceRepository } from '../../domain/repositories/ServiceRepository';
+import { StylistRepository } from '../../domain/repositories/StylistRepository';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
@@ -16,6 +17,7 @@ export class StylistServiceService {
     private stylistServiceRepository: StylistServiceRepository,
     private serviceRepository: ServiceRepository,
     private userRepository: UserRepository,
+    private stylistRepository: StylistRepository,
   ) {}
 
   async assignServiceToStylist(
@@ -26,13 +28,14 @@ export class StylistServiceService {
     this.validateAssignServiceDto(assignDto);
 
     // Verificar que el estilista existe
-    const stylist = await this.userRepository.findById(stylistId);
+    const stylist = await this.stylistRepository.findById(stylistId);
     if (!stylist) {
       throw new NotFoundError('Stylist', stylistId);
     }
 
-    // Verificar que es un estilista
-    if (stylist.roleId !== 'STYLIST') {
+    // Verificar que el usuario asociado es estilista
+    const user = await this.userRepository.findById(stylist.userId);
+    if (!user || user.roleId !== 'STYLIST') {
       throw new ValidationError('User is not a stylist');
     }
 
@@ -68,6 +71,53 @@ export class StylistServiceService {
       service.duration,
       service.price,
     );
+  }
+
+  async getStylistServices(stylistId: string): Promise<StylistServiceDto[]> {
+    // Verificar que el estilista existe
+    const stylist = await this.stylistRepository.findById(stylistId);
+    if (!stylist) {
+      throw new NotFoundError('Stylist', stylistId);
+    }
+
+    const assignments = await this.stylistServiceRepository.findByStylist(stylistId);
+    return this.mapAssignmentsWithServiceInfo(assignments);
+  }
+
+  async getActiveOfferings(stylistId: string): Promise<StylistServiceDto[]> {
+    // Verificar que el estilista existe
+    const stylist = await this.stylistRepository.findById(stylistId);
+    if (!stylist) {
+      throw new NotFoundError('Stylist', stylistId);
+    }
+
+    const assignments = await this.stylistServiceRepository.findActiveOfferings(stylistId);
+    return this.mapAssignmentsWithServiceInfo(assignments);
+  }
+
+  async getStylistWithServices(stylistId: string): Promise<StylistWithServicesDto> {
+    // Verificar que el estilista existe
+    const stylist = await this.stylistRepository.findById(stylistId);
+    if (!stylist) {
+      throw new NotFoundError('Stylist', stylistId);
+    }
+
+    // Obtener información del usuario asociado
+    const user = await this.userRepository.findById(stylist.userId);
+    if (!user) {
+      throw new NotFoundError('User', stylist.userId);
+    }
+
+    const assignments = await this.stylistServiceRepository.findByStylist(stylistId);
+    const services = await this.mapAssignmentsWithServiceInfo(assignments);
+
+    return {
+      stylistId: stylist.id,
+      stylistName: user.name,
+      stylistEmail: user.email,
+      services,
+      totalServicesOffered: services.filter((s) => s.isOffering).length,
+    };
   }
 
   async updateStylistService(
@@ -127,28 +177,6 @@ export class StylistServiceService {
     await this.stylistServiceRepository.delete(stylistId, serviceId);
   }
 
-  async getStylistServices(stylistId: string): Promise<StylistServiceDto[]> {
-    // Verificar que el estilista existe
-    const stylist = await this.userRepository.findById(stylistId);
-    if (!stylist) {
-      throw new NotFoundError('Stylist', stylistId);
-    }
-
-    const assignments = await this.stylistServiceRepository.findByStylist(stylistId);
-    return this.mapAssignmentsWithServiceInfo(assignments);
-  }
-
-  async getActiveOfferings(stylistId: string): Promise<StylistServiceDto[]> {
-    // Verificar que el estilista existe
-    const stylist = await this.userRepository.findById(stylistId);
-    if (!stylist) {
-      throw new NotFoundError('Stylist', stylistId);
-    }
-
-    const assignments = await this.stylistServiceRepository.findActiveOfferings(stylistId);
-    return this.mapAssignmentsWithServiceInfo(assignments);
-  }
-
   async getServiceStylists(serviceId: string): Promise<StylistServiceDto[]> {
     // Verificar que el servicio existe
     const service = await this.serviceRepository.findById(serviceId);
@@ -185,25 +213,6 @@ export class StylistServiceService {
         service.price,
       ),
     );
-  }
-
-  async getStylistWithServices(stylistId: string): Promise<StylistWithServicesDto> {
-    // Verificar que el estilista existe
-    const stylist = await this.userRepository.findById(stylistId);
-    if (!stylist) {
-      throw new NotFoundError('Stylist', stylistId);
-    }
-
-    const assignments = await this.stylistServiceRepository.findByStylist(stylistId);
-    const services = await this.mapAssignmentsWithServiceInfo(assignments);
-
-    return {
-      stylistId: stylist.id,
-      stylistName: stylist.name,
-      stylistEmail: stylist.email,
-      services,
-      totalServicesOffered: services.filter((s) => s.isOffering).length,
-    };
   }
 
   async getServiceWithStylists(serviceId: string): Promise<ServiceWithStylistsDto> {
