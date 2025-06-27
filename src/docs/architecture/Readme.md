@@ -15,8 +15,8 @@ Documentación de la arquitectura del sistema basada en **Clean Architecture** y
 
 
 
-# Visión General
----
+# 🟣Visión General
+
 - [Índice](#índice)
 
 Turnity Backend implementa una **arquitectura hexagonal** (Clean Architecture) que prioriza:
@@ -56,8 +56,8 @@ Turnity Backend implementa una **arquitectura hexagonal** (Clean Architecture) q
 
 
 
-# Principios Arquitectónicos
----
+# 🟣Principios Arquitectónicos
+
 - [Índice](#índice)
 
 ### 1. **Dependency Rule**
@@ -106,8 +106,8 @@ class SMSNotificationService implements NotificationService {}
 
 
 
-# Estructura de Módulos
----
+# 🟣Estructura de Módulos
+
 - [Índice](#índice)
 
 Cada módulo sigue la misma estructura estándar:
@@ -160,8 +160,8 @@ src/modules/auth/
 ```
 
 
-# Flujo de Datos
----
+# 🟣Flujo de Datos
+
 - [Índice](#índice)
 
 
@@ -209,8 +209,8 @@ class PrismaUserRepository {
 
 
 
-# Capas del Sistema
----
+# 🟣Capas del Sistema
+
 - [Índice](#índice)
 
 ### 1. **Presentation Layer**
@@ -342,8 +342,8 @@ class JwtTokenService implements JwtService {
 
 
 
-## Inyección de Dependencias
----
+### 5. Inyección de Dependencias
+
 - [Índice](#índice)
 
 
@@ -378,8 +378,8 @@ export class AuthContainer {
 
 
 
-# Patrones Utilizados
----
+# 🟣Patrones Utilizados
+
 
 - [Índice](#índice)
 
@@ -436,7 +436,7 @@ class LoginUser {
 - [Índice](#índice)
 
 
-##  Beneficios de esta Arquitectura
+###  Beneficios de esta Arquitectura
 ---
 
 ###  **Mantenibilidad**

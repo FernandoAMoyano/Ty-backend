@@ -27,8 +27,8 @@ Documentación completa de la API REST de Turnity Backend.
 12. [Próximas Funcionalidades](#próximas-funcionalidades)
 
 
-# Base URL
----
+# 🟣Base URL
+
 - [Índice](#índice)
 
 
@@ -38,8 +38,8 @@ http://localhost:3000/api/v1
 
 
 
-# Autenticación
----
+# 🟣Autenticación
+
 - [Índice](#índice)
 
 La API utiliza **JWT (JSON Web Tokens)** para autenticación.
@@ -52,8 +52,8 @@ Content-Type: application/json
 
 
 
-# Auth Endpoints
----
+# 🟣Auth Endpoints
+
 - [Índice](#índice)
 
 
@@ -374,8 +374,8 @@ Content-Type: application/json
 
 
 
-# Códigos de Estado HTTP
----
+# 🟣Códigos de Estado HTTP
+
 
 - [Índice](#índice)
 
@@ -402,8 +402,8 @@ Content-Type: application/json
 
 
 
-# Validaciones
----
+# 🟣Validaciones
+
 - [Índice](#índice)
 
 
@@ -429,8 +429,8 @@ Content-Type: application/json
 
 
 
-# Headers de Response
----
+# 🟣Headers de Response
+
 
 - [Índice](#índice)
 
@@ -441,15 +441,15 @@ Content-Type: application/json
 X-Powered-By: Express
 ```
 
-# Rate Limiting
----
+# 🟣Rate Limiting
+
 
 - [Índice](#índice)
 <br>
 - **Límite general:** 100 requests por minuto por IP
 - **Login/Register:** 5 intentos por minuto por IP
 
-## Testing con cURL
+# 🟣Testing con cURL
 
 ### **Registrar cliente (rol por defecto):**
 ```bash
@@ -492,8 +492,8 @@ curl -X GET http://localhost:3000/api/v1/auth/profile \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-# Usuarios de Prueba (Seed Data)
----
+# 🟣Usuarios de Prueba (Seed Data)
+
 
 - [Índice](#índice)
 
@@ -545,8 +545,8 @@ Para testing rápido, puedes usar estos usuarios que se crean automáticamente:
 ```
 
 
-# Ejemplos de Flujo Completo
----
+# 🟣Ejemplos de Flujo Completo
+
 
 - [Índice](#índice)
 
@@ -596,8 +596,8 @@ POST /auth/login
 
 
 
-## Próximas Funcionalidades
----
+# 🟣Próximas Funcionalidades
+
 
 - [Índice](#índice)
 
