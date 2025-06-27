@@ -56,7 +56,7 @@ class App {
     setupSwagger(this.app);
 
     this.app.use('/api/v1/auth', this.authContainer.authRoutes.getRouter());
-    this.app.use('/api/v1/services', this.serviceContainer.servicesRoutes.getRouter());
+    this.app.use('/api/v1', this.serviceContainer.servicesRoutes.getRouter());
 
     this.app.use((req, res) => {
       res.status(404).json({
