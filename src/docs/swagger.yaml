@@ -1,34 +1,11 @@
 openapi: 3.0.3
 info:
   title: Turnity Backend API
-  description: |
-    API REST completa para Turnity - Sistema de gestión de citas para salones de belleza.
-    
-    ## Características principales:
-    - Autenticación JWT con refresh tokens
-    - Sistema de roles (CLIENT, STYLIST, ADMIN)
-    - Gestión de perfiles de usuario
-    - Validaciones robustas de seguridad
-    
-    ## Flujo de autenticación:
-    1. **Registro** - Crear cuenta con rol automático (CLIENT) o específico
-    2. **Login** - Obtener tokens de acceso y refresh
-    3. **Uso** - Acceder a endpoints protegidos con token
-    4. **Renovación** - Renovar tokens cuando expiren
-    
-    ## Roles disponibles:
-    - **CLIENT** - Cliente que puede agendar citas (rol por defecto)
-    - **STYLIST** - Estilista que ofrece servicios  
-    - **ADMIN** - Administrador del sistema
-    
+  description: API REST para Turnity - Sistema de gestión de citas para salones de belleza
   version: 1.0.0
   contact:
     name: Turnity API Support
     email: fernandomoyano21@gmail.com
-    url: https://github.com/FernandoAMoyano/Ty-backend
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
 
 servers:
   - url: http://localhost:3000/api/v1
@@ -40,174 +17,11 @@ security:
   - BearerAuth: []
 
 paths:
+  # AUTHENTICATION
   /auth/register:
     post:
-      tags:
-        - Authentication
+      tags: [Authentication]
       summary: Registrar nuevo usuario
-      description: |
-        Crea una nueva cuenta de usuario en el sistema.
-        
-        **Comportamiento de roles:**
-        - Si no se especifica `roleName`, se asigna automáticamente `CLIENT`
-        - Los roles son case-insensitive ("client", "CLIENT", "Client" son válidos)
-        - Se normaliza automáticamente a mayúsculas
-        
-        **Validaciones aplicadas:**
-        - Email único en el sistema
-        - Contraseña segura (8+ chars, mayús, minús, número, especial)
-        - Teléfono en formato internacional
-        - Rol válido (CLIENT, STYLIST, ADMIN)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterRequest'
-            examples:
-              cliente_default:
-                summary: Cliente con rol por defecto
-                description: Registro básico sin especificar rol (será CLIENT)
-                value:
-                  name: "Ana López"
-                  email: "ana.lopez@example.com"
-                  phone: "+5491123456789"
-                  password: "MiPassword123!"
-              estilista:
-                summary: Estilista con rol específico
-                description: Registro de estilista especificando roleName
-                value:
-                  name: "Elena Martínez"
-                  email: "elena.martinez@example.com"
-                  phone: "+5491198765432"
-                  password: "StylistPass123!"
-                  roleName: "STYLIST"
-              admin:
-                summary: Administrador
-                description: Registro de administrador
-                value:
-                  name: "Roberto Admin"
-                  email: "roberto.admin@example.com"
-                  phone: "+5491167890123"
-                  password: "AdminPass123!"
-                  roleName: "ADMIN"
-      responses:
-        '201':
-          description: Usuario registrado exitosamente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RegisterResponse'
-              examples:
-                cliente_registrado:
-                  summary: Cliente registrado con éxito
-                  value:
-                    success: true
-                    data:
-                      id: "550e8400-e29b-41d4-a716-446655440000"
-                      name: "Ana López"
-                      email: "ana.lopez@example.com"
-                      phone: "+5491123456789"
-                      isActive: true
-                      role:
-                        id: "role-uuid"
-                        name: "CLIENT"
-                        description: "Cliente que puede agendar citas"
-                      createdAt: "2025-06-16T10:30:00.000Z"
-                      updatedAt: "2025-06-16T10:30:00.000Z"
-                    message: "User registered successfully"
-        '400':
-          description: Datos de entrada inválidos
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                rol_invalido:
-                  summary: Rol inválido
-                  value:
-                    success: false
-                    message: "Invalid role: INVALID_ROLE. Valid roles are: CLIENT, STYLIST, ADMIN"
-                    code: "VALIDATION_ERROR"
-                password_debil:
-                  summary: Contraseña débil
-                  value:
-                    success: false
-                    message: "Password must be at least 8 characters long and contain uppercase, lowercase, and number"
-                    code: "VALIDATION_ERROR"
-        '409':
-          description: Email ya existe
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                message: "Email already exists"
-                code: "CONFLICT"
-
-  /auth/login:
-    post:
-      tags:
-        - Authentication
-      summary: Iniciar sesión
-      description: |
-        Autentica un usuario y retorna tokens de acceso.
-        
-        **Tokens retornados:**
-        - `token` - JWT de acceso (15 minutos de duración)
-        - `refreshToken` - Token para renovar acceso (7 días de duración)
-        
-        **Importante:** Guarda ambos tokens de forma segura.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-            examples:
-              login_cliente:
-                summary: Login de cliente
-                value:
-                  email: "ana.lopez@example.com"
-                  password: "MiPassword123!"
-              login_admin_seed:
-                summary: Login con admin del seed
-                value:
-                  email: "admin@turnity.com"
-                  password: "admin123"
-      responses:
-        '200':
-          description: Login exitoso
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '401':
-          description: Credenciales inválidas
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                message: "Invalid credentials"
-                code: "UNAUTHORIZED"
-
-  /auth/refresh-token:
-    post:
-      tags:
-        - Authentication
-      summary: Renovar token de acceso
-      description: |
-        Renueva el token de acceso usando el refresh token.
-        
-        **Cuándo usar:**
-        - Cuando el token de acceso expire (error 401)
-        - Antes de que expire para mantener sesión activa
-        
-        **Resultado:** Nuevos tokens de acceso y refresh.
       security: []
       requestBody:
         required: true
@@ -215,120 +29,60 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - refreshToken
+              required: [name, email, phone, password]
               properties:
-                refreshToken:
+                name:
                   type: string
-                  description: Refresh token obtenido en el login
-                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  example: "Ana López"
+                email:
+                  type: string
+                  format: email
+                  example: "ana.lopez@example.com"
+                phone:
+                  type: string
+                  example: "+5491123456789"
+                password:
+                  type: string
+                  example: "MiPassword123!"
+                roleName:
+                  type: string
+                  enum: [CLIENT, STYLIST, ADMIN]
+                  example: "CLIENT"
       responses:
-        '200':
-          description: Token renovado exitosamente
+        '201':
+          description: Usuario registrado exitosamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '401':
-          description: Refresh token inválido o expirado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /auth/profile:
-    get:
-      tags:
-        - Profile Management
-      summary: Obtener perfil del usuario
-      description: |
-        Retorna la información completa del perfil del usuario autenticado.
-        
-        **Información incluida:**
-        - Datos personales (nombre, email, teléfono)
-        - Información del rol
-        - Estado de la cuenta
-        - Fechas de creación y actualización
-      responses:
-        '200':
-          description: Perfil obtenido exitosamente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProfileResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-    
-    put:
-      tags:
-        - Profile Management
-      summary: Actualizar perfil del usuario
-      description: |
-        Actualiza la información del perfil del usuario autenticado.
-        
-        **Campos actualizables:**
-        - Nombre completo
-        - Número de teléfono
-        - Foto de perfil (URL)
-        
-        **No se puede cambiar:**
-        - Email (es único e inmutable)
-        - Rol (requiere permisos de admin)
-        - ID de usuario
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateProfileRequest'
-            examples:
-              actualizacion_completa:
-                summary: Actualización completa
-                value:
-                  name: "Ana María López Updated"
-                  phone: "+5491987654321"
-                  profilePicture: "https://example.com/new-photo.jpg"
-              solo_nombre:
-                summary: Solo actualizar nombre
-                value:
-                  name: "Ana María López"
-      responses:
-        '200':
-          description: Perfil actualizado exitosamente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProfileResponse'
+                $ref: '#/components/schemas/SuccessResponse'
         '400':
-          description: Datos de entrada inválidos
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
+          $ref: '#/components/responses/Error400'
+        '409':
+          $ref: '#/components/responses/Error409'
 
-  /auth/change-password:
-    put:
-      tags:
-        - Profile Management
-      summary: Cambiar contraseña
-      description: |
-        Cambia la contraseña del usuario autenticado.
-        
-        **Seguridad:**
-        - Requiere contraseña actual para verificación
-        - La nueva contraseña debe cumplir políticas de seguridad
-        - Se invalidan todas las sesiones activas
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Iniciar sesión
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "ana.lopez@example.com"
+                password:
+                  type: string
+                  example: "MiPassword123!"
       responses:
         '200':
-          description: Contraseña cambiada exitosamente
+          description: Login exitoso
           content:
             application/json:
               schema:
@@ -339,19 +93,952 @@ paths:
                     example: true
                   message:
                     type: string
-                    example: "Password changed successfully"
-        '400':
-          description: Nueva contraseña inválida
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                    example: "Login successful"
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      refreshToken:
+                        type: string
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            example: "123e4567-e89b-12d3-a456-426614174000"
+                          name:
+                            type: string
+                            example: "Ana López"
+                          email:
+                            type: string
+                            example: "ana.lopez@example.com"
         '401':
-          description: Contraseña actual incorrecta o no autorizado
+          $ref: '#/components/responses/Error401'
+
+  /auth/refresh-token:
+    post:
+      tags: [Authentication]
+      summary: Renovar token de acceso
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Token renovado exitosamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  /auth/profile:
+    get:
+      tags: [Authentication]
+      summary: Obtener perfil del usuario
+      responses:
+        '200':
+          description: Perfil obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+    
+    put:
+      tags: [Authentication]
+      summary: Actualizar perfil del usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Ana María López"
+                phone:
+                  type: string
+                  example: "+5491987654321"
+                profilePicture:
+                  type: string
+                  example: "https://example.com/photo.jpg"
+      responses:
+        '200':
+          description: Perfil actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  /auth/change-password:
+    put:
+      tags: [Authentication]
+      summary: Cambiar contraseña
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                  example: "MiPassword123!"
+                newPassword:
+                  type: string
+                  example: "NuevoPassword456!"
+      responses:
+        '200':
+          description: Contraseña cambiada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  # CATEGORIES
+  /services/categories:
+    get:
+      tags: [Categories]
+      summary: Obtener todas las categorías
+      security: []
+      responses:
+        '200':
+          description: Categorías obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Categories retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+
+    post:
+      tags: [Categories]
+      summary: Crear nueva categoría
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: "Tratamientos Faciales"
+                description:
+                  type: string
+                  example: "Servicios de cuidado facial"
+      responses:
+        '201':
+          description: Categoría creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+
+  /services/categories/active:
+    get:
+      tags: [Categories]
+      summary: Obtener categorías activas
+      security: []
+      responses:
+        '200':
+          description: Categorías activas obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Active categories retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+
+  /services/categories/{id}:
+    get:
+      tags: [Categories]
+      summary: Obtener categoría por ID
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Categoría obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+    put:
+      tags: [Categories]
+      summary: Actualizar categoría
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Corte y Peinado Premium"
+                description:
+                  type: string
+                  example: "Servicios premium de corte"
+      responses:
+        '200':
+          description: Categoría actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+
+    delete:
+      tags: [Categories]
+      summary: Eliminar categoría
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Categoría eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/categories/{id}/activate:
+    patch:
+      tags: [Categories]
+      summary: Activar categoría
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Categoría activada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/categories/{id}/deactivate:
+    patch:
+      tags: [Categories]
+      summary: Desactivar categoría
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Categoría desactivada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  # SERVICES
+  /services/services:
+    get:
+      tags: [Services]
+      summary: Obtener todos los servicios
+      security: []
+      responses:
+        '200':
+          description: Servicios obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Services retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+
+    post:
+      tags: [Services]
+      summary: Crear nuevo servicio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [categoryId, name, description, duration, durationVariation, price]
+              properties:
+                categoryId:
+                  type: string
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                name:
+                  type: string
+                  example: "Corte Clásico Hombre"
+                description:
+                  type: string
+                  example: "Corte tradicional con tijera y máquina"
+                duration:
+                  type: integer
+                  example: 45
+                durationVariation:
+                  type: integer
+                  example: 15
+                price:
+                  type: number
+                  example: 25.00
+      responses:
+        '201':
+          description: Servicio creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+
+  /services/services/active:
+    get:
+      tags: [Services]
+      summary: Obtener servicios activos
+      security: []
+      responses:
+        '200':
+          description: Servicios activos obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Active services retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+
+  /services/services/{id}:
+    get:
+      tags: [Services]
+      summary: Obtener servicio por ID
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Servicio obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+    put:
+      tags: [Services]
+      summary: Actualizar servicio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                categoryId:
+                  type: string
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                name:
+                  type: string
+                  example: "Corte Premium Hombre"
+                description:
+                  type: string
+                  example: "Corte premium con tratamiento"
+                duration:
+                  type: integer
+                  example: 60
+                durationVariation:
+                  type: integer
+                  example: 20
+                price:
+                  type: number
+                  example: 30.00
+      responses:
+        '200':
+          description: Servicio actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+
+    delete:
+      tags: [Services]
+      summary: Eliminar servicio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Servicio eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/services/category/{categoryId}:
+    get:
+      tags: [Services]
+      summary: Servicios por categoría
+      security: []
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Servicios de categoría obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Services by category retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/services/category/{categoryId}/active:
+    get:
+      tags: [Services]
+      summary: Servicios activos por categoría
+      security: []
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Servicios activos de categoría obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Active services by category retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/services/{id}/activate:
+    patch:
+      tags: [Services]
+      summary: Activar servicio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Servicio activado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/services/{id}/deactivate:
+    patch:
+      tags: [Services]
+      summary: Desactivar servicio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Servicio desactivado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  # STYLIST SERVICES
+  /services/stylists/{stylistId}/services:
+    get:
+      tags: [Stylist Services]
+      summary: Servicios de un estilista
+      security: []
+      parameters:
+        - name: stylistId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Servicios del estilista obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Stylist services retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StylistService'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+    post:
+      tags: [Stylist Services]
+      summary: Asignar servicio a estilista
+      parameters:
+        - name: stylistId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [serviceId]
+              properties:
+                serviceId:
+                  type: string
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                customPrice:
+                  type: number
+                  example: 35.00
+      responses:
+        '201':
+          description: Servicio asignado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+
+  /services/stylists/{stylistId}/services/active:
+    get:
+      tags: [Stylist Services]
+      summary: Servicios que ofrece activamente
+      security: []
+      parameters:
+        - name: stylistId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Servicios activos del estilista obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Active stylist offerings retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StylistService'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/stylists/{stylistId}/services/detailed:
+    get:
+      tags: [Stylist Services]
+      summary: Estilista con servicios detallados
+      security: []
+      parameters:
+        - name: stylistId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Estilista con servicios obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/stylists/{stylistId}/services/{serviceId}:
+    put:
+      tags: [Stylist Services]
+      summary: Actualizar relación estilista-servicio
+      parameters:
+        - name: stylistId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customPrice:
+                  type: number
+                  example: 40.00
+                isOffering:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Relación actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+    delete:
+      tags: [Stylist Services]
+      summary: Remover servicio de estilista
+      parameters:
+        - name: stylistId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Servicio removido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/services/{serviceId}/stylists:
+    get:
+      tags: [Stylist Services]
+      summary: Estilistas de un servicio
+      security: []
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Estilistas del servicio obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Service stylists retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StylistService'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/services/{serviceId}/stylists/offering:
+    get:
+      tags: [Stylist Services]
+      summary: Estilistas que ofrecen el servicio
+      security: []
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Estilistas que ofrecen el servicio obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Stylists offering service retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StylistService'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/services/{serviceId}/stylists/detailed:
+    get:
+      tags: [Stylist Services]
+      summary: Servicio con estilistas detallados
+      security: []
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Servicio con estilistas obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/Error404'
 
 components:
   securitySchemes:
@@ -359,227 +1046,19 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: |
-        JWT token obtenido del endpoint `/auth/login`.
-        
-        **Formato:** `Authorization: Bearer <token>`
-        
-        **Duración:** 15 minutos (usar refresh token para renovar)
 
   schemas:
-    RegisterRequest:
-      type: object
-      required:
-        - name
-        - email
-        - phone
-        - password
-      properties:
-        name:
-          type: string
-          description: Nombre completo del usuario
-          example: "Ana López"
-          minLength: 1
-          maxLength: 100
-        email:
-          type: string
-          format: email
-          description: Email único (se normaliza a minúsculas)
-          example: "ana.lopez@example.com"
-        phone:
-          type: string
-          description: Teléfono en formato internacional
-          example: "+5491123456789"
-          pattern: '^\+[1-9]\d{1,14}$'
-        password:
-          type: string
-          description: Contraseña segura (8+ chars, mayús, minús, número, especial)
-          example: "MiPassword123!"
-          minLength: 8
-        roleName:
-          type: string
-          description: Rol del usuario (opcional, default: CLIENT)
-          enum: [CLIENT, STYLIST, ADMIN]
-          example: "CLIENT"
-        profilePicture:
-          type: string
-          format: uri
-          description: URL de la foto de perfil (opcional)
-          example: "https://example.com/photo.jpg"
-
-    RegisterResponse:
+    SuccessResponse:
       type: object
       properties:
         success:
           type: boolean
           example: true
-        data:
-          $ref: '#/components/schemas/UserProfile'
         message:
           type: string
-          example: "User registered successfully"
-
-    LoginRequest:
-      type: object
-      required:
-        - email
-        - password
-      properties:
-        email:
-          type: string
-          format: email
-          description: Email del usuario
-          example: "ana.lopez@example.com"
-        password:
-          type: string
-          description: Contraseña del usuario
-          example: "MiPassword123!"
-
-    LoginResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
+          example: "Operation completed successfully"
         data:
           type: object
-          properties:
-            token:
-              type: string
-              description: JWT token de acceso (15 min)
-              example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-            refreshToken:
-              type: string
-              description: Token para renovar acceso (7 días)
-              example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-            user:
-              type: object
-              properties:
-                id:
-                  type: string
-                  format: uuid
-                  example: "550e8400-e29b-41d4-a716-446655440000"
-                name:
-                  type: string
-                  example: "Ana López"
-                email:
-                  type: string
-                  example: "ana.lopez@example.com"
-                role:
-                  $ref: '#/components/schemas/Role'
-        message:
-          type: string
-          example: "Login successful"
-
-    ProfileResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        data:
-          $ref: '#/components/schemas/UserProfile'
-        message:
-          type: string
-          example: "Profile retrieved successfully"
-
-    UpdateProfileRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Nuevo nombre completo
-          example: "Ana María López Updated"
-          minLength: 1
-          maxLength: 100
-        phone:
-          type: string
-          description: Nuevo teléfono
-          example: "+5491987654321"
-          pattern: '^\+[1-9]\d{1,14}$'
-        profilePicture:
-          type: string
-          format: uri
-          description: Nueva URL de foto de perfil
-          example: "https://example.com/new-photo.jpg"
-
-    ChangePasswordRequest:
-      type: object
-      required:
-        - currentPassword
-        - newPassword
-      properties:
-        currentPassword:
-          type: string
-          description: Contraseña actual para verificación
-          example: "MiPassword123!"
-        newPassword:
-          type: string
-          description: Nueva contraseña segura
-          example: "NuevoPassword456!"
-          minLength: 8
-
-    UserProfile:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: ID único del usuario
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        name:
-          type: string
-          description: Nombre completo
-          example: "Ana López"
-        email:
-          type: string
-          format: email
-          description: Email único
-          example: "ana.lopez@example.com"
-        phone:
-          type: string
-          description: Teléfono
-          example: "+5491123456789"
-        isActive:
-          type: boolean
-          description: Estado de la cuenta
-          example: true
-        profilePicture:
-          type: string
-          format: uri
-          description: URL de foto de perfil
-          example: "https://example.com/photo.jpg"
-          nullable: true
-        role:
-          $ref: '#/components/schemas/Role'
-        createdAt:
-          type: string
-          format: date-time
-          description: Fecha de creación
-          example: "2025-06-16T10:30:00.000Z"
-        updatedAt:
-          type: string
-          format: date-time
-          description: Fecha de última actualización
-          example: "2025-06-16T10:30:00.000Z"
-
-    Role:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: ID único del rol
-          example: "role-uuid"
-        name:
-          type: string
-          description: Nombre del rol
-          enum: [CLIENT, STYLIST, ADMIN]
-          example: "CLIENT"
-        description:
-          type: string
-          description: Descripción del rol
-          example: "Cliente que puede agendar citas"
 
     ErrorResponse:
       type: object
@@ -589,21 +1068,132 @@ components:
           example: false
         message:
           type: string
-          description: Mensaje descriptivo del error
-          example: "Email already exists"
+          example: "Error description"
         code:
           type: string
-          description: Código de error específico
-          enum: 
-            - VALIDATION_ERROR
-            - CONFLICT
-            - UNAUTHORIZED
-            - NOT_FOUND
-            - INTERNAL_ERROR
-          example: "CONFLICT"
+          example: "ERROR_CODE"
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Corte de Cabello"
+        description:
+          type: string
+          example: "Servicios de corte y peinado"
+        isActive:
+          type: boolean
+          example: true
+        servicesCount:
+          type: integer
+          example: 5
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Corte Clásico Hombre"
+        description:
+          type: string
+          example: "Corte tradicional para hombre"
+        duration:
+          type: integer
+          example: 45
+        durationVariation:
+          type: integer
+          example: 15
+        minDuration:
+          type: integer
+          example: 30
+        maxDuration:
+          type: integer
+          example: 60
+        price:
+          type: integer
+          example: 2500
+        formattedPrice:
+          type: string
+          example: "25.00"
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    StylistService:
+      type: object
+      properties:
+        stylistId:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        serviceId:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        serviceName:
+          type: string
+          example: "Corte Clásico Hombre"
+        serviceDescription:
+          type: string
+          example: "Corte tradicional para hombre"
+        baseDuration:
+          type: integer
+          example: 45
+        basePrice:
+          type: integer
+          example: 2500
+        customPrice:
+          type: integer
+          example: 3000
+        effectivePrice:
+          type: integer
+          example: 3000
+        formattedEffectivePrice:
+          type: string
+          example: "30.00"
+        isOffering:
+          type: boolean
+          example: true
+        hasCustomPrice:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
   responses:
-    UnauthorizedError:
+    Error400:
+      description: Datos de entrada inválidos
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Validation failed"
+            code: "VALIDATION_ERROR"
+
+    Error401:
       description: Token no válido o faltante
       content:
         application/json:
@@ -614,56 +1204,48 @@ components:
             message: "Invalid or missing token"
             code: "UNAUTHORIZED"
 
+    Error403:
+      description: Permisos insuficientes
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Insufficient permissions"
+            code: "FORBIDDEN"
+
+    Error404:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Resource not found"
+            code: "NOT_FOUND"
+
+    Error409:
+      description: Conflicto con datos existentes
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Resource already exists"
+            code: "CONFLICT"
+
 tags:
   - name: Authentication
-    description: |
-      Endpoints para autenticación y gestión de sesiones.
+    description: Endpoints para autenticación y gestión de sesiones
+    
+  - name: Categories
+    description: Gestión de categorías de servicios (Consulta pública, modificación solo ADMIN)
       
-      **Flujo típico:**
-      1. Registrar usuario con `/auth/register`
-      2. Autenticarse con `/auth/login` 
-      3. Usar token en requests protegidos
-      4. Renovar token con `/auth/refresh-token` cuando expire
-      
-  - name: Profile Management
-    description: |
-      Gestión de perfiles de usuario autenticados.
-      
-      **Funcionalidades:**
-      - Ver información del perfil
-      - Actualizar datos personales
-      - Cambiar contraseña de forma segura
+  - name: Services  
+    description: Gestión de servicios del salón (Consulta pública, modificación solo ADMIN)
 
-externalDocs:
-  description: Documentación completa en GitHub
-  url: https://github.com/tu-repo/turnity-backend
-
-
-x-code-samples:
-  - lang: curl
-    label: "Registro de cliente"
-    source: |
-      curl -X POST http://localhost:3000/api/v1/auth/register \
-        -H "Content-Type: application/json" \
-        -d '{
-          "name": "Ana López",
-          "email": "ana.lopez@example.com", 
-          "phone": "+5491123456789",
-          "password": "MiPassword123!"
-        }'
-  
-  - lang: curl
-    label: "Login"
-    source: |
-      curl -X POST http://localhost:3000/api/v1/auth/login \
-        -H "Content-Type: application/json" \
-        -d '{
-          "email": "ana.lopez@example.com",
-          "password": "MiPassword123!"
-        }'
-        
-  - lang: curl
-    label: "Obtener perfil"
-    source: |
-      curl -X GET http://localhost:3000/api/v1/auth/profile \
-        -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  - name: Stylist Services
+    description: Relación entre estilistas y servicios (Consulta pública, modificación ADMIN/STYLIST)

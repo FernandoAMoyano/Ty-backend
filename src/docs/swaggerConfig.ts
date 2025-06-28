@@ -1,4 +1,3 @@
-import swaggerJsdoc from 'swagger-jsdoc';
 import YAML from 'yamljs';
 import path from 'path';
 
@@ -10,7 +9,7 @@ try {
   swaggerSpec = YAML.load(swaggerYamlPath);
 } catch (error) {
   console.error('Error loading swagger.yaml:', error);
-  // Fallback: especificación básica si no encuentra el archivo
+  // especificación básica si no encuentra el archivo
   swaggerSpec = {
     openapi: '3.0.3',
     info: {
@@ -41,21 +40,13 @@ if (process.env.NODE_ENV === 'development') {
   }
 }
 
-// Opciones para swagger-jsdoc
-const swaggerOptions: swaggerJsdoc.Options = {
-  definition: swaggerSpec,
-  apis: ['./src/routes/*.ts', './src/modules/*/presentation/routes/*.ts'],
-};
-
-// Generar especificación final
-export const swaggerSpecification = swaggerJsdoc(swaggerOptions);
+export const swaggerSpecification = swaggerSpec;
 
 export const swaggerUiOptions = {
   swaggerOptions: {
     docExpansion: 'list',
     persistAuthorization: true,
   },
-
   customCss: `
     .swagger-ui .opblock-tag {
       flex-direction:column !important;
@@ -63,11 +54,9 @@ export const swaggerUiOptions = {
       text-align: left !important;
     }
   `,
-
   customSiteTitle: 'Turnity API Documentation',
 };
 
-// Información adicional para logs
 export const swaggerInfo = {
   title: swaggerSpec.info?.title || 'Turnity API',
   version: swaggerSpec.info?.version || '1.0.0',
