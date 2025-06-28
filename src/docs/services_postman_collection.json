@@ -202,6 +202,24 @@
               "path": ["categories", "{{category_id}}", "activate"]
             }
           }
+        },
+        {
+          "name": "Delete Category (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "{{category_id}}"]
+            }
+          }
         }
       ]
     },
@@ -260,6 +278,18 @@
               "raw": "{{base_url}}/services/category/{{category_id}}",
               "host": ["{{base_url}}"],
               "path": ["services", "category", "{{category_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Services by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/services/category/{{category_id}}/active",
+              "host": ["{{base_url}}"],
+              "path": ["services", "category", "{{category_id}}", "active"]
             }
           }
         },
@@ -373,6 +403,24 @@
               "raw": "{{base_url}}/services/{{service_id}}/activate",
               "host": ["{{base_url}}"],
               "path": ["services", "{{service_id}}", "activate"]
+            }
+          }
+        },
+        {
+          "name": "Delete Service (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/services/{{service_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["services", "{{service_id}}"]
             }
           }
         }
