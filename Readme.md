@@ -91,8 +91,8 @@ El proyecto sigue **Clean Architecture** con estas capas:
 
 ```
 src/modules/[module]/
-├── presentation/     # Controllers, Routes, DTOs
-├── application/      # Use Cases, Services  
+├── presentation/     # Controllers, Routes
+├── application/      # Use Cases, Services, DTOs  
 ├── domain/           # Entities, Repository Interfaces
 ├── infrastructure/   # DB, External Services
 └── container.ts      # Dependency Injection
