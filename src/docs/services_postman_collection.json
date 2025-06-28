@@ -72,9 +72,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/categories",
+              "raw": "{{base_url}}/categories",
               "host": ["{{base_url}}"],
-              "path": ["services", "categories"]
+              "path": ["categories"]
             }
           }
         },
@@ -84,9 +84,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/categories/active",
+              "raw": "{{base_url}}/categories/active",
               "host": ["{{base_url}}"],
-              "path": ["services", "categories", "active"]
+              "path": ["categories", "active"]
             }
           }
         },
@@ -96,9 +96,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/categories/{{category_id}}",
+              "raw": "{{base_url}}/categories/{{category_id}}",
               "host": ["{{base_url}}"],
-              "path": ["services", "categories", "{{category_id}}"]
+              "path": ["categories", "{{category_id}}"]
             }
           }
         },
@@ -135,9 +135,9 @@
               "raw": "{\n  \"name\": \"Cabello & Estilismo\",\n  \"description\": \"Servicios profesionales de corte, peinado y tratamientos capilares\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/services/categories",
+              "raw": "{{base_url}}/categories",
               "host": ["{{base_url}}"],
-              "path": ["services", "categories"]
+              "path": ["categories"]
             }
           }
         },
@@ -161,9 +161,9 @@
               "raw": "{\n  \"name\": \"Cabello & Estilismo Actualizada\",\n  \"description\": \"Servicios profesionales de corte, peinado y tratamientos capilares - Descripción actualizada\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/services/categories/{{category_id}}",
+              "raw": "{{base_url}}/categories/{{category_id}}",
               "host": ["{{base_url}}"],
-              "path": ["services", "categories", "{{category_id}}"]
+              "path": ["categories", "{{category_id}}"]
             }
           }
         },
@@ -179,9 +179,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/services/categories/{{category_id}}/deactivate",
+              "raw": "{{base_url}}/categories/{{category_id}}/deactivate",
               "host": ["{{base_url}}"],
-              "path": ["services", "categories", "{{category_id}}", "deactivate"]
+              "path": ["categories", "{{category_id}}", "deactivate"]
             }
           }
         },
@@ -197,9 +197,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/services/categories/{{category_id}}/activate",
+              "raw": "{{base_url}}/categories/{{category_id}}/activate",
               "host": ["{{base_url}}"],
-              "path": ["services", "categories", "{{category_id}}", "activate"]
+              "path": ["categories", "{{category_id}}", "activate"]
             }
           }
         },
@@ -215,9 +215,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/services/categories/{{category_id}}",
+              "raw": "{{base_url}}/categories/{{category_id}}",
               "host": ["{{base_url}}"],
-              "path": ["services", "categories", "{{category_id}}"]
+              "path": ["categories", "{{category_id}}"]
             }
           }
         }
@@ -251,9 +251,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/services",
+              "raw": "{{base_url}}/services",
               "host": ["{{base_url}}"],
-              "path": ["services", "services"]
+              "path": ["services"]
             }
           }
         },
@@ -263,9 +263,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/services/active",
+              "raw": "{{base_url}}/services/active",
               "host": ["{{base_url}}"],
-              "path": ["services", "services", "active"]
+              "path": ["services", "active"]
             }
           }
         },
@@ -275,9 +275,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/services/category/{{category_id}}",
+              "raw": "{{base_url}}/services/category/{{category_id}}",
               "host": ["{{base_url}}"],
-              "path": ["services", "services", "category", "{{category_id}}"]
+              "path": ["services", "category", "{{category_id}}"]
             }
           }
         },
@@ -287,9 +287,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/services/category/{{category_id}}/active",
+              "raw": "{{base_url}}/services/category/{{category_id}}/active",
               "host": ["{{base_url}}"],
-              "path": ["services", "services", "category", "{{category_id}}", "active"]
+              "path": ["services", "category", "{{category_id}}", "active"]
             }
           }
         },
@@ -299,9 +299,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/services/{{service_id}}",
+              "raw": "{{base_url}}/services/{{service_id}}",
               "host": ["{{base_url}}"],
-              "path": ["services", "services", "{{service_id}}"]
+              "path": ["services", "{{service_id}}"]
             }
           }
         },
@@ -338,9 +338,9 @@
               "raw": "{\n  \"categoryId\": \"{{category_id}}\",\n  \"name\": \"Corte Premium\",\n  \"description\": \"Corte de cabello profesional con consulta de estilo personalizada\",\n  \"duration\": 45,\n  \"durationVariation\": 15,\n  \"price\": 35.00\n}"
             },
             "url": {
-              "raw": "{{base_url}}/services/services",
+              "raw": "{{base_url}}/services",
               "host": ["{{base_url}}"],
-              "path": ["services", "services"]
+              "path": ["services"]
             }
           }
         },
@@ -364,9 +364,9 @@
               "raw": "{\n  \"name\": \"Corte Premium Deluxe\",\n  \"description\": \"Corte de cabello profesional con consulta de estilo, lavado y peinado incluidos\",\n  \"duration\": 60,\n  \"durationVariation\": 20,\n  \"price\": 40.00\n}"
             },
             "url": {
-              "raw": "{{base_url}}/services/services/{{service_id}}",
+              "raw": "{{base_url}}/services/{{service_id}}",
               "host": ["{{base_url}}"],
-              "path": ["services", "services", "{{service_id}}"]
+              "path": ["services", "{{service_id}}"]
             }
           }
         },
@@ -382,9 +382,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/services/services/{{service_id}}/deactivate",
+              "raw": "{{base_url}}/services/{{service_id}}/deactivate",
               "host": ["{{base_url}}"],
-              "path": ["services", "services", "{{service_id}}", "deactivate"]
+              "path": ["services", "{{service_id}}", "deactivate"]
             }
           }
         },
@@ -400,9 +400,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/services/services/{{service_id}}/activate",
+              "raw": "{{base_url}}/services/{{service_id}}/activate",
               "host": ["{{base_url}}"],
-              "path": ["services", "services", "{{service_id}}", "activate"]
+              "path": ["services", "{{service_id}}", "activate"]
             }
           }
         },
@@ -418,9 +418,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/services/services/{{service_id}}",
+              "raw": "{{base_url}}/services/{{service_id}}",
               "host": ["{{base_url}}"],
-              "path": ["services", "services", "{{service_id}}"]
+              "path": ["services", "{{service_id}}"]
             }
           }
         }
@@ -436,9 +436,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services",
+              "raw": "{{base_url}}/stylists/{{stylist_id}}/services",
               "host": ["{{base_url}}"],
-              "path": ["services", "stylists", "{{stylist_id}}", "services"]
+              "path": ["stylists", "{{stylist_id}}", "services"]
             }
           }
         },
@@ -448,9 +448,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services/active",
+              "raw": "{{base_url}}/stylists/{{stylist_id}}/services/active",
               "host": ["{{base_url}}"],
-              "path": ["services", "stylists", "{{stylist_id}}", "services", "active"]
+              "path": ["stylists", "{{stylist_id}}", "services", "active"]
             }
           }
         },
@@ -460,9 +460,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/services/{{service_id}}/stylists",
+              "raw": "{{base_url}}/services/{{service_id}}/stylists",
               "host": ["{{base_url}}"],
-              "path": ["services", "services", "{{service_id}}", "stylists"]
+              "path": ["services", "{{service_id}}", "stylists"]
             }
           }
         },
@@ -472,9 +472,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/services/{{service_id}}/stylists/offering",
+              "raw": "{{base_url}}/services/{{service_id}}/stylists/offering",
               "host": ["{{base_url}}"],
-              "path": ["services", "services", "{{service_id}}", "stylists", "offering"]
+              "path": ["services", "{{service_id}}", "stylists", "offering"]
             }
           }
         },
@@ -498,9 +498,9 @@
               "raw": "{\n  \"serviceId\": \"{{service_id}}\",\n  \"customPrice\": 45.00\n}"
             },
             "url": {
-              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services",
+              "raw": "{{base_url}}/stylists/{{stylist_id}}/services",
               "host": ["{{base_url}}"],
-              "path": ["services", "stylists", "{{stylist_id}}", "services"]
+              "path": ["stylists", "{{stylist_id}}", "services"]
             }
           }
         },
@@ -524,9 +524,9 @@
               "raw": "{\n  \"customPrice\": 50.00,\n  \"isOffering\": true\n}"
             },
             "url": {
-              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services/{{service_id}}",
+              "raw": "{{base_url}}/stylists/{{stylist_id}}/services/{{service_id}}",
               "host": ["{{base_url}}"],
-              "path": ["services", "stylists", "{{stylist_id}}", "services", "{{service_id}}"]
+              "path": ["stylists", "{{stylist_id}}", "services", "{{service_id}}"]
             }
           }
         },
@@ -542,9 +542,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services/{{service_id}}",
+              "raw": "{{base_url}}/stylists/{{stylist_id}}/services/{{service_id}}",
               "host": ["{{base_url}}"],
-              "path": ["services", "stylists", "{{stylist_id}}", "services", "{{service_id}}"]
+              "path": ["stylists", "{{stylist_id}}", "services", "{{service_id}}"]
             }
           }
         },
@@ -554,9 +554,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services/detailed",
+              "raw": "{{base_url}}/stylists/{{stylist_id}}/services/detailed",
               "host": ["{{base_url}}"],
-              "path": ["services", "stylists", "{{stylist_id}}", "services", "detailed"]
+              "path": ["stylists", "{{stylist_id}}", "services", "detailed"]
             }
           }
         },
@@ -566,9 +566,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/services/{{service_id}}/stylists/detailed",
+              "raw": "{{base_url}}/services/{{service_id}}/stylists/detailed",
               "host": ["{{base_url}}"],
-              "path": ["services", "services", "{{service_id}}", "stylists", "detailed"]
+              "path": ["services", "{{service_id}}", "stylists", "detailed"]
             }
           }
         }
@@ -674,9 +674,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/categories/invalid-uuid",
+              "raw": "{{base_url}}/categories/invalid-uuid",
               "host": ["{{base_url}}"],
-              "path": ["services", "categories", "invalid-uuid"]
+              "path": ["categories", "invalid-uuid"]
             }
           }
         },
@@ -698,9 +698,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/categories/123e4567-e89b-12d3-a456-426614174000",
+              "raw": "{{base_url}}/categories/123e4567-e89b-12d3-a456-426614174000",
               "host": ["{{base_url}}"],
-              "path": ["services", "categories", "123e4567-e89b-12d3-a456-426614174000"]
+              "path": ["categories", "123e4567-e89b-12d3-a456-426614174000"]
             }
           }
         },
@@ -731,9 +731,9 @@
               "raw": "{\n  \"name\": \"Test Category\",\n  \"description\": \"This should fail\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/services/categories",
+              "raw": "{{base_url}}/categories",
               "host": ["{{base_url}}"],
-              "path": ["services", "categories"]
+              "path": ["categories"]
             }
           }
         }
