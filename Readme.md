@@ -140,41 +140,41 @@ PUT    /api/v1/auth/change-password # Cambiar contraseña
 
 ### Categorias 
 ```
-GET    /api/v1/services/categories                    # Obtener todas las categorías
-GET    /api/v1/services/categories/active             # Obtener categorías activas
-GET    /api/v1/services/categories/:id                # Obtener categoría por ID
-POST   /api/v1/services/categories                    # Crear categoría (ADMIN)
-PUT    /api/v1/services/categories/:id                # Actualizar categoría (ADMIN)
-PATCH  /api/v1/services/categories/:id/activate       # Activar categoría (ADMIN)
-PATCH  /api/v1/services/categories/:id/deactivate     # Desactivar categoría (ADMIN)
-DELETE /api/v1/services/categories/:id                # Eliminar categoría (ADMIN)
+GET    /api/v1/categories                    # Obtener todas las categorías
+GET    /api/v1/categories/active             # Obtener categorías activas
+GET    /api/v1/categories/:id                # Obtener categoría por ID
+POST   /api/v1/categories                    # Crear categoría (ADMIN)
+PUT    /api/v1/categories/:id                # Actualizar categoría (ADMIN)
+PATCH  /api/v1/categories/:id/activate       # Activar categoría (ADMIN)
+PATCH  /api/v1/categories/:id/deactivate     # Desactivar categoría (ADMIN)
+DELETE /api/v1/categories/:id                # Eliminar categoría (ADMIN)
 ```
 
 ### Servicios 
 ```
-GET    /api/v1/services/services                             # Obtener todos los servicios
-GET    /api/v1/services/services/active                      # Obtener servicios activos
-GET    /api/v1/services/services/:id                         # Obtener servicio por ID
-GET    /api/v1/services/services/category/:categoryId        # Obtener servicios por categoría
-GET    /api/v1/services/services/category/:categoryId/active # Obtener servicios activos por categoría
-POST   /api/v1/services/services                             # Crear servicio (ADMIN)
-PUT    /api/v1/services/services/:id                         # Actualizar servicio (ADMIN)
-PATCH  /api/v1/services/services/:id/activate                # Activar servicio (ADMIN)
-PATCH  /api/v1/services/services/:id/deactivate              # Desactivar servicio (ADMIN)
-DELETE /api/v1/services/services/:id                         # Eliminar servicio (ADMIN)
+GET    /api/v1/services                             # Obtener todos los servicios
+GET    /api/v1/services/active                      # Obtener servicios activos
+GET    /api/v1/services/:id                         # Obtener servicio por ID
+GET    /api/v1/services/category/:categoryId        # Obtener servicios por categoría
+GET    /api/v1/services/category/:categoryId/active # Obtener servicios activos por categoría
+POST   /api/v1/services                             # Crear servicio (ADMIN)
+PUT    /api/v1/services/:id                         # Actualizar servicio (ADMIN)
+PATCH  /api/v1/services/:id/activate                # Activar servicio (ADMIN)
+PATCH  /api/v1/services/:id/deactivate              # Desactivar servicio (ADMIN)
+DELETE /api/v1/services/:id                         # Eliminar servicio (ADMIN)
 ```
 
 ### Servicios en relación con estilistas 
 ```
-GET    /api/v1/services/stylists/:stylistId/services            # Obtener servicios del estilista
-GET    /api/v1/services/stylists/:stylistId/services/active     # Obtener servicios activos del estilista
-GET    /api/v1/services/stylists/:stylistId/services/detailed   # Vista detallada del estilista con servicios
-GET    /api/v1/services/services/:serviceId/stylists            # Obtener estilistas del servicio
-GET    /api/v1/services/services/:serviceId/stylists/offering   # Obtener estilistas que ofrecen el servicio
-GET    /api/v1/services/services/:serviceId/stylists/detailed   # Vista detallada del servicio con estilistas
-POST   /api/v1/services/stylists/:stylistId/services            # Asignar servicio a estilista (ADMIN/STYLIST)
-PUT    /api/v1/services/stylists/:stylistId/services/:serviceId # Actualizar servicio del estilista (ADMIN/STYLIST)
-DELETE /api/v1/services/stylists/:stylistId/services/:serviceId # Remover servicio del estilista (ADMIN/STYLIST)
+GET    /api/v1/stylists/:stylistId/services            # Obtener servicios del estilista
+GET    /api/v1/stylists/:stylistId/services/active     # Obtener servicios activos del estilista
+GET    /api/v1/stylists/:stylistId/services/detailed   # Vista detallada del estilista con servicios
+GET    /api/v1/services/:serviceId/stylists            # Obtener estilistas del servicio
+GET    /api/v1/services/:serviceId/stylists/offering   # Obtener estilistas que ofrecen el servicio
+GET    /api/v1/services/:serviceId/stylists/detailed   # Vista detallada del servicio con estilistas
+POST   /api/v1/stylists/:stylistId/services            # Asignar servicio a estilista (ADMIN/STYLIST)
+PUT    /api/v1/stylists/:stylistId/services/:serviceId # Actualizar servicio del estilista (ADMIN/STYLIST)
+DELETE /api/v1/stylists/:stylistId/services/:serviceId # Remover servicio del estilista (ADMIN/STYLIST)
 ```
 
 # 🟣Testing

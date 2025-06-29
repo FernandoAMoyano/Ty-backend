@@ -438,8 +438,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  # SERVICES
-  /services/services:
+# SERVICES
+  /services:
     get:
       tags: [Services]
       summary: Obtener todos los servicios
@@ -508,7 +508,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error409'
 
-  /services/services/active:
+  /services/active:
     get:
       tags: [Services]
       summary: Obtener servicios activos
@@ -532,7 +532,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Service'
 
-  /services/services/{id}:
+  /services/{id}:
     get:
       tags: [Services]
       summary: Obtener servicio por ID
@@ -631,7 +631,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /services/services/category/{categoryId}:
+  /services/category/{categoryId}:
     get:
       tags: [Services]
       summary: Servicios por categoría
@@ -664,7 +664,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /services/services/category/{categoryId}/active:
+  /services/category/{categoryId}/active:
     get:
       tags: [Services]
       summary: Servicios activos por categoría
@@ -697,7 +697,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /services/services/{id}/activate:
+  /services/{id}/activate:
     patch:
       tags: [Services]
       summary: Activar servicio
@@ -722,7 +722,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /services/services/{id}/deactivate:
+  /services/{id}/deactivate:
     patch:
       tags: [Services]
       summary: Desactivar servicio
@@ -747,8 +747,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  # STYLIST SERVICES
-  /services/stylists/{stylistId}/services:
+# STYLIST SERVICES
+  /stylists/{stylistId}/services:
     get:
       tags: [Stylist Services]
       summary: Servicios de un estilista
@@ -821,7 +821,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error409'
 
-  /services/stylists/{stylistId}/services/active:
+  /stylists/{stylistId}/services/active:
     get:
       tags: [Stylist Services]
       summary: Servicios que ofrece activamente
@@ -854,7 +854,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /services/stylists/{stylistId}/services/detailed:
+  /stylists/{stylistId}/services/detailed:
     get:
       tags: [Stylist Services]
       summary: Estilista con servicios detallados
@@ -876,7 +876,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /services/stylists/{stylistId}/services/{serviceId}:
+  /stylists/{stylistId}/services/{serviceId}:
     put:
       tags: [Stylist Services]
       summary: Actualizar relación estilista-servicio
@@ -952,7 +952,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /services/services/{serviceId}/stylists:
+  /services/{serviceId}/stylists:
     get:
       tags: [Stylist Services]
       summary: Estilistas de un servicio
@@ -985,7 +985,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /services/services/{serviceId}/stylists/offering:
+  /services/{serviceId}/stylists/offering:
     get:
       tags: [Stylist Services]
       summary: Estilistas que ofrecen el servicio
@@ -1018,7 +1018,8 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /services/services/{serviceId}/stylists/detailed:
+  /services/{serviceId}/stylists/detailed:
+
     get:
       tags: [Stylist Services]
       summary: Servicio con estilistas detallados
@@ -1039,6 +1040,7 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '404':
           $ref: '#/components/responses/Error404'
+
 
 components:
   securitySchemes:
