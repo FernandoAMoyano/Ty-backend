@@ -112,12 +112,12 @@ describe('Service Entity', () => {
         validServiceData.categoryId,
         validServiceData.name,
         validServiceData.description,
-        10, // 10 minutos
+        15, // 15 minutos (igual a la variación)
         15, // ±15 minutos variación
         validServiceData.price,
       );
 
-      expect(shortService.calculateMinDuration()).toBe(0); // Max(0, 10-15)
+      expect(shortService.calculateMinDuration()).toBe(0); // Max(0, 15-15)
     });
   });
 

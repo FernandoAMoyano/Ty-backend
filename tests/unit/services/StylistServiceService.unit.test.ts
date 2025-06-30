@@ -86,11 +86,11 @@ describe('StylistServiceService', () => {
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
 
       const mockUser = User.create(
-        'test@example.com',
-        'password',
-        'Test User',
-        '+1234567890',
-        'STYLIST',
+        'STYLIST', // roleId (1er parámetro)
+        'Test User', // name (2do parámetro)
+        'test@example.com', // email (3er parámetro)
+        '+1234567890', // phone (4to parámetro)
+        'password', // password (5to parámetro)
       );
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
       const mockStylistService = StylistService.create('stylist-id', 'service-id', 3000);
@@ -128,11 +128,11 @@ describe('StylistServiceService', () => {
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
 
       const mockUser = User.create(
-        'test@example.com',
-        'password',
-        'Test User',
-        '+1234567890',
-        'STYLIST',
+        'STYLIST', // roleId
+        'Test User', // name
+        'test@example.com', // email
+        '+1234567890', // phone
+        'password', // password
       );
 
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
@@ -149,11 +149,11 @@ describe('StylistServiceService', () => {
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
 
       const mockUser = User.create(
-        'test@example.com',
-        'password',
-        'Test User',
-        '+1234567890',
-        'CLIENT',
+        'CLIENT', // roleId
+        'Test User', // name
+        'test@example.com', // email
+        '+1234567890', // phone
+        'password', // password
       );
 
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
@@ -169,11 +169,11 @@ describe('StylistServiceService', () => {
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
 
       const mockUser = User.create(
-        'test@example.com',
-        'password',
-        'Test User',
-        '+1234567890',
-        'STYLIST',
+        'STYLIST', // roleId
+        'Test User', // name
+        'test@example.com', // email
+        '+1234567890', // phone
+        'password', // password
       );
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
 
@@ -199,6 +199,9 @@ describe('StylistServiceService', () => {
         Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500),
         Service.create('category-id', 'Hair Wash', 'Description', 30, 10, 1500),
       ];
+
+      Object.defineProperty(mockServices[0], 'id', { value: 'service-1', writable: false });
+      Object.defineProperty(mockServices[1], 'id', { value: 'service-2', writable: false });
 
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
       mockStylistServiceRepository.findByStylist.mockResolvedValue(mockStylistServices);
@@ -324,14 +327,16 @@ describe('StylistServiceService', () => {
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
 
       const mockUser = User.create(
-        'test@example.com',
-        'password',
-        'Test User',
-        '+1234567890',
-        'STYLIST',
+        'STYLIST', // roleId
+        'Test User', // name
+        'test@example.com', // email
+        '+1234567890', // phone
+        'password', // password
       );
       const mockStylistServices = [StylistService.create('stylist-id', 'service-1', 3000)];
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
+
+      Object.defineProperty(mockService, 'id', { value: 'service-1', writable: false });
 
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
       mockUserRepository.findById.mockResolvedValue(mockUser);
