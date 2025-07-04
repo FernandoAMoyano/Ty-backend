@@ -43,7 +43,13 @@ export class AuthMiddleware {
           throw new UnauthorizedError('Authentication required');
         }
 
-        if (!allowedRoles.includes(req.user.roleId)) {
+        const roleMapping: Record<string, string> = {
+          '4b39b668-2515-4f5c-b032-e71e9c5f401c': 'ADMIN',
+        };
+
+        const roleName = roleMapping[req.user.roleId];
+
+        if (!roleName || !allowedRoles.includes(roleName)) {
           throw new UnauthorizedError('Insufficient permissions');
         }
 
