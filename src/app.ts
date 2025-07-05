@@ -8,6 +8,9 @@ import { AuthContainer } from './modules/auth/AuthContainer';
 import { ServicesContainer } from './modules/services/ServicesContainer';
 import { setupSwagger } from './shared/middleware/swagger';
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 class App {
   public app: express.Application;
   private authContainer: AuthContainer;

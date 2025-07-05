@@ -14,7 +14,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
-    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "typeRoots": ["./node_modules/@types", "src/types"],
     "types": ["node", "express"]
   },
   "include": ["src/**/*", "src/types/**/*", "/tests/**/*", "src/shared/middleware/swagger.ts"],

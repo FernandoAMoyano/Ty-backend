@@ -164,18 +164,22 @@ export const createTestStylist = async (): Promise<{
 };
 
 //Limpia todos los datos de test
-
 export const cleanupTestData = async (): Promise<void> => {
   try {
+    console.log('🧹 Starting test data cleanup...');
+
+    // 1. Eliminar asignaciones StylistService de test
     await testPrisma.stylistService.deleteMany({
       where: {
         OR: [
           { stylist: { user: { email: { contains: 'test' } } } },
           { service: { name: { contains: 'Test' } } },
+          { service: { category: { name: { contains: 'Test' } } } },
         ],
       },
     });
 
+    // 2. Eliminar Stylists de test
     await testPrisma.stylist.deleteMany({
       where: {
         user: {
@@ -184,25 +188,46 @@ export const cleanupTestData = async (): Promise<void> => {
       },
     });
 
+    // 3. Eliminar Services de test
     await testPrisma.service.deleteMany({
       where: {
-        OR: [{ name: { contains: 'Test' } }, { category: { name: { contains: 'Test' } } }],
+        OR: [
+          { name: { contains: 'Test' } },
+          { category: { name: { contains: 'Test' } } },
+          { category: { name: { contains: 'Another' } } },
+          { category: { name: { contains: 'Delete' } } },
+          { category: { name: { contains: 'Status' } } },
+          { category: { name: { contains: 'Original' } } },
+        ],
       },
     });
 
+    // 4. Eliminar Categories de test
     await testPrisma.category.deleteMany({
       where: {
-        name: { contains: 'Test' },
+        OR: [
+          { name: { contains: 'Test' } },
+          { name: { contains: 'Another' } },
+          { name: { contains: 'Delete' } },
+          { name: { contains: 'Status' } },
+          { name: { contains: 'Original' } },
+          { name: { contains: 'Minimal' } },
+          { name: { contains: 'Updated' } },
+          { name: { contains: 'Duplicate' } },
+        ],
       },
     });
 
+    // 5. Eliminar Users de test
     await testPrisma.user.deleteMany({
       where: {
         email: { contains: 'test' },
       },
     });
+
+    console.log('✅ Test data cleanup completed');
   } catch (error) {
-    console.warn('Cleanup warning:', error);
+    console.warn('⚠️ Cleanup warning:', error);
   }
 };
 
