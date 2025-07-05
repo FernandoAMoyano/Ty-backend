@@ -1,22 +1,15 @@
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  roots: ['<rootDir>/tests'],
+import dotenv from 'dotenv';
+dotenv.config();
 
-  // IMPORTANTE: Excluir archivos de setup para que no corran como tests
-  testMatch: [
-    '**/tests/**/*.test.(ts|js)',
-    '**/tests/**/*.spec.(ts|js)',
-    '!**/tests/setup/**.*', // ✅ EXCLUIR setup
-  ],
+// Configuración de base de datos para tests
+console.log('Configurando entorno de tests...');
 
-  transform: {
-    '^.+\\.ts$': 'ts-jest',
-  },
+// Forzar el uso de la base de datos de test
+if (process.env.TEST_DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+  console.log('Usando base de datos de TESTS:', process.env.DATABASE_URL);
+} else {
+  console.log('TEST_DATABASE_URL no encontrada, usando DATABASE_URL principal');
+}
 
-  setupFilesAfterEnv: ['<rootDir>/tests/setup/jest.setup.ts'],
-
-  collectCoverageFrom: ['src/**/*.{ts,js}', '!src/**/*.d.ts'],
-
-  testTimeout: 30000,
-};
+console.log('Configuración de tests completada');
