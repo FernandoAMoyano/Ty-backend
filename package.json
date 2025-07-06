@@ -1,6 +1,12 @@
 {
   "name": "turnity-backend",
   "version": "1.0.0",
+   "license": "MIT",
+  "author": "Fernando Moyano",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FernandoAMoyano/Ty-backend"
+  },
   "scripts": {
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",

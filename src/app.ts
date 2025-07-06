@@ -1,3 +1,9 @@
+/**
+ * Turnity Backend - Sistema de Gestión para Salones de Belleza
+ * Copyright (c) 2025 Fernando Moyano
+ * Licensed under the MIT License
+ */
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
