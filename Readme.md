@@ -186,11 +186,25 @@ DELETE /api/v1/stylists/:stylistId/services/:serviceId # Remover servicio del es
 - **Tests de integración** - API endpoints  
 - **Tests E2E** - Flujos completos
 
+El proyecto utiliza **dos bases de datos independientes** para garantizar la separación entre desarrollo y testing:
+
+| Base de Datos | Uso | Descripción |
+|---------------|-----|-------------|
+| **`turnity`** | Desarrollo y Postman | Datos persistentes para desarrollo diario |
+| **`turnity_test`** | Tests automáticos | Datos temporales que se limpian automáticamente |
+
+
 ```bash
-# Ejecutar todos los tests
+# 1. Configurar base de datos de test (solo una vez)
+npm run docker:test:setup
+
+# 2. Ejecutar tests (usan turnity_test automáticamente)
 npm run docker:jest:test
 
-# Tests específicos
+# 3. Resetear DB de test si es necesario
+npm run docker:test:reset
+
+# 4. Tests específicos
 npm run docker:jest:test -- tests/integration/auth/login.integration.test.ts
 ```
 
@@ -288,3 +302,23 @@ npm run dev
 # 🟣Licencia
 
 [Índice](#índice)
+
+Este proyecto está licenciado bajo la Licencia MIT - consulta el archivo LICENSE para más detalles.
+**Protección Intelectual**
+
+- Código fuente protegido bajo Licencia MIT
+- Derechos de autor reservados a Fernando Moyano (2025)
+- Uso comercial permitido con atribución apropiada
+- Modificaciones permitidas manteniendo créditos originales
+
+**Uso Empresarial**
+Si planeas usar este proyecto comercialmente:
+
+- Mantén el aviso de copyright en archivos derivados
+- Incluye referencia al autor original
+-Respeta los términos de la Licencia MIT
+
+**Contribuciones**
+Al contribuir a este proyecto, aceptas que tus contribuciones se licencien bajo los mismos términos.
+
+**© 2025 Fernando Moyano. Todos los derechos reservados.**
