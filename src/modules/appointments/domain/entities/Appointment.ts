@@ -5,7 +5,7 @@ export class Appointment {
   constructor(
     public id: string,
     public dateTime: Date,
-    public duration: number, // in minutes
+    public duration: number, // en minutos
     public userId: string,
     public clientId: string,
     public scheduleId: string,
@@ -211,6 +211,74 @@ export class Appointment {
     twentyFourHoursFromNow.setHours(twentyFourHoursFromNow.getHours() + 24);
 
     return this.dateTime > twentyFourHoursFromNow;
+  }
+
+  // Métodos de gestión de estado
+
+  /**
+   * Cambia el estado de la cita a un nuevo estado específico
+   * @param newStatusId - ID del nuevo estado para la cita
+   * @throws ValidationError si el ID del estado no es válido
+   */
+  changeStatus(newStatusId: string): void {
+    this.validateStatusId(newStatusId);
+    this.statusId = newStatusId;
+    this.updatedAt = new Date();
+  }
+
+  // Métodos de transición específicos
+
+  /**
+   * Marca la cita como confirmada, estableciendo la fecha de confirmación y cambiando el estado
+   * @param confirmedStatusId - ID del estado "confirmado"
+   * @throws ValidationError si la cita ya está confirmada
+   */
+  markAsConfirmed(confirmedStatusId: string): void {
+    this.confirm();
+    this.changeStatus(confirmedStatusId);
+  }
+
+  /**
+   * Marca la cita como cancelada cambiando su estado
+   * @param cancelledStatusId - ID del estado "cancelado"
+   */
+  markAsCancelled(cancelledStatusId: string): void {
+    this.changeStatus(cancelledStatusId);
+  }
+
+  /**
+   * Marca la cita como completada cambiando su estado
+   * @param completedStatusId - ID del estado "completado"
+   */
+  markAsCompleted(completedStatusId: string): void {
+    this.changeStatus(completedStatusId);
+  }
+
+  /**
+   * Marca la cita como en progreso cambiando su estado
+   * @param inProgressStatusId - ID del estado "en progreso"
+   */
+  markAsInProgress(inProgressStatusId: string): void {
+    this.changeStatus(inProgressStatusId);
+  }
+
+  /**
+   * Marca la cita como no show (cliente no se presentó) cambiando su estado
+   * @param noShowStatusId - ID del estado "no show"
+   */
+  markAsNoShow(noShowStatusId: string): void {
+    this.changeStatus(noShowStatusId);
+  }
+
+  /**
+   * Valida que el ID del estado sea válido y no esté vacío
+   * @param statusId - ID del estado a validar
+   * @throws ValidationError si el ID del estado es inválido o vacío
+   */
+  private validateStatusId(statusId: string): void {
+    if (!statusId || statusId.trim().length === 0) {
+      throw new ValidationError('Status ID is required');
+    }
   }
 
   toPersistence() {
