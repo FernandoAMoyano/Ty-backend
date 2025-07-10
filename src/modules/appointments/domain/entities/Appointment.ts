@@ -19,6 +19,19 @@ export class Appointment {
     this.validate();
   }
 
+  /**
+   * Crea una nueva instancia de cita con validaciones automáticas
+   * @param dateTime - Fecha y hora de la cita
+   * @param duration - Duración en minutos (mínimo 15, múltiplo de 15)
+   * @param userId - ID del usuario que crea la cita
+   * @param clientId - ID del cliente para la cita
+   * @param scheduleId - ID del horario asociado
+   * @param statusId - ID del estado inicial de la cita
+   * @param stylistId - ID del estilista asignado (opcional)
+   * @param serviceIds - Lista de IDs de servicios incluidos
+   * @returns Nueva instancia de Appointment
+   * @throws ValidationError si algún dato es inválido
+   */
   static create(
     dateTime: Date,
     duration: number,
@@ -43,6 +56,22 @@ export class Appointment {
     );
   }
 
+  /**
+   * Reconstruye una instancia de cita desde datos de persistencia
+   * @param id - ID único de la cita
+   * @param dateTime - Fecha y hora de la cita
+   * @param duration - Duración en minutos
+   * @param userId - ID del usuario creador
+   * @param clientId - ID del cliente
+   * @param scheduleId - ID del horario
+   * @param statusId - ID del estado actual
+   * @param stylistId - ID del estilista (opcional)
+   * @param confirmedAt - Fecha de confirmación (opcional)
+   * @param serviceIds - Lista de servicios
+   * @param createdAt - Fecha de creación (opcional)
+   * @param updatedAt - Fecha de última actualización (opcional)
+   * @returns Instancia de Appointment desde persistencia
+   */
   static fromPersistence(
     id: string,
     dateTime: Date,
@@ -73,12 +102,20 @@ export class Appointment {
     );
   }
 
+  /**
+   * Ejecuta todas las validaciones necesarias para la cita
+   * @throws ValidationError si alguna validación falla
+   */
   private validate(): void {
     this.validateDateTime();
     this.validateDuration();
     this.validateRequiredFields();
   }
 
+  /**
+   * Valida que la fecha y hora de la cita sean válidas
+   * @throws ValidationError si la fecha es inválida o está en el pasado
+   */
   private validateDateTime(): void {
     if (!this.dateTime) {
       throw new ValidationError('Appointment date and time is required');
@@ -89,6 +126,10 @@ export class Appointment {
     }
   }
 
+  /**
+   * Valida que la duración cumpla con las reglas de negocio
+   * @throws ValidationError si la duración es inválida
+   */
   private validateDuration(): void {
     if (!this.duration || this.duration <= 0) {
       throw new ValidationError('Duration must be greater than 0');
@@ -108,6 +149,10 @@ export class Appointment {
     }
   }
 
+  /**
+   * Valida que todos los campos requeridos estén presentes
+   * @throws ValidationError si algún campo requerido falta
+   */
   private validateRequiredFields(): void {
     const requiredFields = [
       { field: this.userId, name: 'userId' },
@@ -124,6 +169,11 @@ export class Appointment {
   }
 
   // Métodos lógicos de negocios
+
+  /**
+   * Confirma la cita estableciendo la fecha de confirmación
+   * @throws ValidationError si la cita ya está confirmada
+   */
   confirm(): void {
     if (this.confirmedAt) {
       throw new ValidationError('Appointment is already confirmed');
@@ -132,6 +182,12 @@ export class Appointment {
     this.updatedAt = new Date();
   }
 
+  /**
+   * Reprograma la cita a una nueva fecha y hora, opcionalmente cambiando la duración
+   * @param newDateTime - Nueva fecha y hora para la cita
+   * @param newDuration - Nueva duración en minutos (opcional)
+   * @throws ValidationError si la nueva fecha está en el pasado o los datos son inválidos
+   */
   reschedule(newDateTime: Date, newDuration?: number): void {
     if (newDateTime < new Date()) {
       throw new ValidationError('Cannot reschedule to a past date');
@@ -145,6 +201,11 @@ export class Appointment {
     this.validate();
   }
 
+  /**
+   * Agrega un servicio a la lista de servicios de la cita
+   * @param serviceId - ID del servicio a agregar
+   * @throws ValidationError si el servicio ya está agregado o el ID es inválido
+   */
   addService(serviceId: string): void {
     if (!serviceId || serviceId.trim().length === 0) {
       throw new ValidationError('Service ID is required');
@@ -158,6 +219,11 @@ export class Appointment {
     this.updatedAt = new Date();
   }
 
+  /**
+   * Remueve un servicio de la lista de servicios de la cita
+   * @param serviceId - ID del servicio a remover
+   * @throws ValidationError si el servicio no está en la cita
+   */
   removeService(serviceId: string): void {
     const index = this.serviceIds.indexOf(serviceId);
     if (index === -1) {
@@ -168,6 +234,11 @@ export class Appointment {
     this.updatedAt = new Date();
   }
 
+  /**
+   * Actualiza el estilista asignado a la cita
+   * @param stylistId - ID del nuevo estilista
+   * @throws ValidationError si el ID del estilista es inválido
+   */
   updateStylist(stylistId: string): void {
     if (!stylistId || stylistId.trim().length === 0) {
       throw new ValidationError('Stylist ID is required');
@@ -177,6 +248,11 @@ export class Appointment {
     this.updatedAt = new Date();
   }
 
+  /**
+   * Actualiza la duración de la cita
+   * @param newDuration - Nueva duración en minutos
+   * @throws ValidationError si la nueva duración no cumple las reglas de negocio
+   */
   updateDuration(newDuration: number): void {
     this.duration = newDuration;
     this.updatedAt = new Date();
@@ -184,18 +260,36 @@ export class Appointment {
   }
 
   // Métodos de consulta
+
+  /**
+   * Verifica si la cita está confirmada
+   * @returns true si la cita tiene fecha de confirmación, false en caso contrario
+   */
   isConfirmed(): boolean {
     return this.confirmedAt !== undefined;
   }
 
+  /**
+   * Calcula la fecha y hora de finalización de la cita
+   * @returns Fecha y hora cuando termina la cita
+   */
   getEndTime(): Date {
     return new Date(this.dateTime.getTime() + this.duration * 60000);
   }
 
+  /**
+   * Verifica si la cita está programada en el pasado
+   * @returns true si la fecha de la cita ya pasó, false en caso contrario
+   */
   isInPast(): boolean {
     return this.dateTime < new Date();
   }
 
+  /**
+   * Verifica si esta cita tiene conflicto de horario con otra cita
+   * @param otherAppointment - Otra cita a comparar
+   * @returns true si hay conflicto de horario, false en caso contrario
+   */
   hasConflictWith(otherAppointment: Appointment): boolean {
     const thisStart = this.dateTime.getTime();
     const thisEnd = this.getEndTime().getTime();
@@ -205,6 +299,10 @@ export class Appointment {
     return !(thisEnd <= otherStart || thisStart >= otherEnd);
   }
 
+  /**
+   * Verifica si la cita puede ser modificada (debe ser al menos 24 horas en el futuro)
+   * @returns true si se puede modificar, false en caso contrario
+   */
   canBeModified(): boolean {
     // Se puede modificar si son al menos 24 horas en el futuro
     const twentyFourHoursFromNow = new Date();
@@ -281,6 +379,10 @@ export class Appointment {
     }
   }
 
+  /**
+   * Convierte la entidad a formato de persistencia para guardar en base de datos
+   * @returns Objeto plano con todas las propiedades de la cita
+   */
   toPersistence() {
     return {
       id: this.id,
