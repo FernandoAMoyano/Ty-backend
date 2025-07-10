@@ -29,6 +29,15 @@ export class AppointmentService {
     private userRepository: UserRepository,
   ) {}
 
+  /**
+   * Crea una nueva cita en el sistema con todas las validaciones necesarias
+   * @param dto - Datos de la cita a crear (fecha, cliente, servicios, etc.)
+   * @param userId - ID del usuario que está creando la cita
+   * @returns Promise con los datos de la cita creada
+   * @throws ValidationError si los datos no son válidos o hay conflictos de horario
+   * @throws NotFoundError si el cliente, estilista o servicios no existen
+   * @throws ConflictError si hay conflictos de horario con otras citas
+   */
   async createAppointment(dto: CreateAppointmentDto, userId: string): Promise<AppointmentDto> {
     // Validaciones de entrada
     this.validateCreateAppointmentDto(dto);
@@ -99,6 +108,15 @@ export class AppointmentService {
     return this.mapAppointmentToDto(savedAppointment);
   }
 
+  /**
+   * Actualiza una cita existente con nuevos datos y validaciones
+   * @param id - ID único de la cita a actualizar
+   * @param dto - Nuevos datos para la cita (fecha, estilista, servicios, etc.)
+   * @returns Promise con los datos de la cita actualizada
+   * @throws NotFoundError si la cita no existe
+   * @throws ValidationError si la cita no se puede modificar o los datos son inválidos
+   * @throws ConflictError si la nueva fecha genera conflictos de horario
+   */
   async updateAppointment(id: string, dto: UpdateAppointmentDto): Promise<AppointmentDto> {
     // Validaciones de entrada
     this.validateUpdateAppointmentDto(dto);
@@ -181,6 +199,13 @@ export class AppointmentService {
     return this.mapAppointmentToDto(updatedAppointment);
   }
 
+  /**
+   * Confirma una cita cambiando su estado de PENDING a CONFIRMED
+   * @param id - ID único de la cita a confirmar
+   * @returns Promise con los datos de la cita confirmada
+   * @throws NotFoundError si la cita no existe
+   * @throws ValidationError si la cita ya está confirmada o no se encuentra el estado CONFIRMED
+   */
   async confirmAppointment(id: string): Promise<AppointmentDto> {
     const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {
@@ -205,6 +230,14 @@ export class AppointmentService {
     return this.mapAppointmentToDto(updatedAppointment);
   }
 
+  /**
+   * Cancela una cita cambiando su estado a CANCELLED
+   * @param id - ID único de la cita a cancelar
+   * @param _reason - Razón de la cancelación (opcional, no implementado aún)
+   * @returns Promise con los datos de la cita cancelada
+   * @throws NotFoundError si la cita no existe
+   * @throws ValidationError si la cita ya pasó o no se encuentra el estado CANCELLED
+   */
   async cancelAppointment(id: string, _reason?: string): Promise<AppointmentDto> {
     const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {
@@ -230,6 +263,12 @@ export class AppointmentService {
     return this.mapAppointmentToDto(updatedAppointment);
   }
 
+  /**
+   * Obtiene una cita específica por su ID único
+   * @param id - ID único de la cita a buscar
+   * @returns Promise con los datos de la cita encontrada
+   * @throws NotFoundError si la cita no existe
+   */
   async getAppointmentById(id: string): Promise<AppointmentDto> {
     const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {
@@ -239,11 +278,22 @@ export class AppointmentService {
     return this.mapAppointmentToDto(appointment);
   }
 
+  /**
+   * Obtiene todas las citas de un cliente específico
+   * @param clientId - ID único del cliente
+   * @returns Promise con la lista de citas del cliente
+   */
   async getAppointmentsByClient(clientId: string): Promise<AppointmentDto[]> {
     const appointments = await this.appointmentRepository.findByClientId(clientId);
     return appointments.map((appointment) => this.mapAppointmentToDto(appointment));
   }
 
+  /**
+   * Obtiene todas las citas asignadas a un estilista específico
+   * @param stylistId - ID único del estilista
+   * @returns Promise con la lista de citas del estilista
+   * @throws ValidationError si no se proporciona el ID del estilista
+   */
   async getAppointmentsByStylist(stylistId: string): Promise<AppointmentDto[]> {
     if (!stylistId) {
       throw new ValidationError('Stylist ID is required');
@@ -253,6 +303,13 @@ export class AppointmentService {
     return appointments.map((appointment) => this.mapAppointmentToDto(appointment));
   }
 
+  /**
+   * Obtiene todas las citas dentro de un rango de fechas específico
+   * @param startDate - Fecha de inicio del rango
+   * @param endDate - Fecha de fin del rango
+   * @returns Promise con la lista de citas en el rango especificado
+   * @throws ValidationError si la fecha de inicio es posterior a la fecha de fin
+   */
   async getAppointmentsForDateRange(startDate: Date, endDate: Date): Promise<AppointmentDto[]> {
     if (startDate >= endDate) {
       throw new ValidationError('Start date must be before end date');
@@ -262,6 +319,11 @@ export class AppointmentService {
     return appointments.map((appointment) => this.mapAppointmentToDto(appointment));
   }
 
+  /**
+   * Elimina una cita del sistema de forma permanente
+   * @param id - ID único de la cita a eliminar
+   * @throws NotFoundError si la cita no existe
+   */
   async deleteAppointment(id: string): Promise<void> {
     const exists = await this.appointmentRepository.existsById(id);
     if (!exists) {
@@ -273,6 +335,10 @@ export class AppointmentService {
 
   // Métodos de estadística y análisis
 
+  /**
+   * Obtiene estadísticas generales de todas las citas agrupadas por estado
+   * @returns Promise con un objeto que contiene el conteo de citas por cada estado
+   */
   async getAppointmentStatistics(): Promise<Record<string, number>> {
     // Obtener todos los estados disponibles
     const allStatuses = await this.appointmentStatusRepository.findAll();
@@ -287,6 +353,10 @@ export class AppointmentService {
     return statistics;
   }
 
+  /**
+   * Obtiene un resumen completo de estadísticas con métricas calculadas
+   * @returns Promise con estadísticas detalladas incluyendo tasas de finalización y asistencia
+   */
   async getAppointmentStatisticsSummary(): Promise<AppointmentStatisticsSummaryDto> {
     const statistics = await this.getAppointmentStatistics();
 
@@ -318,6 +388,13 @@ export class AppointmentService {
     };
   }
 
+  /**
+   * Obtiene estadísticas de citas agrupadas por estado dentro de un rango de fechas
+   * @param startDate - Fecha de inicio del análisis
+   * @param endDate - Fecha de fin del análisis
+   * @returns Promise con el conteo de citas por estado en el período especificado
+   * @throws ValidationError si la fecha de inicio es posterior a la fecha de fin
+   */
   async getAppointmentStatisticsByDateRange(
     startDate: Date,
     endDate: Date,
@@ -350,6 +427,13 @@ export class AppointmentService {
     return statistics;
   }
 
+  /**
+   * Obtiene estadísticas de citas de un estilista específico agrupadas por estado
+   * @param stylistId - ID único del estilista
+   * @returns Promise con el conteo de citas por estado para el estilista especificado
+   * @throws ValidationError si no se proporciona el ID del estilista
+   * @throws NotFoundError si el estilista no existe
+   */
   async getAppointmentStatisticsByStylist(stylistId: string): Promise<Record<string, number>> {
     if (!stylistId) {
       throw new ValidationError('Stylist ID is required');
@@ -384,6 +468,13 @@ export class AppointmentService {
     return statistics;
   }
 
+  /**
+   * Obtiene estadísticas de citas de un cliente específico agrupadas por estado
+   * @param clientId - ID único del cliente
+   * @returns Promise con el conteo de citas por estado para el cliente especificado
+   * @throws ValidationError si no se proporciona el ID del cliente
+   * @throws NotFoundError si el cliente no existe
+   */
   async getAppointmentStatisticsByClient(clientId: string): Promise<Record<string, number>> {
     if (!clientId) {
       throw new ValidationError('Client ID is required');
@@ -420,6 +511,11 @@ export class AppointmentService {
 
   // Métodos de validación privados
 
+  /**
+   * Valida los datos de entrada para crear una nueva cita
+   * @param dto - Datos de la cita a validar
+   * @throws ValidationError si algún campo requerido falta o es inválido
+   */
   private validateCreateAppointmentDto(dto: CreateAppointmentDto): void {
     if (!dto.dateTime) {
       throw new ValidationError('dateTime is required');
@@ -438,6 +534,11 @@ export class AppointmentService {
     }
   }
 
+  /**
+   * Valida los datos de entrada para actualizar una cita existente
+   * @param dto - Datos de actualización a validar
+   * @throws ValidationError si algún campo es inválido
+   */
   private validateUpdateAppointmentDto(dto: UpdateAppointmentDto): void {
     if (dto.duration && dto.duration < 15) {
       throw new ValidationError('Minimum duration is 15 minutes');
@@ -448,6 +549,11 @@ export class AppointmentService {
     }
   }
 
+  /**
+   * Verifica que todos los servicios en la lista existen en el sistema
+   * @param serviceIds - Lista de IDs de servicios a validar
+   * @throws NotFoundError si algún servicio no existe
+   */
   private async validateServiceIds(serviceIds: string[]): Promise<void> {
     for (const serviceId of serviceIds) {
       const exists = await this.serviceRepository.existsById(serviceId);
@@ -457,6 +563,12 @@ export class AppointmentService {
     }
   }
 
+  /**
+   * Calcula la duración total sumando las duraciones de todos los servicios
+   * @param serviceIds - Lista de IDs de servicios
+   * @returns Promise con la duración total en minutos
+   * @throws NotFoundError si algún servicio no existe
+   */
   private async calculateTotalDuration(serviceIds: string[]): Promise<number> {
     let totalDuration = 0;
 
@@ -471,6 +583,14 @@ export class AppointmentService {
     return totalDuration;
   }
 
+  /**
+   * Verifica si existe conflicto de horario con otras citas
+   * @param dateTime - Fecha y hora de la cita a verificar
+   * @param duration - Duración de la cita en minutos
+   * @param stylistId - ID del estilista (opcional)
+   * @param excludeAppointmentId - ID de cita a excluir de la verificación (para actualizaciones)
+   * @throws ConflictError si se detectan conflictos de horario
+   */
   private async checkForConflicts(
     dateTime: Date,
     duration: number,
@@ -491,19 +611,39 @@ export class AppointmentService {
     }
   }
 
+  /**
+   * Extrae el día de la semana de una fecha dada
+   * @param date - Fecha de la cual extraer el día de la semana
+   * @returns Enumeración del día de la semana
+   */
   private getDayOfWeekFromDate(date: Date): DayOfWeekEnum {
     return DayOfWeekUtils.fromDate(date);
   }
 
+  /**
+   * Formatea una fecha en string de hora (HH:MM)
+   * @param date - Fecha a formatear
+   * @returns String con el formato de hora HH:MM
+   */
   private formatTimeFromDate(date: Date): string {
     return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   }
 
+  /**
+   * Busca el horario de trabajo para un día específico de la semana
+   * @param dayOfWeek - Día de la semana a buscar
+   * @returns Promise con el horario encontrado o null si no existe
+   */
   private async findScheduleForDay(dayOfWeek: DayOfWeekEnum): Promise<any> {
     const schedules = await this.scheduleRepository.findByDayOfWeek(dayOfWeek);
     return schedules.find((s) => !s.holidayId) || null; // Retorna horario regular (no feriado)
   }
 
+  /**
+   * Convierte una entidad Appointment a su representación DTO
+   * @param appointment - Entidad de dominio a convertir
+   * @returns Objeto DTO con los datos de la cita
+   */
   private mapAppointmentToDto(appointment: Appointment): AppointmentDto {
     return {
       id: appointment.id,
