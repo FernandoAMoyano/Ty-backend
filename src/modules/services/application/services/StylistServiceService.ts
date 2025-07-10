@@ -20,6 +20,15 @@ export class StylistServiceService {
     private stylistRepository: StylistRepository,
   ) {}
 
+  /**
+   * Asigna un servicio a un estilista con precio personalizado opcional
+   * @param stylistId - ID único del estilista
+   * @param assignDto - Datos de la asignación incluyendo servicio y precio personalizado
+   * @returns Promise con los datos de la asignación creada
+   * @throws NotFoundError si el estilista, usuario o servicio no existen
+   * @throws ValidationError si el usuario no es estilista o los datos son inválidos
+   * @throws ConflictError si el servicio ya está asignado al estilista
+   */
   async assignServiceToStylist(
     stylistId: string,
     assignDto: AssignServiceDto,
@@ -85,6 +94,12 @@ export class StylistServiceService {
     );
   }
 
+  /**
+   * Obtiene todos los servicios asignados a un estilista específico
+   * @param stylistId - ID único del estilista
+   * @returns Promise con la lista de servicios asignados al estilista
+   * @throws NotFoundError si el estilista no existe
+   */
   async getStylistServices(stylistId: string): Promise<StylistServiceDto[]> {
     // Verificar que el estilista existe
     const stylist = await this.stylistRepository.findById(stylistId);
@@ -96,6 +111,12 @@ export class StylistServiceService {
     return this.mapAssignmentsWithServiceInfo(assignments);
   }
 
+  /**
+   * Obtiene solo los servicios que el estilista está ofreciendo activamente
+   * @param stylistId - ID único del estilista
+   * @returns Promise con la lista de servicios que el estilista está ofreciendo
+   * @throws NotFoundError si el estilista no existe
+   */
   async getActiveOfferings(stylistId: string): Promise<StylistServiceDto[]> {
     // Verificar que el estilista existe
     const stylist = await this.stylistRepository.findById(stylistId);
@@ -107,6 +128,12 @@ export class StylistServiceService {
     return this.mapAssignmentsWithServiceInfo(assignments);
   }
 
+  /**
+   * Obtiene información completa de un estilista con todos sus servicios
+   * @param stylistId - ID único del estilista
+   * @returns Promise con datos completos del estilista y sus servicios
+   * @throws NotFoundError si el estilista o usuario asociado no existen
+   */
   async getStylistWithServices(stylistId: string): Promise<StylistWithServicesDto> {
     // Verificar que el estilista existe
     const stylist = await this.stylistRepository.findById(stylistId);
@@ -132,6 +159,15 @@ export class StylistServiceService {
     };
   }
 
+  /**
+   * Actualiza una asignación de servicio a estilista (precio y estado de oferta)
+   * @param stylistId - ID único del estilista
+   * @param serviceId - ID único del servicio
+   * @param updateDto - Datos de actualización (precio personalizado y/o estado de oferta)
+   * @returns Promise con los datos de la asignación actualizada
+   * @throws NotFoundError si la asignación o el servicio no existen
+   * @throws ValidationError si los datos son inválidos
+   */
   async updateStylistService(
     stylistId: string,
     serviceId: string,
@@ -179,6 +215,12 @@ export class StylistServiceService {
     );
   }
 
+  /**
+   * Remueve la asignación de un servicio de un estilista
+   * @param stylistId - ID único del estilista
+   * @param serviceId - ID único del servicio
+   * @throws NotFoundError si la asignación no existe
+   */
   async removeServiceFromStylist(stylistId: string, serviceId: string): Promise<void> {
     // Verificar que existe la asignación
     const exists = await this.stylistServiceRepository.existsAssignment(stylistId, serviceId);
@@ -189,6 +231,12 @@ export class StylistServiceService {
     await this.stylistServiceRepository.delete(stylistId, serviceId);
   }
 
+  /**
+   * Obtiene todos los estilistas que pueden realizar un servicio específico
+   * @param serviceId - ID único del servicio
+   * @returns Promise con la lista de estilistas que tienen asignado el servicio
+   * @throws NotFoundError si el servicio no existe
+   */
   async getServiceStylists(serviceId: string): Promise<StylistServiceDto[]> {
     // Verificar que el servicio existe
     const service = await this.serviceRepository.findById(serviceId);
@@ -208,6 +256,12 @@ export class StylistServiceService {
     );
   }
 
+  /**
+   * Obtiene solo los estilistas que están ofreciendo activamente un servicio específico
+   * @param serviceId - ID único del servicio
+   * @returns Promise con la lista de estilistas que están ofreciendo el servicio
+   * @throws NotFoundError si el servicio no existe
+   */
   async getStylistsOfferingService(serviceId: string): Promise<StylistServiceDto[]> {
     // Verificar que el servicio existe
     const service = await this.serviceRepository.findById(serviceId);
@@ -227,6 +281,12 @@ export class StylistServiceService {
     );
   }
 
+  /**
+   * Obtiene información completa de un servicio con todos los estilistas que lo pueden realizar
+   * @param serviceId - ID único del servicio
+   * @returns Promise con datos completos del servicio y sus estilistas
+   * @throws NotFoundError si el servicio no existe
+   */
   async getServiceWithStylists(serviceId: string): Promise<ServiceWithStylistsDto> {
     // Verificar que el servicio existe
     const service = await this.serviceRepository.findById(serviceId);
@@ -256,6 +316,11 @@ export class StylistServiceService {
     };
   }
 
+  /**
+   * Mapea una lista de asignaciones con información completa de servicios de forma eficiente
+   * @param assignments - Lista de asignaciones estilista-servicio
+   * @returns Promise con la lista de DTOs con información completa de servicios
+   */
   private async mapAssignmentsWithServiceInfo(
     assignments: StylistService[],
   ): Promise<StylistServiceDto[]> {
@@ -281,6 +346,11 @@ export class StylistServiceService {
     });
   }
 
+  /**
+   * Valida los datos de entrada para asignar un servicio a un estilista
+   * @param dto - Datos de asignación a validar
+   * @throws ValidationError si algún campo es inválido
+   */
   private validateAssignServiceDto(dto: AssignServiceDto): void {
     if (!dto.serviceId || dto.serviceId.trim().length === 0) {
       throw new ValidationError('Service ID is required');
@@ -291,6 +361,11 @@ export class StylistServiceService {
     }
   }
 
+  /**
+   * Valida los datos de entrada para actualizar una asignación estilista-servicio
+   * @param dto - Datos de actualización a validar
+   * @throws ValidationError si algún campo es inválido o no hay campos para actualizar
+   */
   private validateUpdateStylistServiceDto(dto: UpdateStylistServiceDto): void {
     if (dto.customPrice !== undefined && dto.customPrice < 0) {
       throw new ValidationError('Custom price cannot be negative');
@@ -301,6 +376,15 @@ export class StylistServiceService {
     }
   }
 
+  /**
+   * Convierte una entidad StylistService a su representación DTO con información completa
+   * @param stylistService - Entidad de asignación estilista-servicio
+   * @param serviceName - Nombre del servicio
+   * @param serviceDescription - Descripción del servicio
+   * @param baseDuration - Duración base del servicio
+   * @param basePrice - Precio base del servicio
+   * @returns Objeto DTO con todos los datos de la asignación
+   */
   private mapStylistServiceToDto(
     stylistService: StylistService,
     serviceName: string,

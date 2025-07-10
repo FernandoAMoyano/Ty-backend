@@ -14,6 +14,14 @@ export class ServiceManagementService {
     private categoryRepository: CategoryRepository,
   ) {}
 
+  /**
+   * Crea un nuevo servicio en el sistema con validaciones completas
+   * @param createDto - Datos para crear el nuevo servicio
+   * @returns Promise con los datos del servicio creado incluyendo información de categoría
+   * @throws ValidationError si los datos no son válidos
+   * @throws NotFoundError si la categoría no existe
+   * @throws ConflictError si ya existe un servicio con ese nombre
+   */
   async createService(createDto: CreateServiceDto): Promise<ServiceDto> {
     // Validaciones
     this.validateCreateServiceDto(createDto);
@@ -46,6 +54,15 @@ export class ServiceManagementService {
     return this.mapServiceToDto(savedService, category);
   }
 
+  /**
+   * Actualiza un servicio existente con nuevos datos
+   * @param id - ID único del servicio a actualizar
+   * @param updateDto - Datos parciales para actualizar el servicio
+   * @returns Promise con los datos del servicio actualizado
+   * @throws NotFoundError si el servicio o nueva categoría no existen
+   * @throws ValidationError si los datos no son válidos
+   * @throws ConflictError si el nuevo nombre ya está en uso
+   */
   async updateService(id: string, updateDto: UpdateServiceDto): Promise<ServiceDto> {
     // Validaciones
     this.validateUpdateServiceDto(updateDto);
@@ -101,6 +118,12 @@ export class ServiceManagementService {
     return this.mapServiceToDto(updatedService, category!);
   }
 
+  /**
+   * Obtiene un servicio específico por su ID único
+   * @param id - ID único del servicio a buscar
+   * @returns Promise con los datos del servicio encontrado incluyendo información de categoría
+   * @throws NotFoundError si el servicio o su categoría no existen
+   */
   async getServiceById(id: string): Promise<ServiceDto> {
     const service = await this.serviceRepository.findById(id);
     if (!service) {
@@ -115,16 +138,30 @@ export class ServiceManagementService {
     return this.mapServiceToDto(service, category);
   }
 
+  /**
+   * Obtiene todos los servicios del sistema (activos e inactivos)
+   * @returns Promise con la lista completa de servicios con información de categorías
+   */
   async getAllServices(): Promise<ServiceDto[]> {
     const services = await this.serviceRepository.findAll();
     return this.mapServicesWithCategories(services);
   }
 
+  /**
+   * Obtiene solo los servicios que están activos
+   * @returns Promise con la lista de servicios activos con información de categorías
+   */
   async getActiveServices(): Promise<ServiceDto[]> {
     const services = await this.serviceRepository.findActive();
     return this.mapServicesWithCategories(services);
   }
 
+  /**
+   * Obtiene todos los servicios de una categoría específica
+   * @param categoryId - ID único de la categoría
+   * @returns Promise con la lista de servicios de la categoría
+   * @throws NotFoundError si la categoría no existe
+   */
   async getServicesByCategory(categoryId: string): Promise<ServiceDto[]> {
     // Verificar que la categoría existe
     const category = await this.categoryRepository.findById(categoryId);
@@ -136,6 +173,12 @@ export class ServiceManagementService {
     return services.map((service) => this.mapServiceToDto(service, category));
   }
 
+  /**
+   * Obtiene solo los servicios activos de una categoría específica
+   * @param categoryId - ID único de la categoría
+   * @returns Promise con la lista de servicios activos de la categoría
+   * @throws NotFoundError si la categoría no existe
+   */
   async getActiveServicesByCategory(categoryId: string): Promise<ServiceDto[]> {
     // Verificar que la categoría existe
     const category = await this.categoryRepository.findById(categoryId);
@@ -147,6 +190,12 @@ export class ServiceManagementService {
     return services.map((service) => this.mapServiceToDto(service, category));
   }
 
+  /**
+   * Activa un servicio previamente desactivado
+   * @param id - ID único del servicio a activar
+   * @returns Promise con los datos del servicio activado
+   * @throws NotFoundError si el servicio no existe
+   */
   async activateService(id: string): Promise<ServiceDto> {
     const service = await this.serviceRepository.findById(id);
     if (!service) {
@@ -160,6 +209,12 @@ export class ServiceManagementService {
     return this.mapServiceToDto(updatedService, category!);
   }
 
+  /**
+   * Desactiva un servicio sin eliminarlo del sistema
+   * @param id - ID único del servicio a desactivar
+   * @returns Promise con los datos del servicio desactivado
+   * @throws NotFoundError si el servicio no existe
+   */
   async deactivateService(id: string): Promise<ServiceDto> {
     const service = await this.serviceRepository.findById(id);
     if (!service) {
@@ -173,6 +228,11 @@ export class ServiceManagementService {
     return this.mapServiceToDto(updatedService, category!);
   }
 
+  /**
+   * Elimina permanentemente un servicio del sistema
+   * @param id - ID único del servicio a eliminar
+   * @throws NotFoundError si el servicio no existe
+   */
   async deleteService(id: string): Promise<void> {
     const exists = await this.serviceRepository.existsById(id);
     if (!exists) {
@@ -182,6 +242,11 @@ export class ServiceManagementService {
     await this.serviceRepository.delete(id);
   }
 
+  /**
+   * Mapea una lista de servicios con sus categorías correspondientes de forma eficiente
+   * @param services - Lista de servicios a mapear
+   * @returns Promise con la lista de DTOs de servicios con información de categorías
+   */
   private async mapServicesWithCategories(services: Service[]): Promise<ServiceDto[]> {
     const categoryIds = [...new Set(services.map((service) => service.categoryId))];
     const categories = await Promise.all(
@@ -201,6 +266,11 @@ export class ServiceManagementService {
     });
   }
 
+  /**
+   * Valida los datos de entrada para crear un nuevo servicio
+   * @param dto - Datos de creación a validar
+   * @throws ValidationError si algún campo es inválido
+   */
   private validateCreateServiceDto(dto: CreateServiceDto): void {
     if (!dto.name || dto.name.trim().length === 0) {
       throw new ValidationError('Service name is required');
@@ -243,6 +313,11 @@ export class ServiceManagementService {
     }
   }
 
+  /**
+   * Valida los datos de entrada para actualizar un servicio
+   * @param dto - Datos de actualización a validar
+   * @throws ValidationError si algún campo es inválido
+   */
   private validateUpdateServiceDto(dto: UpdateServiceDto): void {
     if (dto.name !== undefined && (!dto.name || dto.name.trim().length === 0)) {
       throw new ValidationError('Service name cannot be empty');
@@ -300,6 +375,12 @@ export class ServiceManagementService {
     }
   }
 
+  /**
+   * Convierte una entidad Service a su representación DTO con información de categoría
+   * @param service - Entidad de servicio a convertir
+   * @param category - Entidad de categoría asociada
+   * @returns Objeto DTO con los datos completos del servicio
+   */
   private mapServiceToDto(service: Service, category: any): ServiceDto {
     return {
       id: service.id,

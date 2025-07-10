@@ -10,6 +10,13 @@ import { UpdateCategoryDto } from '../dto/request/UpdateCategoryDto ';
 export class CategoryService {
   constructor(private categoryRepository: CategoryRepository) {}
 
+  /**
+   * Crea una nueva categoría en el sistema con validaciones completas
+   * @param createDto - Datos para crear la nueva categoría
+   * @returns Promise con los datos de la categoría creada
+   * @throws ValidationError si los datos no son válidos
+   * @throws ConflictError si ya existe una categoría con ese nombre
+   */
   async createCategory(createDto: CreateCategoryDto): Promise<CategoryDto> {
     // Validaciones
     this.validateCreateCategoryDto(createDto);
@@ -29,6 +36,15 @@ export class CategoryService {
     return this.mapCategoryToDto(savedCategory);
   }
 
+  /**
+   * Actualiza una categoría existente con nuevos datos
+   * @param id - ID único de la categoría a actualizar
+   * @param updateDto - Datos parciales para actualizar la categoría
+   * @returns Promise con los datos de la categoría actualizada
+   * @throws NotFoundError si la categoría no existe
+   * @throws ValidationError si los datos no son válidos
+   * @throws ConflictError si el nuevo nombre ya está en uso
+   */
   async updateCategory(id: string, updateDto: UpdateCategoryDto): Promise<CategoryDto> {
     // Validaciones
     this.validateUpdateCategoryDto(updateDto);
@@ -58,6 +74,12 @@ export class CategoryService {
     return this.mapCategoryToDto(updatedCategory);
   }
 
+  /**
+   * Obtiene una categoría específica por su ID único
+   * @param id - ID único de la categoría a buscar
+   * @returns Promise con los datos de la categoría encontrada
+   * @throws NotFoundError si la categoría no existe
+   */
   async getCategoryById(id: string): Promise<CategoryDto> {
     const category = await this.categoryRepository.findById(id);
     if (!category) {
@@ -67,16 +89,30 @@ export class CategoryService {
     return this.mapCategoryToDto(category);
   }
 
+  /**
+   * Obtiene todas las categorías del sistema (activas e inactivas)
+   * @returns Promise con la lista completa de categorías
+   */
   async getAllCategories(): Promise<CategoryDto[]> {
     const categories = await this.categoryRepository.findAll();
     return categories.map((category) => this.mapCategoryToDto(category));
   }
 
+  /**
+   * Obtiene solo las categorías que están activas
+   * @returns Promise con la lista de categorías activas
+   */
   async getActiveCategories(): Promise<CategoryDto[]> {
     const categories = await this.categoryRepository.findActive();
     return categories.map((category) => this.mapCategoryToDto(category));
   }
 
+  /**
+   * Activa una categoría previamente desactivada
+   * @param id - ID único de la categoría a activar
+   * @returns Promise con los datos de la categoría activada
+   * @throws NotFoundError si la categoría no existe
+   */
   async activateCategory(id: string): Promise<CategoryDto> {
     const category = await this.categoryRepository.findById(id);
     if (!category) {
@@ -89,6 +125,12 @@ export class CategoryService {
     return this.mapCategoryToDto(updatedCategory);
   }
 
+  /**
+   * Desactiva una categoría sin eliminarla del sistema
+   * @param id - ID único de la categoría a desactivar
+   * @returns Promise con los datos de la categoría desactivada
+   * @throws NotFoundError si la categoría no existe
+   */
   async deactivateCategory(id: string): Promise<CategoryDto> {
     const category = await this.categoryRepository.findById(id);
     if (!category) {
@@ -101,6 +143,11 @@ export class CategoryService {
     return this.mapCategoryToDto(updatedCategory);
   }
 
+  /**
+   * Elimina permanentemente una categoría del sistema
+   * @param id - ID único de la categoría a eliminar
+   * @throws NotFoundError si la categoría no existe
+   */
   async deleteCategory(id: string): Promise<void> {
     const exists = await this.categoryRepository.existsById(id);
     if (!exists) {
@@ -110,6 +157,11 @@ export class CategoryService {
     await this.categoryRepository.delete(id);
   }
 
+  /**
+   * Valida los datos de entrada para crear una nueva categoría
+   * @param dto - Datos de creación a validar
+   * @throws ValidationError si algún campo es inválido
+   */
   private validateCreateCategoryDto(dto: CreateCategoryDto): void {
     if (!dto.name || dto.name.trim().length === 0) {
       throw new ValidationError('Category name is required');
@@ -124,6 +176,11 @@ export class CategoryService {
     }
   }
 
+  /**
+   * Valida los datos de entrada para actualizar una categoría
+   * @param dto - Datos de actualización a validar
+   * @throws ValidationError si algún campo es inválido
+   */
   private validateUpdateCategoryDto(dto: UpdateCategoryDto): void {
     if (dto.name !== undefined && (!dto.name || dto.name.trim().length === 0)) {
       throw new ValidationError('Category name cannot be empty');
@@ -138,6 +195,11 @@ export class CategoryService {
     }
   }
 
+  /**
+   * Convierte una entidad Category a su representación DTO
+   * @param category - Entidad de dominio a convertir
+   * @returns Objeto DTO con los datos de la categoría
+   */
   private mapCategoryToDto(category: Category): CategoryDto {
     return {
       id: category.id,

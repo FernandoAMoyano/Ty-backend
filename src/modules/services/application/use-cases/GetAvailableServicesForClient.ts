@@ -4,8 +4,14 @@ import { ServiceManagementService } from '../services/ServiceManagementService';
 import { StylistServiceService } from '../services/StylistServiceService';
 
 /**
- * Use Case que combina servicios activos con estilistas disponibles
- *  solo mostrar servicios que tienen estilistas activos ofreciéndolos
+ * Caso de uso que combina servicios activos con estilistas disponibles
+ * Solo muestra servicios que tienen al menos un estilista activo ofreciéndolos
+ */
+
+/**
+ * Obtiene todos los servicios disponibles para clientes con sus estilistas
+ * Filtra solo servicios que tienen al menos un estilista ofreciéndolos activamente
+ * @returns Promise con lista de servicios disponibles y sus estilistas
  */
 export class GetAvailableServicesForClient {
   constructor(
@@ -37,8 +43,16 @@ export class GetAvailableServicesForClient {
   }
 }
 
+/**
+ * Interfaz que representa un servicio con sus estilistas disponibles
+ */
 interface ServiceWithAvailableStylists {
+  /** Información completa del servicio */
   service: ServiceDto;
+
+  /** Lista de estilistas que están ofreciendo este servicio */
   availableStylists: StylistServiceDto[];
+
+  /** Indica si el servicio tiene al menos un estilista disponible */
   hasAvailableStylists: boolean;
 }
