@@ -2,6 +2,16 @@ import { PrismaClient } from '@prisma/client';
 import { Category } from '../../domain/entities/Category';
 import { CategoryRepository } from '../../domain/repositories/CategoryRepository';
 
+/**
+ * Implementación de CategoryRepository usando Prisma ORM
+ * Gestiona la persistencia de categorías en base de datos PostgreSQL
+ */
+
+/**
+ * Busca una categoría por su ID único
+ * @param id - ID único de la categoría a buscar
+ * @returns Promise que resuelve con la categoría encontrada o null si no existe
+ */
 export class PrismaCategoryRepository implements CategoryRepository {
   constructor(private prisma: PrismaClient) {}
 
@@ -22,6 +32,11 @@ export class PrismaCategoryRepository implements CategoryRepository {
     );
   }
 
+  /**
+   * Busca una categoría por su nombre (búsqueda insensible a mayúsculas)
+   * @param name - Nombre de la categoría a buscar
+   * @returns Promise que resuelve con la categoría encontrada o null si no existe
+   */
   async findByName(name: string): Promise<Category | null> {
     const categoryData = await this.prisma.category.findFirst({
       where: {
@@ -44,6 +59,10 @@ export class PrismaCategoryRepository implements CategoryRepository {
     );
   }
 
+  /**
+   * Obtiene todas las categorías del sistema ordenadas alfabéticamente
+   * @returns Promise que resuelve con un array de todas las categorías
+   */
   async findAll(): Promise<Category[]> {
     const categoriesData = await this.prisma.category.findMany({
       orderBy: { name: 'asc' },
@@ -61,6 +80,10 @@ export class PrismaCategoryRepository implements CategoryRepository {
     );
   }
 
+  /**
+   * Obtiene solo las categorías activas ordenadas alfabéticamente
+   * @returns Promise que resuelve con un array de categorías activas
+   */
   async findActive(): Promise<Category[]> {
     const categoriesData = await this.prisma.category.findMany({
       where: { isActive: true },
@@ -79,6 +102,11 @@ export class PrismaCategoryRepository implements CategoryRepository {
     );
   }
 
+  /**
+   * Guarda una nueva categoría en la base de datos
+   * @param category - Entidad de categoría a guardar
+   * @returns Promise que resuelve con la categoría guardada
+   */
   async save(category: Category): Promise<Category> {
     const categoryData = await this.prisma.category.create({
       data: {
@@ -101,6 +129,11 @@ export class PrismaCategoryRepository implements CategoryRepository {
     );
   }
 
+  /**
+   * Actualiza una categoría existente en la base de datos
+   * @param category - Entidad de categoría con los datos actualizados
+   * @returns Promise que resuelve con la categoría actualizada
+   */
   async update(category: Category): Promise<Category> {
     const categoryData = await this.prisma.category.update({
       where: { id: category.id },
@@ -122,12 +155,22 @@ export class PrismaCategoryRepository implements CategoryRepository {
     );
   }
 
+  /**
+   * Elimina una categoría de la base de datos de forma permanente
+   * @param id - ID único de la categoría a eliminar
+   * @returns Promise que resuelve cuando la eliminación se completa
+   */
   async delete(id: string): Promise<void> {
     await this.prisma.category.delete({
       where: { id },
     });
   }
 
+  /**
+   * Verifica si existe una categoría con el ID especificado
+   * @param id - ID único de la categoría a verificar
+   * @returns Promise que resuelve con true si existe, false en caso contrario
+   */
   async existsById(id: string): Promise<boolean> {
     const count = await this.prisma.category.count({
       where: { id },
@@ -135,6 +178,11 @@ export class PrismaCategoryRepository implements CategoryRepository {
     return count > 0;
   }
 
+  /**
+   * Verifica si existe una categoría con el nombre especificado (insensible a mayúsculas)
+   * @param name - Nombre de la categoría a verificar
+   * @returns Promise que resuelve con true si existe, false en caso contrario
+   */
   async existsByName(name: string): Promise<boolean> {
     const count = await this.prisma.category.count({
       where: {

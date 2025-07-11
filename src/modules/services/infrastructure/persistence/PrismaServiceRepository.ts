@@ -2,6 +2,16 @@ import { PrismaClient } from '@prisma/client';
 import { Service } from '../../domain/entities/Service';
 import { ServiceRepository } from '../../domain/repositories/ServiceRepository';
 
+/**
+ * Implementación de ServiceRepository usando Prisma ORM
+ * Gestiona la persistencia de servicios en base de datos PostgreSQL con conversión de tipos
+ */
+
+/**
+ * Busca un servicio por su ID único
+ * @param id - ID único del servicio a buscar
+ * @returns Promise que resuelve con el servicio encontrado o null si no existe
+ */
 export class PrismaServiceRepository implements ServiceRepository {
   constructor(private prisma: PrismaClient) {}
 
@@ -26,6 +36,11 @@ export class PrismaServiceRepository implements ServiceRepository {
     );
   }
 
+  /**
+   * Busca un servicio por su nombre (búsqueda insensible a mayúsculas)
+   * @param name - Nombre del servicio a buscar
+   * @returns Promise que resuelve con el servicio encontrado o null si no existe
+   */
   async findByName(name: string): Promise<Service | null> {
     const serviceData = await this.prisma.service.findFirst({
       where: {
@@ -52,6 +67,10 @@ export class PrismaServiceRepository implements ServiceRepository {
     );
   }
 
+  /**
+   * Obtiene todos los servicios del sistema ordenados alfabéticamente
+   * @returns Promise que resuelve con un array de todos los servicios
+   */
   async findAll(): Promise<Service[]> {
     const servicesData = await this.prisma.service.findMany({
       orderBy: { name: 'asc' },
@@ -73,6 +92,10 @@ export class PrismaServiceRepository implements ServiceRepository {
     );
   }
 
+  /**
+   * Obtiene solo los servicios activos ordenados alfabéticamente
+   * @returns Promise que resuelve con un array de servicios activos
+   */
   async findActive(): Promise<Service[]> {
     const servicesData = await this.prisma.service.findMany({
       where: { isActive: true },
@@ -95,6 +118,11 @@ export class PrismaServiceRepository implements ServiceRepository {
     );
   }
 
+  /**
+   * Busca todos los servicios que pertenecen a una categoría específica
+   * @param categoryId - ID único de la categoría
+   * @returns Promise que resuelve con un array de servicios de la categoría
+   */
   async findByCategory(categoryId: string): Promise<Service[]> {
     const servicesData = await this.prisma.service.findMany({
       where: { categoryId },
@@ -117,6 +145,11 @@ export class PrismaServiceRepository implements ServiceRepository {
     );
   }
 
+  /**
+   * Busca solo los servicios activos que pertenecen a una categoría específica
+   * @param categoryId - ID único de la categoría
+   * @returns Promise que resuelve con un array de servicios activos de la categoría
+   */
   async findActiveByCategoryId(categoryId: string): Promise<Service[]> {
     const servicesData = await this.prisma.service.findMany({
       where: {
@@ -142,6 +175,11 @@ export class PrismaServiceRepository implements ServiceRepository {
     );
   }
 
+  /**
+   * Guarda un nuevo servicio en la base de datos
+   * @param service - Entidad de servicio a guardar
+   * @returns Promise que resuelve con el servicio guardado
+   */
   async save(service: Service): Promise<Service> {
     const serviceData = await this.prisma.service.create({
       data: {
@@ -172,6 +210,11 @@ export class PrismaServiceRepository implements ServiceRepository {
     );
   }
 
+  /**
+   * Actualiza un servicio existente en la base de datos
+   * @param service - Entidad de servicio con los datos actualizados
+   * @returns Promise que resuelve con el servicio actualizado
+   */
   async update(service: Service): Promise<Service> {
     const serviceData = await this.prisma.service.update({
       where: { id: service.id },
@@ -201,12 +244,22 @@ export class PrismaServiceRepository implements ServiceRepository {
     );
   }
 
+  /**
+   * Elimina un servicio de la base de datos de forma permanente
+   * @param id - ID único del servicio a eliminar
+   * @returns Promise que resuelve cuando la eliminación se completa
+   */
   async delete(id: string): Promise<void> {
     await this.prisma.service.delete({
       where: { id },
     });
   }
 
+  /**
+   * Verifica si existe un servicio con el ID especificado
+   * @param id - ID único del servicio a verificar
+   * @returns Promise que resuelve con true si existe, false en caso contrario
+   */
   async existsById(id: string): Promise<boolean> {
     const count = await this.prisma.service.count({
       where: { id },
@@ -214,6 +267,11 @@ export class PrismaServiceRepository implements ServiceRepository {
     return count > 0;
   }
 
+  /**
+   * Verifica si existe un servicio con el nombre especificado (insensible a mayúsculas)
+   * @param name - Nombre del servicio a verificar
+   * @returns Promise que resuelve con true si existe, false en caso contrario
+   */
   async existsByName(name: string): Promise<boolean> {
     const count = await this.prisma.service.count({
       where: {

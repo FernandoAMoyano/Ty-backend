@@ -2,6 +2,17 @@ import { PrismaClient } from '@prisma/client';
 import { StylistService } from '../../domain/entities/StylistService';
 import { StylistServiceRepository } from '../../domain/repositories/StylistServiceRepository';
 
+/**
+ * Implementación de StylistServiceRepository usando Prisma ORM
+ * Gestiona la persistencia de asignaciones estilista-servicio con clave compuesta y conversión de tipos
+ */
+
+/**
+ * Busca una asignación específica entre un estilista y un servicio usando clave compuesta
+ * @param stylistId - ID único del estilista
+ * @param serviceId - ID único del servicio
+ * @returns Promise que resuelve con la asignación encontrada o null si no existe
+ */
 export class PrismaStylistServiceRepository implements StylistServiceRepository {
   constructor(private prisma: PrismaClient) {}
 
@@ -30,6 +41,12 @@ export class PrismaStylistServiceRepository implements StylistServiceRepository 
     );
   }
 
+  /**
+   * Busca todas las asignaciones de servicios para un estilista específico
+   * Ordenadas por fecha de creación (más recientes primero)
+   * @param stylistId - ID único del estilista
+   * @returns Promise que resuelve con un array de asignaciones del estilista
+   */
   async findByStylist(stylistId: string): Promise<StylistService[]> {
     const stylistServicesData = await this.prisma.stylistService.findMany({
       where: { stylistId },
@@ -48,6 +65,12 @@ export class PrismaStylistServiceRepository implements StylistServiceRepository 
     );
   }
 
+  /**
+   * Busca todas las asignaciones de estilistas para un servicio específico
+   * Ordenadas por fecha de creación (más recientes primero)
+   * @param serviceId - ID único del servicio
+   * @returns Promise que resuelve con un array de asignaciones del servicio
+   */
   async findByService(serviceId: string): Promise<StylistService[]> {
     const stylistServicesData = await this.prisma.stylistService.findMany({
       where: { serviceId },
@@ -66,6 +89,11 @@ export class PrismaStylistServiceRepository implements StylistServiceRepository 
     );
   }
 
+  /**
+   * Busca solo las asignaciones activas (que están siendo ofrecidas) de un estilista
+   * @param stylistId - ID único del estilista
+   * @returns Promise que resuelve con un array de asignaciones activas del estilista
+   */
   async findActiveOfferings(stylistId: string): Promise<StylistService[]> {
     const stylistServicesData = await this.prisma.stylistService.findMany({
       where: {
@@ -87,6 +115,11 @@ export class PrismaStylistServiceRepository implements StylistServiceRepository 
     );
   }
 
+  /**
+   * Busca todos los estilistas que están ofreciendo activamente un servicio específico
+   * @param serviceId - ID único del servicio
+   * @returns Promise que resuelve con un array de asignaciones activas para el servicio
+   */
   async findStylistsOfferingService(serviceId: string): Promise<StylistService[]> {
     const stylistServicesData = await this.prisma.stylistService.findMany({
       where: {
@@ -108,6 +141,11 @@ export class PrismaStylistServiceRepository implements StylistServiceRepository 
     );
   }
 
+  /**
+   * Guarda una nueva asignación estilista-servicio en la base de datos
+   * @param stylistService - Entidad de asignación a guardar
+   * @returns Promise que resuelve con la asignación guardada
+   */
   async save(stylistService: StylistService): Promise<StylistService> {
     const stylistServiceData = await this.prisma.stylistService.create({
       data: {
@@ -130,6 +168,11 @@ export class PrismaStylistServiceRepository implements StylistServiceRepository 
     );
   }
 
+  /**
+   * Actualiza una asignación estilista-servicio existente usando clave compuesta
+   * @param stylistService - Entidad de asignación con los datos actualizados
+   * @returns Promise que resuelve con la asignación actualizada
+   */
   async update(stylistService: StylistService): Promise<StylistService> {
     const stylistServiceData = await this.prisma.stylistService.update({
       where: {
@@ -155,6 +198,12 @@ export class PrismaStylistServiceRepository implements StylistServiceRepository 
     );
   }
 
+  /**
+   * Elimina una asignación estilista-servicio usando clave compuesta
+   * @param stylistId - ID único del estilista
+   * @param serviceId - ID único del servicio
+   * @returns Promise que resuelve cuando la eliminación se completa
+   */
   async delete(stylistId: string, serviceId: string): Promise<void> {
     await this.prisma.stylistService.delete({
       where: {
@@ -166,6 +215,12 @@ export class PrismaStylistServiceRepository implements StylistServiceRepository 
     });
   }
 
+  /**
+   * Verifica si existe una asignación entre un estilista y un servicio específicos
+   * @param stylistId - ID único del estilista
+   * @param serviceId - ID único del servicio
+   * @returns Promise que resuelve con true si existe la asignación, false en caso contrario
+   */
   async existsAssignment(stylistId: string, serviceId: string): Promise<boolean> {
     const count = await this.prisma.stylistService.count({
       where: {

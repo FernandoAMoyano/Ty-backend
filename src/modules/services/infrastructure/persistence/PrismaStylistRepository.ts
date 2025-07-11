@@ -2,6 +2,16 @@ import { PrismaClient } from '@prisma/client';
 import { StylistRepository } from '../../domain/repositories/StylistRepository';
 import { Stylist } from '../../domain/entities/Stylist';
 
+/**
+ * Implementación de StylistRepository usando Prisma ORM
+ * Gestiona la persistencia de estilistas en base de datos PostgreSQL con relaciones a usuarios
+ */
+
+/**
+ * Busca un estilista por su ID único incluyendo información del usuario relacionado
+ * @param id - ID único del estilista a buscar
+ * @returns Promise que resuelve con el estilista encontrado o null si no existe
+ */
 export class PrismaStylistRepository implements StylistRepository {
   constructor(private prisma: PrismaClient) {}
 
@@ -23,6 +33,11 @@ export class PrismaStylistRepository implements StylistRepository {
     );
   }
 
+  /**
+   * Busca un estilista por el ID del usuario asociado incluyendo información del usuario
+   * @param userId - ID único del usuario que es estilista
+   * @returns Promise que resuelve con el estilista encontrado o null si no existe
+   */
   async findByUserId(userId: string): Promise<Stylist | null> {
     const stylistData = await this.prisma.stylist.findUnique({
       where: { userId },
@@ -41,6 +56,11 @@ export class PrismaStylistRepository implements StylistRepository {
     );
   }
 
+  /**
+   * Obtiene todos los estilistas del sistema incluyendo información de usuarios relacionados
+   * Ordenados por fecha de creación (más recientes primero)
+   * @returns Promise que resuelve con un array de todos los estilistas
+   */
   async findAll(): Promise<Stylist[]> {
     const stylistsData = await this.prisma.stylist.findMany({
       include: {
@@ -54,6 +74,11 @@ export class PrismaStylistRepository implements StylistRepository {
     );
   }
 
+  /**
+   * Guarda un nuevo estilista en la base de datos
+   * @param stylist - Entidad de estilista a guardar
+   * @returns Promise que resuelve con el estilista guardado
+   */
   async save(stylist: Stylist): Promise<Stylist> {
     const stylistData = await this.prisma.stylist.create({
       data: {
@@ -72,6 +97,11 @@ export class PrismaStylistRepository implements StylistRepository {
     );
   }
 
+  /**
+   * Actualiza un estilista existente en la base de datos
+   * @param stylist - Entidad de estilista con los datos actualizados
+   * @returns Promise que resuelve con el estilista actualizado
+   */
   async update(stylist: Stylist): Promise<Stylist> {
     const stylistData = await this.prisma.stylist.update({
       where: { id: stylist.id },
@@ -89,12 +119,22 @@ export class PrismaStylistRepository implements StylistRepository {
     );
   }
 
+  /**
+   * Elimina un estilista de la base de datos de forma permanente
+   * @param id - ID único del estilista a eliminar
+   * @returns Promise que resuelve cuando la eliminación se completa
+   */
   async delete(id: string): Promise<void> {
     await this.prisma.stylist.delete({
       where: { id },
     });
   }
 
+  /**
+   * Verifica si existe un estilista con el ID especificado
+   * @param id - ID único del estilista a verificar
+   * @returns Promise que resuelve con true si existe, false en caso contrario
+   */
   async existsById(id: string): Promise<boolean> {
     const count = await this.prisma.stylist.count({
       where: { id },
