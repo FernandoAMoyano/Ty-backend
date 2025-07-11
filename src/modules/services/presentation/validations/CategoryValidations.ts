@@ -1,6 +1,17 @@
 import { body, param } from 'express-validator';
 
+/**
+ * Validaciones para operaciones relacionadas con categorías de servicios
+ * Define reglas de validación usando express-validator para asegurar integridad de datos
+ */
 export class CategoryValidations {
+  /**
+   * Validaciones para crear una nueva categoría
+   * @description Valida nombre requerido, longitud y formato, descripción opcional
+   * @rules
+   * - name: string requerido, 1-100 caracteres, solo letras y espacios
+   * - description: string opcional, máximo 500 caracteres
+   */
   static createCategory = [
     body('name')
       .isString()
@@ -20,6 +31,14 @@ export class CategoryValidations {
       .withMessage('Description cannot exceed 500 characters'),
   ];
 
+  /**
+   * Validaciones para actualizar una categoría existente
+   * @description Valida UUID del parámetro y campos opcionales de actualización
+   * @rules
+   * - id: UUID válido requerido en parámetros
+   * - name: string opcional, 1-100 caracteres, solo letras y espacios
+   * - description: string opcional, máximo 500 caracteres
+   */
   static updateCategory = [
     param('id').isUUID().withMessage('Category ID must be a valid UUID'),
 
@@ -42,5 +61,11 @@ export class CategoryValidations {
       .withMessage('Description cannot exceed 500 characters'),
   ];
 
+  /**
+   * Validación para operaciones que requieren ID de categoría
+   * @description Valida que el parámetro ID sea un UUID válido
+   * @rules
+   * - id: UUID válido requerido en parámetros de ruta
+   */
   static categoryById = [param('id').isUUID().withMessage('Category ID must be a valid UUID')];
 }
