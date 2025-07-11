@@ -1,4 +1,4 @@
-/* import { Router } from 'express';
+import { Router } from 'express';
 import { CategoryController } from '../controllers/CategoryController';
 import { ServiceController } from '../controllers/ServiceController';
 import { StylistServiceController } from '../controllers/StylistServiceController';
@@ -8,6 +8,10 @@ import { ServiceValidations } from '../validations/ServiceValidations';
 import { StylistServiceValidations } from '../validations/StylistServiceValidations';
 import { ValidationMiddleware } from '../middleware/ValidationMiddleware';
 
+/**
+ * Configurador de rutas para el módulo de servicios
+ * Organiza y registra todas las rutas relacionadas con categorías, servicios y asignaciones de estilistas
+ */
 export class ServicesRoutes {
   private router: Router;
 
@@ -21,12 +25,29 @@ export class ServicesRoutes {
     this.setupRoutes();
   }
 
+  /**
+   * Configura todas las rutas del módulo de servicios
+   * @description Organiza las rutas en grupos lógicos por funcionalidad
+   */
   private setupRoutes(): void {
     this.setupCategoryRoutes();
     this.setupServiceRoutes();
     this.setupStylistServiceRoutes();
   }
 
+  /**
+   * Configura las rutas para operaciones CRUD de categorías
+   * @description Define rutas públicas y administrativas para gestión de categorías
+   * @routes
+   * - GET /categories - Obtener todas las categorías
+   * - GET /categories/active - Obtener categorías activas
+   * - GET /categories/:id - Obtener categoría por ID
+   * - POST /categories - Crear categoría (requiere ADMIN)
+   * - PUT /categories/:id - Actualizar categoría (requiere ADMIN)
+   * - PATCH /categories/:id/activate - Activar categoría (requiere ADMIN)
+   * - PATCH /categories/:id/deactivate - Desactivar categoría (requiere ADMIN)
+   * - DELETE /categories/:id - Eliminar categoría (requiere ADMIN)
+   */
   private setupCategoryRoutes(): void {
     this.router.get('/categories', this.categoryController.getAllCategories);
     this.router.get('/categories/active', this.categoryController.getActiveCategories);
@@ -83,6 +104,21 @@ export class ServicesRoutes {
     );
   }
 
+  /**
+   * Configura las rutas para operaciones CRUD de servicios
+   * @description Define rutas públicas y administrativas con orden específico para evitar conflictos
+   * @routes
+   * - GET /services/active - Obtener servicios activos
+   * - GET /services/category/:categoryId/active - Obtener servicios activos por categoría
+   * - GET /services/category/:categoryId - Obtener servicios por categoría
+   * - GET /services - Obtener todos los servicios
+   * - GET /services/:id - Obtener servicio por ID
+   * - POST /services - Crear servicio (requiere ADMIN)
+   * - PUT /services/:id - Actualizar servicio (requiere ADMIN)
+   * - PATCH /services/:id/activate - Activar servicio (requiere ADMIN)
+   * - PATCH /services/:id/deactivate - Desactivar servicio (requiere ADMIN)
+   * - DELETE /services/:id - Eliminar servicio (requiere ADMIN)
+   */
   private setupServiceRoutes(): void {
     // 1. PRIMERO: Rutas más específicas
     this.router.get('/active', this.serviceController.getActiveServices);
@@ -158,6 +194,20 @@ export class ServicesRoutes {
     );
   }
 
+  /**
+   * Configura las rutas para operaciones de asignación de servicios a estilistas
+   * @description Define rutas de consulta y modificación con orden específico para resolver conflictos
+   * @routes
+   * - GET /services/stylists/:stylistId/services/active - Ofertas activas del estilista
+   * - GET /services/stylists/:stylistId/services/detailed - Estilista con servicios detallado
+   * - GET /services/stylists/:stylistId/services - Servicios del estilista
+   * - GET /services/:serviceId/stylists/offering - Estilistas ofreciendo servicio
+   * - GET /services/:serviceId/stylists/detailed - Servicio con estilistas detallado
+   * - GET /services/:serviceId/stylists - Estilistas del servicio
+   * - POST /services/stylists/:stylistId/services - Asignar servicio (requiere ADMIN/STYLIST)
+   * - PUT /services/stylists/:stylistId/services/:serviceId - Actualizar asignación (requiere ADMIN/STYLIST)
+   * - DELETE /services/stylists/:stylistId/services/:serviceId - Remover asignación (requiere ADMIN/STYLIST)
+   */
   private setupStylistServiceRoutes(): void {
     this.router.get(
       '/stylists/:stylistId/services',
@@ -228,13 +278,16 @@ export class ServicesRoutes {
       this.stylistServiceController.removeServiceFromStylist,
     );
   }
+  /**
+   * Obtiene el router configurado con todas las rutas
+   * @returns Router de Express con todas las rutas del módulo de servicios configuradas
+   */
   getRouter(): Router {
     return this.router;
   }
 }
- */
 
-import { Router } from 'express';
+/* import { Router } from 'express';
 import { CategoryController } from '../controllers/CategoryController';
 import { ServiceController } from '../controllers/ServiceController';
 import { StylistServiceController } from '../controllers/StylistServiceController';
@@ -474,3 +527,4 @@ export class ServicesRoutes {
     return this.router;
   }
 }
+ */
