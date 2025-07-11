@@ -17,6 +17,17 @@ export class Service {
     this.validate();
   }
 
+  /**
+   * Crea una nueva instancia de servicio con validaciones automáticas
+   * @param categoryId - ID de la categoría a la que pertenece el servicio
+   * @param name - Nombre del servicio (máximo 150 caracteres)
+   * @param description - Descripción del servicio (requerida, máximo 1000 caracteres)
+   * @param duration - Duración base en minutos (positivo, máximo 600 minutos)
+   * @param durationVariation - Variación de duración permitida en minutos
+   * @param price - Precio del servicio (no puede ser negativo)
+   * @returns Nueva instancia de Service con ID generado automáticamente
+   * @throws ValidationError si los datos no son válidos
+   */
   static create(
     categoryId: string,
     name: string,
@@ -36,6 +47,20 @@ export class Service {
     );
   }
 
+  /**
+   * Reconstruye una instancia de servicio desde datos de persistencia
+   * @param id - ID único del servicio
+   * @param categoryId - ID de la categoría
+   * @param name - Nombre del servicio
+   * @param description - Descripción del servicio
+   * @param duration - Duración en minutos
+   * @param durationVariation - Variación de duración
+   * @param price - Precio del servicio
+   * @param isActive - Estado activo/inactivo (por defecto true)
+   * @param createdAt - Fecha de creación (opcional)
+   * @param updatedAt - Fecha de última actualización (opcional)
+   * @returns Instancia de Service desde persistencia
+   */
   static fromPersistence(
     id: string,
     categoryId: string,
@@ -62,6 +87,10 @@ export class Service {
     );
   }
 
+  /**
+   * Ejecuta todas las validaciones de negocio para el servicio
+   * @throws ValidationError si alguna validación falla
+   */
   private validate(): void {
     if (!this.name || this.name.trim().length === 0) {
       throw new ValidationError('Service name cannot be empty');
@@ -105,6 +134,15 @@ export class Service {
     }
   }
 
+  /**
+   * Actualiza los detalles principales del servicio
+   * @param name - Nuevo nombre del servicio
+   * @param description - Nueva descripción del servicio
+   * @param duration - Nueva duración en minutos
+   * @param durationVariation - Nueva variación de duración
+   * @param price - Nuevo precio del servicio
+   * @throws ValidationError si los nuevos datos no son válidos
+   */
   updateDetails(
     name: string,
     description: string,
@@ -121,34 +159,61 @@ export class Service {
     this.validate();
   }
 
+  /**
+   * Cambia el servicio a una categoría diferente
+   * @param categoryId - ID de la nueva categoría
+   * @throws ValidationError si el ID de categoría no es válido
+   */
   updateCategory(categoryId: string): void {
     this.categoryId = categoryId;
     this.updatedAt = new Date();
     this.validate();
   }
 
+  /**
+   * Activa el servicio para que sea visible y reservable
+   */
   activate(): void {
     this.isActive = true;
     this.updatedAt = new Date();
   }
 
+  /**
+   * Desactiva el servicio sin eliminarlo del sistema
+   */
   deactivate(): void {
     this.isActive = false;
     this.updatedAt = new Date();
   }
 
+  /**
+   * Calcula la duración mínima del servicio considerando la variación
+   * @returns Duración mínima en minutos (nunca menor a 0)
+   */
   calculateMinDuration(): number {
     return Math.max(0, this.duration - this.durationVariation);
   }
 
+  /**
+   * Calcula la duración máxima del servicio considerando la variación
+   * @returns Duración máxima en minutos
+   */
   calculateMaxDuration(): number {
     return this.duration + this.durationVariation;
   }
 
+  /**
+   * Formatea el precio del servicio para mostrar en la interfaz
+   * @returns Precio formateado como string con dos decimales
+   */
   getFormattedPrice(): string {
     return (this.price / 100).toFixed(2);
   }
 
+  /**
+   * Convierte la entidad a formato de persistencia para guardar en base de datos
+   * @returns Objeto plano con todas las propiedades del servicio
+   */
   toPersistence() {
     return {
       id: this.id,
