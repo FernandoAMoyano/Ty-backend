@@ -10,6 +10,10 @@ import { RegisterDto } from '../dto/Request/RegisterDto';
 import { UserDto } from '../dto/Response/UserDto';
 import { HashService } from '../services/HashService';
 
+/**
+ * Caso de uso para registrar nuevos usuarios en el sistema
+ * Valida datos de entrada, verifica disponibilidad de email y crea nueva cuenta de usuario
+ */
 export class RegisterUser {
   constructor(
     private userRepository: UserRepository,
@@ -17,6 +21,15 @@ export class RegisterUser {
     private hashService: HashService,
   ) {}
 
+  /**
+   * Ejecuta el proceso de registro de un nuevo usuario
+   * @param registerDto - Datos de registro del usuario
+   * @returns Promise con los datos del usuario registrado
+   * @throws ValidationError si los datos de entrada no son válidos
+   * @throws ConflictError si el email ya está registrado
+   * @throws NotFoundError si el rol especificado no existe
+   * @description Valida datos, verifica unicidad del email, hashea contraseña y crea usuario con rol asignado
+   */
   async execute(registerDto: RegisterDto): Promise<UserDto> {
     //validaciones
     this.validateRegisterDto(registerDto);
@@ -51,6 +64,13 @@ export class RegisterUser {
     return this.mapUserToDto(savedUser, role);
   }
 
+  /**
+   * Convierte un string de rol a enum RoleName de Prisma
+   * @param roleString - String del nombre del rol a convertir
+   * @returns Enum RoleName correspondiente
+   * @throws ValidationError si el rol no es válido
+   * @private
+   */
   private stringToRoleName(roleString: string): RoleName {
     const normalizedRole = roleString.toUpperCase();
 
@@ -68,6 +88,13 @@ export class RegisterUser {
     }
   }
 
+  /**
+   * Valida los datos de entrada para el registro de usuario
+   * @param registerDto - Datos de registro a validar
+   * @throws ValidationError si alguno de los campos no cumple con los requisitos
+   * @private
+   * @description Valida nombre, email, teléfono, contraseña y rol usando utilidades compartidas
+   */
   private validateRegisterDto(registerDto: RegisterDto): void {
     if (!registerDto.name || registerDto.name.trim().length === 0) {
       throw new ValidationError('Name is required');
@@ -95,6 +122,13 @@ export class RegisterUser {
     }
   }
 
+  /**
+   * Convierte entidades User y Role a su representación DTO
+   * @param user - Entidad de usuario creada
+   * @param role - Entidad de rol asociada
+   * @returns Objeto DTO con los datos del usuario para respuesta
+   * @private
+   */
   private mapUserToDto(user: any, role: any): UserDto {
     return {
       id: user.id,
