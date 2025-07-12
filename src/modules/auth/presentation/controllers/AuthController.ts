@@ -12,6 +12,11 @@ import { LoginDto } from '../../application/dto/Request/LoginDto';
 import { UpdateProfileDto } from '../../application/dto/Request/UpdateProfileDto';
 import { ChangePasswordDto } from '../../application/dto/Request/ChangePasswordDto';
 
+/**
+ * Controlador de autenticación que maneja peticiones HTTP
+ * relacionadas con usuarios, Coordina las operaciones de
+ * login, registro, renovación de tokens y gestión de perfiles
+ */
 export class AuthController {
   constructor(
     private loginUser: LoginUser,
@@ -22,6 +27,17 @@ export class AuthController {
     private changeUserPassword: ChangeUserPassword,
   ) {}
 
+  /**
+   * Autentica un usuario en el sistema
+   * @route POST /auth/login
+   * @param req - Request de Express con LoginDto en el body
+   * @param res - Response de Express
+   * @returns Promise<Response | void>
+   * @description Valida credenciales y retorna tokens de acceso y renovación
+   * @responseStatus 200 - Login exitoso con tokens
+   * @throws ValidationError si las credenciales son inválidas
+   * @throws UnauthorizedError si el usuario no existe o la contraseña es incorrecta
+   */
   async login(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const loginDto: LoginDto = req.body;
@@ -37,6 +53,17 @@ export class AuthController {
     }
   }
 
+  /**
+   * Registra un nuevo usuario en el sistema
+   * @route POST /auth/register
+   * @param req - Request de Express con RegisterDto en el body
+   * @param res - Response de Express
+   * @returns Promise<Response | void>
+   * @description Crea una nueva cuenta de usuario con rol asignado
+   * @responseStatus 201 - Usuario registrado exitosamente
+   * @throws ValidationError si los datos no son válidos
+   * @throws ConflictError si el email ya está registrado
+   */
   async register(req: Request, res: Response): Promise<Response | void> {
     try {
       const registerDto: RegisterDto = req.body;
@@ -52,6 +79,17 @@ export class AuthController {
     }
   }
 
+  /**
+   * Renueva los tokens de acceso usando un refresh token
+   * @route POST /auth/refresh-token
+   * @param req - Request de Express con refreshToken en el body
+   * @param res - Response de Express
+   * @returns Promise<Response | void>
+   * @description Genera nuevos tokens cuando el token de acceso expira
+   * @responseStatus 200 - Tokens renovados exitosamente
+   * @throws ValidationError si no se proporciona refresh token
+   * @throws UnauthorizedError si el refresh token es inválido
+   */
   async refreshToken(req: Request, res: Response): Promise<Response | void> {
     try {
       const { refreshToken } = req.body;
@@ -75,6 +113,17 @@ export class AuthController {
     }
   }
 
+  /**
+   * Obtiene el perfil del usuario autenticado
+   * @route GET /auth/profile
+   * @param req - Request de Express autenticado con user en req.user
+   * @param res - Response de Express
+   * @returns Promise<Response | void>
+   * @description Retorna información completa del perfil del usuario
+   * @responseStatus 200 - Perfil obtenido exitosamente
+   * @throws UnauthorizedError si no hay autenticación
+   * @throws NotFoundError si el usuario no existe
+   */
   async getProfile(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       // Validación explícita del userId
@@ -99,6 +148,18 @@ export class AuthController {
     }
   }
 
+  /**
+   * Actualiza el perfil del usuario autenticado
+   * @route PUT /auth/profile
+   * @param req - Request de Express con UpdateProfileDto en el body
+   * @param res - Response de Express
+   * @returns Promise<Response | void>
+   * @description Modifica datos del perfil como nombre, email, etc.
+   * @responseStatus 200 - Perfil actualizado exitosamente
+   * @throws UnauthorizedError si no hay autenticación
+   * @throws ValidationError si los datos no son válidos
+   * @throws ConflictError si el nuevo email ya está en uso
+   */
   async updateProfile(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const userId = req.user?.userId || req.params.userId;
@@ -123,6 +184,17 @@ export class AuthController {
     }
   }
 
+  /**
+   * Cambia la contraseña del usuario autenticado
+   * @route PUT /auth/change-password
+   * @param req - Request de Express con ChangePasswordDto en el body
+   * @param res - Response de Express
+   * @returns Promise<Response | void>
+   * @description Actualiza la contraseña verificando la contraseña actual
+   * @responseStatus 200 - Contraseña cambiada exitosamente
+   * @throws UnauthorizedError si no hay autenticación
+   * @throws ValidationError si la contraseña actual es incorrecta
+   */
   async changePassword(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const userId = req.user?.userId;

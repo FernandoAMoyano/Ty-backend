@@ -8,6 +8,10 @@ import { isValidEmail } from '../../../../shared/utils/validation';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
 
+/**
+ * Caso de uso para autenticar usuarios en el sistema
+ * Valida credenciales, verifica el estado del usuario y genera tokens JWT
+ */
 export class LoginUser {
   constructor(
     private userRepository: UserRepository,
@@ -15,6 +19,14 @@ export class LoginUser {
     private jwtService: JwtService,
   ) {}
 
+  /**
+   * Ejecuta el proceso de autenticación de usuario
+   * @param loginDto - Datos de login (email y contraseña)
+   * @returns Promise con los datos de respuesta del login incluyendo tokens y datos del usuario
+   * @throws ValidationError si el email o contraseña no son válidos
+   * @throws UnauthorizedError si las credenciales son incorrectas o el usuario está inactivo
+   * @description Valida formato de email, verifica credenciales, genera tokens JWT y retorna datos del usuario
+   */
   async execute(loginDto: LoginDto): Promise<LoginResponseDto> {
     if (!loginDto.email || !isValidEmail(loginDto.email)) {
       throw new ValidationError('Invalid email format');
@@ -63,6 +75,13 @@ export class LoginUser {
     };
   }
 
+  /**
+   * Convierte una entidad User con Role a su representación DTO
+   * @param user - Entidad de usuario con datos completos
+   * @param role - Entidad de rol asociada al usuario
+   * @returns Objeto DTO con los datos del usuario formateados para respuesta
+   * @private
+   */
   private mapUserToDto(user: any, role: any): UserDto {
     return {
       id: user.id,

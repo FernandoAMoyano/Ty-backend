@@ -2,6 +2,10 @@ import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import { AuthMiddleware } from '../middleware/AuthMiddleware';
 
+/**
+ * Configurador de rutas para el módulo de autenticación
+ * Organiza todas las rutas relacionadas con login, registro y gestión de perfiles
+ */
 export class AuthRoutes {
   private router: Router;
 
@@ -13,6 +17,17 @@ export class AuthRoutes {
     this.setupRoutes();
   }
 
+  /**
+   * Configura todas las rutas del módulo de autenticación
+   * @description Define rutas públicas y protegidas con sus respectivos middlewares
+   * @routes
+   * - POST /auth/login - Iniciar sesión
+   * - POST /auth/register - Registrar nuevo usuario
+   * - POST /auth/refresh-token - Renovar tokens
+   * - GET /auth/profile - Obtener perfil (requiere autenticación)
+   * - PUT /auth/profile - Actualizar perfil (requiere autenticación)
+   * - PUT /auth/change-password - Cambiar contraseña (requiere autenticación)
+   */
   private setupRoutes(): void {
     this.router.post('/login', (req, res, next) => {
       this.authController.login(req, res).catch(next);
@@ -57,6 +72,10 @@ export class AuthRoutes {
     );
   }
 
+  /**
+   * Obtiene el router configurado con todas las rutas de autenticación
+   * @returns Router de Express con todas las rutas del módulo de autenticación configuradas
+   */
   getRouter(): Router {
     return this.router;
   }
