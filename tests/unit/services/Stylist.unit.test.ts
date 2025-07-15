@@ -40,15 +40,21 @@ describe('Stylist Entity', () => {
   });
 
   describe('updateInfo', () => {
-    it('should update timestamps', async () => {
+    it('should update timestamps', () => {
       const stylist = Stylist.create('user-id-123');
       const originalUpdatedAt = stylist.updatedAt;
 
-      await new Promise((resolve) => setTimeout(resolve, 1));
+      // Guardar el método original
+      const originalNow = Date.now;
+
+      // Mock Date.now para simular tiempo posterior
+      Date.now = jest.fn(() => originalUpdatedAt.getTime() + 1000);
 
       stylist.updateInfo();
 
       expect(stylist.updatedAt.getTime()).toBeGreaterThan(originalUpdatedAt.getTime());
+
+      Date.now = originalNow;
     });
   });
 

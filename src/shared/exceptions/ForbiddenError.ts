@@ -8,17 +8,17 @@ import { AppError } from './AppError';
  * Mapea al código de estado HTTP 403 (Forbidden)
  */
 
-/**
- * Crea una nueva instancia de error de acceso prohibido
- * @param message - Mensaje descriptivo del acceso denegado (por defecto 'Forbidden')
- * @example
- * // Uso típico para permisos insuficientes
- * throw new ForbiddenError('You do not have permission to delete this resource')
- *
- * // Uso para acceso a recursos de otros usuarios
- * throw new ForbiddenError('You can only access your own appointments')
- */
 export class ForbiddenError extends AppError {
+  /**
+   * Crea una nueva instancia de error de acceso prohibido
+   * @param message - Mensaje descriptivo del acceso denegado (por defecto 'Forbidden')
+   * @example
+   * // Uso típico para permisos insuficientes
+   * throw new ForbiddenError('You do not have permission to delete this resource')
+   *
+   * // Uso para acceso a recursos de otros usuarios
+   * throw new ForbiddenError('You can only access your own appointments')
+   */
   constructor(message: string = 'Forbidden') {
     super(message, 403);
   }

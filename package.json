@@ -20,16 +20,8 @@
     "prisma:migrate:reset": "prisma migrate reset",
     "prisma:db:seed": "ts-node prisma/seed.ts",
     "prisma:db:push": "prisma db push",
-    "prisma:test:migrate:deploy": "DATABASE_URL=$TEST_DATABASE_URL prisma migrate deploy",
-    "prisma:test:migrate:reset": "DATABASE_URL=$TEST_DATABASE_URL prisma migrate reset --force",
-    "prisma:test:db:seed": "DATABASE_URL=$TEST_DATABASE_URL ts-node prisma/seed.ts",
-    "prisma:test:studio": "DATABASE_URL=$TEST_DATABASE_URL prisma studio",
-
-
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:setup": "npm run prisma:test:migrate:deploy && npm run prisma:test:db:seed",
-    "test:reset": "npm run prisma:test:migrate:reset",
 
 
     "lint": "eslint . --ext .ts",
@@ -40,16 +32,14 @@
     "docker:dev:build": "docker-compose -f docker-compose.dev.yml build",
     "docker:dev:up": "docker-compose -f docker-compose.dev.yml up",
     "docker:dev:down": "docker-compose -f docker-compose.dev.yml down",
+
+
+
+    
     "docker:prisma:migrate:dev": "docker exec -it turnity-api-dev npx prisma migrate dev",
     "docker:generate:prisma:client": "docker exec -it turnity-api-dev npx prisma generate",
     "docker:db:prisma:seed": "docker exec -it turnity-api-dev npx prisma db seed",
     "docker:db:reset": "docker exec -it turnity-api-dev npx prisma migrate reset --force",
-    "docker:prisma:test:migrate:deploy": "docker exec -e DATABASE_URL=\"postgresql://postgres:fandanguillo236@db:5432/turnity_test?schema=public\" -it turnity-api-dev npx prisma migrate deploy",
-    "docker:prisma:test:migrate:reset": "docker exec -it turnity-api-dev env DATABASE_URL=$TEST_DATABASE_URL npx prisma migrate reset --force",
-    "docker:prisma:test:db:seed": "docker exec -e DATABASE_URL=\"postgresql://postgres:fandanguillo236@db:5432/turnity_test?schema=public\" -it turnity-api-dev npx prisma db seed",
-    "docker:prisma:test:studio": "docker exec -it turnity-api-dev env DATABASE_URL=$TEST_DATABASE_URL npx prisma studio",
-    "docker:test:setup": "npm run docker:prisma:test:migrate:deploy && npm run docker:prisma:test:db:seed",
-    "docker:test:reset": "npm run docker:prisma:test:migrate:reset",
     "docker:jest:test": "docker exec -it turnity-api-dev npm test",
     "docker:jest:test:watch": "docker exec -it turnity-api-dev npm run test:watch",
     "docker:prod:up": "docker-compose up -d",

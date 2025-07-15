@@ -110,7 +110,7 @@ describe('AuthService Unit Tests', () => {
 
   describe('registerService', () => {
     it('should delegate to RegisterUser use case with default CLIENT role', async () => {
-      // ✅ CORREGIDO: Usar roleName en lugar de roleId
+      // Usar roleName en lugar de roleId
       const registerDto: RegisterDto = {
         name: 'John Doe',
         email: 'test@example.com',
@@ -151,7 +151,7 @@ describe('AuthService Unit Tests', () => {
         email: 'elena@example.com',
         phone: '+1234567890',
         password: 'TestPass123!',
-        roleName: 'STYLIST', // ✅ Especificar rol
+        roleName: 'STYLIST',
       };
 
       const expectedUser: UserDto = {
@@ -162,7 +162,7 @@ describe('AuthService Unit Tests', () => {
         isActive: true,
         role: {
           id: generateUuid(),
-          name: 'STYLIST', // ✅ Rol específico
+          name: 'STYLIST',
           description: 'Stylist role',
         },
         createdAt: new Date(),
@@ -180,7 +180,7 @@ describe('AuthService Unit Tests', () => {
     });
 
     it('should handle registration errors from use case', async () => {
-      // ✅ CORREGIDO: Usar roleName
+      //
       const registerDto: RegisterDto = {
         name: 'John Doe',
         email: 'existing@example.com',
@@ -199,7 +199,7 @@ describe('AuthService Unit Tests', () => {
       expect(mockRegisterUser.execute).toHaveBeenCalledWith(registerDto);
     });
 
-    //  NUEVO: Test para rol inválido
+    // Test para rol inválido
     it('should handle invalid role error from use case', async () => {
       const registerDto: RegisterDto = {
         name: 'John Doe',

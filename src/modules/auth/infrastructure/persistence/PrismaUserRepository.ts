@@ -81,6 +81,23 @@ export class PrismaUserRepository implements UserRepository {
       },
     });
 
+    return userData;
+  }
+
+  /**
+   * Busca usuario por ID incluyendo datos del rol asociado
+   * @param id - ID del usuario
+   * @returns Promise con usuario y rol o null si no existe
+   * @description Usa include de Prisma para obtener relación con tabla role
+   */
+  async findByIdWithRole(id: string): Promise<any | null> {
+    const userData = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        role: true, // Incluir la relación con el rol
+      },
+    });
+
     if (!userData) return null;
 
     // Crear el objeto User con el rol incluido

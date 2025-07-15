@@ -65,19 +65,23 @@ export class AuthMiddleware {
    * @throws UnauthorizedError si el usuario no tiene permisos suficientes
    */
   authorize = (allowedRoles: string[]) => {
-    return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
       try {
         if (!req.user) {
           throw new UnauthorizedError('Authentication required');
         }
 
-        const roleMapping: Record<string, string> = {
-          '4b39b668-2515-4f5c-b032-e71e9c5f401c': 'ADMIN',
-        };
+        // Obtener el rol del usuario desde la base de datos
+        const { PrismaClient } = require('@prisma/client');
+        const prisma = new PrismaClient();
+        
+        const userRole = await prisma.role.findUnique({
+          where: { id: req.user.roleId }
+        });
+        
+        await prisma.$disconnect();
 
-        const roleName = roleMapping[req.user.roleId];
-
-        if (!roleName || !allowedRoles.includes(roleName)) {
+        if (!userRole || !allowedRoles.includes(userRole.name)) {
           throw new UnauthorizedError('Insufficient permissions');
         }
 

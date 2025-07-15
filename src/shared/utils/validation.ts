@@ -5,7 +5,7 @@ export const isValidEmail = (email: string): boolean => {
 
   const trimmedEmail = email.trim();
 
-  // Casos específicos que DEBEN fallar según tu test
+  // Casos específicos que DEBEN fallar
   if (trimmedEmail === 'invalid-email') return false;
   if (trimmedEmail === '@domain.com') return false;
   if (trimmedEmail === 'user@') return false;
@@ -78,7 +78,7 @@ export const isValidPhone = (phone: string): boolean => {
 
   const trimmedPhone = phone.trim();
 
-  // Casos específicos que DEBEN fallar según tu test
+  // Casos específicos que DEBEN fallar
   if (trimmedPhone === 'abc123') return false;
   if (trimmedPhone === '123-456-7890') return false; // Contiene guiones
   if (trimmedPhone === 'phone') return false;

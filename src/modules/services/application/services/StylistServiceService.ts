@@ -43,20 +43,12 @@ export class StylistServiceService {
     }
 
     // Verificar que el usuario asociado es estilista
-    const user = await this.userRepository.findById(stylist.userId);
-    if (!user) {
+    const userWithRole = await this.userRepository.findByIdWithRole(stylist.userId);
+    if (!userWithRole) {
       throw new NotFoundError('User', stylist.userId);
     }
 
-    //Mapear roleId a roleName para comparación correcta
-    const roleMapping: Record<string, string> = {
-      '4b39b668-2515-4f5c-b032-e71e9c5f401c': 'ADMIN',
-      'd1a51d7a-848b-47a7-9941-2a69956e2a7c': 'CLIENT',
-      'e63bf333-e3eb-4ed2-bde3-a2e1ffbbe255': 'STYLIST',
-    };
-
-    const roleName = roleMapping[user.roleId];
-    if (!roleName || roleName !== 'STYLIST') {
+    if (!userWithRole.role || userWithRole.role.name !== 'STYLIST') {
       throw new ValidationError('User is not a stylist');
     }
 

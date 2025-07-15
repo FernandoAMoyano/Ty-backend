@@ -29,10 +29,6 @@ export const setupSwagger = (app: Application): void => {
         message: 'API information retrieved successfully',
       });
     });
-
-    console.log(' 🟢Swagger UI configurado exitosamente:');
-    console.log(` 🟢Documentación: http://localhost:${process.env.PORT || 3000}/api/docs`);
-    console.log(` 🟢API Info: http://localhost:${process.env.PORT || 3000}/api/info`);
   } catch (error) {
     console.error('🔴 Error configurando Swagger:', error);
 
