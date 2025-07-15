@@ -188,26 +188,25 @@ DELETE /api/v1/stylists/:stylistId/services/:serviceId # Remover servicio del es
 - **Tests de integración** - API endpoints  
 - **Tests E2E** - Flujos completos
 
-El proyecto utiliza **dos bases de datos independientes** para garantizar la separación entre desarrollo y testing:
+El proyecto utiliza **una base de datos principal** (`turnity`) para desarrollo y testing, con limpieza automática de datos de prueba:
 
 | Base de Datos | Uso | Descripción |
 |---------------|-----|-------------|
-| **`turnity`** | Desarrollo y Postman | Datos persistentes para desarrollo diario |
-| **`turnity_test`** | Tests automáticos | Datos temporales que se limpian automáticamente |
+| **`turnity`** | Desarrollo y Testing | Base de datos única con datos de desarrollo y limpieza automática para tests |
 
 
 ```bash
-# 1. Configurar base de datos de test (solo una vez)
-npm run docker:test:setup
-
-# 2. Ejecutar tests (usan turnity_test automáticamente)
+# 1. Ejecutar todos los tests
 npm run docker:jest:test
 
-# 3. Resetear DB de test si es necesario
-npm run docker:test:reset
-
-# 4. Tests específicos
+# 2. Tests específicos
 npm run docker:jest:test -- tests/integration/auth/login.integration.test.ts
+
+# 3. Tests con patrón
+npm run docker:jest:test -- --testNamePattern="should login successfully"
+
+# 4. Ver cobertura de tests
+npm run docker:jest:test -- --coverage
 ```
 
 # 🟣Base de Datos
