@@ -12,6 +12,13 @@ export interface UserRepository {
    */
   findById(id: string): Promise<User | null>;
   /**
+   * Busca un usuario por su ID incluyendo información de su rol
+   * @param id - ID único del usuario
+   * @returns Promise que resuelve con el usuario y rol encontrados o null si no existe
+   * @description Útil para validaciones de rol
+   */
+  findByIdWithRole(id: string): Promise<any | null>;
+  /**
    * Busca un usuario por su dirección de email
    * @param email - Dirección de correo electrónico del usuario
    * @returns Promise que resuelve con el usuario encontrado o null si no existe

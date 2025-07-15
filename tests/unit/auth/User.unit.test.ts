@@ -92,7 +92,7 @@ describe('User Entity', () => {
       const newHashedPassword = 'newHashedPassword456';
       const originalUpdatedAt = user.updatedAt;
 
-      // Wait a bit to ensure timestamp difference
+      //garantizar la diferencia de marca de tiempo
       setTimeout(() => {
         user.updatePassword(newHashedPassword);
         expect(user.password).toBe(newHashedPassword);
@@ -107,7 +107,7 @@ describe('User Entity', () => {
         new User(
           validUserData.id,
           validUserData.roleId,
-          '', // Empty name
+          '', // nombre vacío
           validUserData.email,
           validUserData.phone,
           validUserData.password,
@@ -123,7 +123,7 @@ describe('User Entity', () => {
           validUserData.roleId,
           validUserData.name,
           validUserData.email,
-          'invalid-phone', // Invalid phone
+          'invalid-phone', // Teléfono no válido
           validUserData.password,
           validUserData.isActive,
         );
@@ -137,7 +137,7 @@ describe('User Entity', () => {
           validUserData.roleId,
           validUserData.name,
           validUserData.email,
-          '', // Empty phone
+          '', // teléfono vacío
           validUserData.password,
           validUserData.isActive,
         );

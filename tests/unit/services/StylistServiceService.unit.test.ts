@@ -47,6 +47,7 @@ describe('StylistServiceService', () => {
 
     mockUserRepository = {
       findById: jest.fn(),
+      findByIdWithRole: jest.fn(),
       findByEmail: jest.fn(),
       findByEmailWithRole: jest.fn(),
       findAll: jest.fn(),
@@ -85,18 +86,25 @@ describe('StylistServiceService', () => {
       const mockStylist = Stylist.create('user-id');
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
 
-      const mockUser = User.create(
-        'STYLIST', // roleId (1er parámetro)
-        'Test User', // name (2do parámetro)
-        'test@example.com', // email (3er parámetro)
-        '+1234567890', // phone (4to parámetro)
-        'password', // password (5to parámetro)
-      );
+      const mockUserWithRole = {
+        id: 'user-id',
+        roleId: 'stylist-role-id',
+        name: 'Test User',
+        email: 'test@example.com',
+        phone: '+1234567890',
+        password: 'password',
+        isActive: true,
+        role: {
+          id: 'stylist-role-id',
+          name: 'STYLIST',
+          description: 'Estilista que ofrece servicios'
+        }
+      };
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
       const mockStylistService = StylistService.create('stylist-id', 'service-id', 3000);
 
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
-      mockUserRepository.findById.mockResolvedValue(mockUser);
+      mockUserRepository.findByIdWithRole.mockResolvedValue(mockUserWithRole);
       mockServiceRepository.findById.mockResolvedValue(mockService);
       mockStylistServiceRepository.existsAssignment.mockResolvedValue(false);
       mockStylistServiceRepository.save.mockResolvedValue(mockStylistService);
@@ -104,7 +112,7 @@ describe('StylistServiceService', () => {
       const result = await stylistServiceService.assignServiceToStylist('stylist-id', assignDto);
 
       expect(mockStylistRepository.findById).toHaveBeenCalledWith('stylist-id');
-      expect(mockUserRepository.findById).toHaveBeenCalledWith('user-id');
+      expect(mockUserRepository.findByIdWithRole).toHaveBeenCalledWith('user-id');
       expect(mockServiceRepository.findById).toHaveBeenCalledWith('service-id');
       expect(mockStylistServiceRepository.existsAssignment).toHaveBeenCalledWith(
         'stylist-id',
@@ -127,16 +135,23 @@ describe('StylistServiceService', () => {
       const mockStylist = Stylist.create('user-id');
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
 
-      const mockUser = User.create(
-        'STYLIST', // roleId
-        'Test User', // name
-        'test@example.com', // email
-        '+1234567890', // phone
-        'password', // password
-      );
+      const mockUserWithRole = {
+        id: 'user-id',
+        roleId: 'stylist-role-id',
+        name: 'Test User',
+        email: 'test@example.com',
+        phone: '+1234567890',
+        password: 'password',
+        isActive: true,
+        role: {
+          id: 'stylist-role-id',
+          name: 'STYLIST',
+          description: 'Estilista que ofrece servicios'
+        }
+      };
 
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
-      mockUserRepository.findById.mockResolvedValue(mockUser);
+      mockUserRepository.findByIdWithRole.mockResolvedValue(mockUserWithRole);
       mockServiceRepository.findById.mockResolvedValue(null);
 
       await expect(
@@ -148,16 +163,23 @@ describe('StylistServiceService', () => {
       const mockStylist = Stylist.create('user-id');
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
 
-      const mockUser = User.create(
-        'CLIENT', // roleId
-        'Test User', // name
-        'test@example.com', // email
-        '+1234567890', // phone
-        'password', // password
-      );
+      const mockUserWithRole = {
+        id: 'user-id',
+        roleId: 'client-role-id',
+        name: 'Test User',
+        email: 'test@example.com',
+        phone: '+1234567890',
+        password: 'password',
+        isActive: true,
+        role: {
+          id: 'client-role-id',
+          name: 'CLIENT',
+          description: 'Cliente que puede agendar citas'
+        }
+      };
 
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
-      mockUserRepository.findById.mockResolvedValue(mockUser);
+      mockUserRepository.findByIdWithRole.mockResolvedValue(mockUserWithRole);
 
       await expect(
         stylistServiceService.assignServiceToStylist('stylist-id', assignDto),
@@ -168,17 +190,24 @@ describe('StylistServiceService', () => {
       const mockStylist = Stylist.create('user-id');
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
 
-      const mockUser = User.create(
-        'STYLIST', // roleId
-        'Test User', // name
-        'test@example.com', // email
-        '+1234567890', // phone
-        'password', // password
-      );
+      const mockUserWithRole = {
+        id: 'user-id',
+        roleId: 'stylist-role-id',
+        name: 'Test User',
+        email: 'test@example.com',
+        phone: '+1234567890',
+        password: 'password',
+        isActive: true,
+        role: {
+          id: 'stylist-role-id',
+          name: 'STYLIST',
+          description: 'Estilista que ofrece servicios'
+        }
+      };
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
 
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
-      mockUserRepository.findById.mockResolvedValue(mockUser);
+      mockUserRepository.findByIdWithRole.mockResolvedValue(mockUserWithRole);
       mockServiceRepository.findById.mockResolvedValue(mockService);
       mockStylistServiceRepository.existsAssignment.mockResolvedValue(true);
 
