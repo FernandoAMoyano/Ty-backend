@@ -12,6 +12,7 @@ import { errorHandler } from './shared/middleware/ErrorHandler';
 import { prisma } from './shared/config/Prisma';
 import { AuthContainer } from './modules/auth/AuthContainer';
 import { ServicesContainer } from './modules/services/ServicesContainer';
+import { AppointmentContainer } from './modules/appointments/AppointmentContainer';
 import { setupSwagger } from './shared/middleware/swagger';
 
 import dotenv from 'dotenv';
@@ -21,11 +22,16 @@ class App {
   public app: express.Application;
   private authContainer: AuthContainer;
   private serviceContainer: ServicesContainer;
+  private appointmentContainer: AppointmentContainer;
 
   constructor() {
     this.app = express();
     this.authContainer = AuthContainer.getInstance(prisma);
     this.serviceContainer = ServicesContainer.getInstance(
+      prisma,
+      this.authContainer.authMiddleware,
+    );
+    this.appointmentContainer = AppointmentContainer.getInstance(
       prisma,
       this.authContainer.authMiddleware,
     );
@@ -66,6 +72,7 @@ class App {
 
     this.app.use('/api/v1/auth', this.authContainer.authRoutes.getRouter());
     this.app.use('/api/v1', this.serviceContainer.servicesRoutes.getRouter());
+    this.app.use('/api/v1/appointments', this.appointmentContainer.appointmentRoutes.getRouter());
 
     this.app.use((req, res) => {
       res.status(404).json({
