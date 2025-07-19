@@ -220,7 +220,7 @@ paths:
           $ref: '#/components/responses/Error401'
 
   # CATEGORIES
-  /services/categories:
+  /categories:
     get:
       tags: [Categories]
       summary: Obtener todas las categorías
@@ -277,7 +277,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error409'
 
-  /services/categories/active:
+  /categories/active:
     get:
       tags: [Categories]
       summary: Obtener categorías activas
@@ -301,7 +301,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Category'
 
-  /services/categories/{id}:
+  /categories/{id}:
     get:
       tags: [Categories]
       summary: Obtener categoría por ID
@@ -388,7 +388,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /services/categories/{id}/activate:
+  /categories/{id}/activate:
     patch:
       tags: [Categories]
       summary: Activar categoría
@@ -413,7 +413,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /services/categories/{id}/deactivate:
+  /categories/{id}/deactivate:
     patch:
       tags: [Categories]
       summary: Desactivar categoría
@@ -748,7 +748,7 @@ paths:
           $ref: '#/components/responses/Error404'
 
 # STYLIST SERVICES
-  /stylists/{stylistId}/services:
+  /services/stylists/{stylistId}/services:
     get:
       tags: [Stylist Services]
       summary: Servicios de un estilista
@@ -821,7 +821,7 @@ paths:
         '409':
           $ref: '#/components/responses/Error409'
 
-  /stylists/{stylistId}/services/active:
+  /services/stylists/{stylistId}/services/active:
     get:
       tags: [Stylist Services]
       summary: Servicios que ofrece activamente
@@ -854,7 +854,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /stylists/{stylistId}/services/detailed:
+  /services/stylists/{stylistId}/services/detailed:
     get:
       tags: [Stylist Services]
       summary: Estilista con servicios detallados
@@ -876,7 +876,7 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /stylists/{stylistId}/services/{serviceId}:
+  /services/stylists/{stylistId}/services/{serviceId}:
     put:
       tags: [Stylist Services]
       summary: Actualizar relación estilista-servicio
@@ -1041,6 +1041,390 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
+  /services/{serviceId}/stylists:
+    get:
+      tags: [Stylist Services]
+      summary: Estilistas de un servicio
+      security: []
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Estilistas del servicio obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Service stylists retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StylistService'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/{serviceId}/stylists/offering:
+    get:
+      tags: [Stylist Services]
+      summary: Estilistas que ofrecen el servicio
+      security: []
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Estilistas que ofrecen el servicio obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Stylists offering service retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StylistService'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /services/{serviceId}/stylists/detailed:
+    get:
+      tags: [Stylist Services]
+      summary: Servicio con estilistas detallados
+      security: []
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Servicio con estilistas obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  # APPOINTMENTS
+  /appointments:
+    post:
+      tags: [Appointments]
+      summary: Crear nueva cita
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [dateTime, clientId, serviceIds]
+              properties:
+                dateTime:
+                  type: string
+                  format: date-time
+                  example: "2025-12-22T10:00:00.000Z"
+                clientId:
+                  type: string
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                stylistId:
+                  type: string
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                serviceIds:
+                  type: array
+                  items:
+                    type: string
+                  example: ["123e4567-e89b-12d3-a456-426614174000"]
+                duration:
+                  type: integer
+                  example: 60
+      responses:
+        '201':
+          description: Cita creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '409':
+          $ref: '#/components/responses/Error409'
+
+  /appointments/available-slots:
+    get:
+      tags: [Appointments]
+      summary: Obtener slots disponibles
+      security: []
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2025-12-22"
+        - name: duration
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 60
+        - name: stylistId
+          in: query
+          required: false
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Slots disponibles obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /appointments/statistics:
+    get:
+      tags: [Appointments]
+      summary: Obtener estadísticas de citas
+      responses:
+        '200':
+          description: Estadísticas obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  /appointments/date-range:
+    get:
+      tags: [Appointments]
+      summary: Obtener citas por rango de fechas
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: "2025-12-01T00:00:00.000Z"
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: "2025-12-31T23:59:59.999Z"
+      responses:
+        '200':
+          description: Citas obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  /appointments/client/{clientId}:
+    get:
+      tags: [Appointments]
+      summary: Obtener citas de un cliente
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Citas del cliente obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /appointments/stylist/{stylistId}:
+    get:
+      tags: [Appointments]
+      summary: Obtener citas de un estilista
+      parameters:
+        - name: stylistId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Citas del estilista obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /appointments/{id}:
+    get:
+      tags: [Appointments]
+      summary: Obtener cita por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Cita obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+    put:
+      tags: [Appointments]
+      summary: Actualizar cita
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dateTime:
+                  type: string
+                  format: date-time
+                  example: "2025-12-22T10:00:00.000Z"
+                stylistId:
+                  type: string
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                serviceIds:
+                  type: array
+                  items:
+                    type: string
+                  example: ["123e4567-e89b-12d3-a456-426614174000"]
+                duration:
+                  type: integer
+                  example: 60
+      responses:
+        '200':
+          description: Cita actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+
+  /appointments/{id}/confirm:
+    post:
+      tags: [Appointments]
+      summary: Confirmar cita
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Cita confirmada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /appointments/{id}/cancel:
+    post:
+      tags: [Appointments]
+      summary: Cancelar cita
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  example: "Cliente no puede asistir"
+      responses:
+        '200':
+          description: Cita cancelada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
 
 components:
   securitySchemes:
@@ -1183,6 +1567,131 @@ components:
           type: string
           format: date-time
 
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        dateTime:
+          type: string
+          format: date-time
+          example: "2025-12-22T10:00:00.000Z"
+        duration:
+          type: integer
+          example: 60
+          description: "Duración en minutos"
+        userId:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: "ID del usuario que creó la cita"
+        clientId:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: "ID del cliente para la cita"
+        stylistId:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: "ID del estilista asignado (opcional)"
+        scheduleId:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: "ID del horario asociado"
+        statusId:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: "ID del estado actual de la cita"
+        serviceIds:
+          type: array
+          items:
+            type: string
+          example: ["123e4567-e89b-12d3-a456-426614174000"]
+          description: "Lista de IDs de servicios incluidos"
+        confirmedAt:
+          type: string
+          format: date-time
+          example: "2025-12-22T09:30:00.000Z"
+          description: "Fecha de confirmación (null si no está confirmada)"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-12-20T15:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-12-21T10:15:00.000Z"
+
+    AppointmentStatus:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Pendiente"
+          description: "Nombre del estado (Pendiente, Confirmada, Completada, etc.)"
+        description:
+          type: string
+          example: "Cita pendiente de confirmación"
+          description: "Descripción del estado"
+
+    Schedule:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        dayOfWeek:
+          type: string
+          enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+          example: "MONDAY"
+          description: "Día de la semana del horario"
+        startTime:
+          type: string
+          example: "09:00"
+          description: "Hora de inicio en formato HH:MM"
+        endTime:
+          type: string
+          example: "18:00"
+          description: "Hora de fin en formato HH:MM"
+        holidayId:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: "ID del feriado asociado (opcional)"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AvailableSlot:
+      type: object
+      properties:
+        startTime:
+          type: string
+          format: date-time
+          example: "2025-12-22T10:00:00.000Z"
+          description: "Hora de inicio del slot disponible"
+        endTime:
+          type: string
+          format: date-time
+          example: "2025-12-22T11:00:00.000Z"
+          description: "Hora de fin del slot disponible"
+        duration:
+          type: integer
+          example: 60
+          description: "Duración del slot en minutos"
+        isAvailable:
+          type: boolean
+          example: true
+          description: "Indica si el slot está disponible"
+        stylistId:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: "ID del estilista para este slot (opcional)"
+
   responses:
     Error400:
       description: Datos de entrada inválidos
@@ -1251,3 +1760,6 @@ tags:
 
   - name: Stylist Services
     description: Relación entre estilistas y servicios (Consulta pública, modificación ADMIN/STYLIST)
+
+  - name: Appointments
+    description: Gestión de citas del sistema (Requiere autenticación, slots disponibles públicos)
