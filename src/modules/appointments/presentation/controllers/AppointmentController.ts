@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { CreateAppointment } from '../../application/use-cases/CreateAppointment';
+import { GetAppointmentById } from '../../application/use-cases/GetAppointmentById';
 import { AuthenticatedRequest } from '../../../auth/presentation/middleware/AuthMiddleware';
 import { CreateAppointmentDto } from '../../application/dto/request/CreateAppointmentDto';
 import { UpdateAppointmentDto } from '../../application/dto/request/UpdateAppointmentDto';
@@ -10,7 +11,10 @@ import { GetAvailableSlotsDto } from '../../application/dto/request/GetAvailable
  * Coordina las operaciones de creación, actualización, consulta y gestión de citas
  */
 export class AppointmentController {
-  constructor(private createAppointmentUseCase: CreateAppointment) {}
+  constructor(
+    private createAppointmentUseCase: CreateAppointment,
+    private getAppointmentByIdUseCase: GetAppointmentById,
+  ) {}
 
   /**
    * Crea una nueva cita en el sistema
@@ -64,12 +68,11 @@ export class AppointmentController {
     try {
       const { id } = req.params;
 
-      // TODO: Implementar el caso de uso GetAppointmentById
-      // const result = await this.getAppointmentById.execute(id);
+      const result = await this.getAppointmentByIdUseCase.execute(id);
 
       return res.status(200).json({
         success: true,
-        data: { id, message: 'GetAppointmentById use case not implemented yet' },
+        data: result,
         message: 'Appointment retrieved successfully',
       });
     } catch (error) {
