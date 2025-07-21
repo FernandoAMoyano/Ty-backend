@@ -23,6 +23,7 @@ import { PrismaUserRepository } from '../auth/infrastructure/persistence/PrismaU
 
 // Casos de uso
 import { CreateAppointment } from './application/use-cases/CreateAppointment';
+import { GetAppointmentById } from './application/use-cases/GetAppointmentById';
 
 /**
  * Contenedor de dependencias para el módulo de citas
@@ -38,6 +39,7 @@ export class AppointmentContainer {
 
   // Use Cases
   private _createAppointment: CreateAppointment;
+  private _getAppointmentById: GetAppointmentById;
 
   // Repositories - Own module
   private _appointmentRepository: AppointmentRepository;
@@ -92,7 +94,7 @@ export class AppointmentContainer {
     this._stylistRepository = new PrismaStylistRepository(this.prisma);
     this._userRepository = new PrismaUserRepository(this.prisma);
 
-    // Use Cases - Solo CreateAppointment está implementado por ahora
+    // Use Cases - CreateAppointment y GetAppointmentById implementados
     this._createAppointment = new CreateAppointment(
       this._appointmentRepository,
       this._appointmentStatusRepository,
@@ -102,14 +104,18 @@ export class AppointmentContainer {
       this._userRepository,
     );
 
-    // HTTP Layer - Solo inyectamos el caso de uso implementado
+    this._getAppointmentById = new GetAppointmentById(
+      this._appointmentRepository,
+    );
+
+    // HTTP Layer - Inyectamos los casos de uso implementados
     this._appointmentController = new AppointmentController(
       this._createAppointment,
+      this._getAppointmentById,
       // TODO: Inyectar otros casos de uso cuando se implementen:
       // this._updateAppointmentUseCase,
       // this._cancelAppointmentUseCase,
       // this._confirmAppointmentUseCase,
-      // this._getAppointmentByIdUseCase,
       // this._getAppointmentsByClientUseCase,
       // this._getAppointmentsByStylistUseCase,
       // this._getAvailableSlotsUseCase,
@@ -147,6 +153,14 @@ export class AppointmentContainer {
    */
   get createAppointment(): CreateAppointment {
     return this._createAppointment;
+  }
+
+  /**
+   * Obtiene el caso de uso de consulta de cita por ID configurado
+   * @returns Instancia de GetAppointmentById para uso directo o testing
+   */
+  get getAppointmentById(): GetAppointmentById {
+    return this._getAppointmentById;
   }
 
   // Getters para repositorios (para testing o uso directo)
