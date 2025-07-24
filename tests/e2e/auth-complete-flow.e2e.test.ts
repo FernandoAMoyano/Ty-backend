@@ -3,6 +3,7 @@ import app from '../../src/app';
 import { createTestUser } from '../setup/helpers';
 
 describe('Auth Complete Flow E2E Tests', () => {
+  // Debería completar el flujo completo de autenticación
   it('should complete full authentication flow', async () => {
     // 1. Registrar usuario (usará roleId del seed)
     const userData = await createTestUser('CLIENT');
@@ -35,6 +36,7 @@ describe('Auth Complete Flow E2E Tests', () => {
     expect(refreshResponse.body.data.token).toBeDefined();
   });
 
+  // Debería manejar escenarios completos de error
   it('should handle complete error scenarios', async () => {
     // Test con credenciales inválidas
     const loginResponse = await request(app).post('/api/v1/auth/login').send({

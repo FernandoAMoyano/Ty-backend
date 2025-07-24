@@ -40,6 +40,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
   });
 
   describe('POST /api/v1/services/stylists/:stylistId/services - Assign Service', () => {
+    // Debería asignar servicio al estilista exitosamente
     it('should assign service to stylist successfully', async () => {
       const response = await request(app)
         .post(`/api/v1/services/stylists/${testStylistId}/services`)
@@ -62,6 +63,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(assignment.customPrice).toBeUndefined();
     });
 
+    // Debería asignar servicio con precio personalizado
     it('should assign service with custom price', async () => {
       const customPrice = 75.0;
 
@@ -85,6 +87,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(assignment.formattedEffectivePrice).toBe('75.00');
     });
 
+    // Debería rechazar asignación sin autenticación
     it('should reject assignment without authentication', async () => {
       const response = await request(app)
         .post(`/api/v1/services/stylists/${testStylistId}/services`)
@@ -96,6 +99,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
+    // Debería rechazar asignación a estilista inexistente
     it('should reject assignment to non-existent stylist', async () => {
       const response = await request(app)
         .post('/api/v1/services/stylists/00000000-0000-0000-0000-000000000000/services')
@@ -109,6 +113,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(response.body.message).toContain('Stylist not found');
     });
 
+    // Debería rechazar asignación de servicio inexistente
     it('should reject assignment of non-existent service', async () => {
       const response = await request(app)
         .post(`/api/v1/services/stylists/${testStylistId}/services`)
@@ -122,6 +127,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(response.body.message).toContain('Service not found');
     });
 
+    // Debería rechazar asignación duplicada
     it('should reject duplicate assignment', async () => {
       // Asignar servicio por primera vez
       await assignServiceToStylist(adminToken, testStylistId, testServiceId);
@@ -139,6 +145,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(response.body.message).toContain('already assigned');
     });
 
+    // Debería rechazar precio personalizado negativo
     it('should reject negative custom price', async () => {
       const response = await request(app)
         .post(`/api/v1/services/stylists/${testStylistId}/services`)
@@ -160,6 +167,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       await assignServiceToStylist(adminToken, testStylistId, testServiceId);
     });
 
+    // Debería obtener servicios del estilista exitosamente
     it('should get stylist services successfully', async () => {
       const response = await request(app)
         .get(`/api/v1/services/stylists/${testStylistId}/services`)
@@ -175,6 +183,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(assignment.serviceId).toBe(testServiceId);
     });
 
+    // Debería devolver array vacío para estilista sin servicios
     it('should return empty array for stylist with no services', async () => {
       // Crear otro estilista sin servicios
       const newStylist = await createTestStylist();
@@ -188,6 +197,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(response.body.data.length).toBe(0);
     });
 
+    // Debería devolver 404 para estilista inexistente
     it('should return 404 for non-existent stylist', async () => {
       const response = await request(app)
         .get('/api/v1/services/stylists/00000000-0000-0000-0000-000000000000/services')
@@ -204,6 +214,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       await assignServiceToStylist(adminToken, testStylistId, testServiceId);
     });
 
+    // Debería actualizar precio personalizado exitosamente
     it('should update custom price successfully', async () => {
       const newCustomPrice = 80.0;
 
@@ -226,6 +237,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(assignment.formattedEffectivePrice).toBe('80.00');
     });
 
+    // Debería actualizar estado de oferta exitosamente
     it('should update offering status successfully', async () => {
       const response = await request(app)
         .put(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
@@ -241,6 +253,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(assignment.isOffering).toBe(false);
     });
 
+    // Debería actualizar tanto precio como estado de oferta
     it('should update both price and offering status', async () => {
       const newCustomPrice = 90.0;
 
@@ -261,6 +274,8 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(assignment.effectivePrice).toBe(9000);
     });
 
+    // Debería devolver 404 para asignación inexistente
+    // Debería devolver 404 para asignación inexistente al eliminar
     it('should return 404 for non-existent assignment', async () => {
       // Crear otro servicio que no está asignado
       const anotherService = await createTestService(adminToken, testCategoryId, {
@@ -286,6 +301,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       await assignServiceToStylist(adminToken, testStylistId, testServiceId);
     });
 
+    // Debería eliminar asignación exitosamente
     it('should remove assignment successfully', async () => {
       const response = await request(app)
         .delete(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
@@ -324,6 +340,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       await assignServiceToStylist(adminToken, testStylistId, testServiceId);
     });
 
+    // Debería permitir acceso público a operaciones de lectura
     it('should allow public access to read operations', async () => {
       // Sin token de autenticación
       await request(app).get(`/api/v1/services/stylists/${testStylistId}/services`).expect(200);
@@ -331,6 +348,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       await request(app).get(`/api/v1/services/${testServiceId}/stylists`).expect(200);
     });
 
+    // Debería requerir autenticación para operaciones de escritura
     it('should require authentication for write operations', async () => {
       // Sin token
       await request(app)

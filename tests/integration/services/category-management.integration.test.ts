@@ -24,6 +24,7 @@ describe('Category Management Integration Tests', () => {
   });
 
   describe('POST /api/v1/categories - Create Category', () => {
+    // Debería crear una nueva categoría exitosamente
     it('should create a new category successfully', async () => {
       const categoryData = generateValidCategoryData({
         name: generateUniqueName('Test Hair Services'),
@@ -48,6 +49,7 @@ describe('Category Management Integration Tests', () => {
       testCategoryId = category.id;
     });
 
+    // Debería crear categoría con datos mínimos
     it('should create category with minimal data', async () => {
       const categoryData = {
         name: generateUniqueName('Minimal Test Category'),
@@ -67,6 +69,7 @@ describe('Category Management Integration Tests', () => {
       expect(category.isActive).toBe(true);
     });
 
+    // Debería rechazar la creación de categoría sin autenticación
     it('should reject category creation without authentication', async () => {
       const categoryData = generateValidCategoryData({
         name: generateUniqueName('Unauthorized Category'),
@@ -78,6 +81,7 @@ describe('Category Management Integration Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
+    // Debería rechazar nombre de categoría duplicado
     it('should reject duplicate category name', async () => {
       const categoryData = generateValidCategoryData({
         name: generateUniqueName('Duplicate Category Name'),
@@ -104,6 +108,7 @@ describe('Category Management Integration Tests', () => {
       expect(response.body.message).toContain('already exists');
     });
 
+    // Debería validar los campos requeridos
     it('should validate required fields', async () => {
       const response = await request(app)
         .post('/api/v1/categories')
@@ -116,6 +121,7 @@ describe('Category Management Integration Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
+    // Debería rechazar caracteres especiales en el nombre
     it('should reject special characters in name', async () => {
       const categoryData = generateValidCategoryData({
         name: 'Test Category & Spa Services (Premium)',
@@ -132,6 +138,7 @@ describe('Category Management Integration Tests', () => {
       expect(response.body.message).toContain('letters and spaces');
     });
 
+    // Debería eliminar espacios en blanco del nombre
     it('should trim whitespace from name', async () => {
       const categoryData = {
         name: `  ${generateUniqueName('Test Category with Spaces')}  `,
@@ -170,6 +177,7 @@ describe('Category Management Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`);
     });
 
+    // Debería obtener todas las categorías
     it('should get all categories', async () => {
       const response = await request(app).get('/api/v1/categories').expect(200);
 
@@ -190,6 +198,7 @@ describe('Category Management Integration Tests', () => {
       });
     });
 
+    // Debería obtener solo las categorías activas
     it('should get only active categories', async () => {
       const response = await request(app).get('/api/v1/categories/active').expect(200);
 
@@ -203,6 +212,7 @@ describe('Category Management Integration Tests', () => {
       });
     });
 
+    // Debería obtener categoría por ID
     it('should get category by ID', async () => {
       const response = await request(app).get(`/api/v1/categories/${testCategoryId}`).expect(200);
 
@@ -211,6 +221,7 @@ describe('Category Management Integration Tests', () => {
       validateCategoryResponse(response.body.data);
     });
 
+    // Debería devolver 404 para categoría inexistente
     it('should return 404 for non-existent category', async () => {
       const response = await request(app)
         .get('/api/v1/categories/00000000-0000-0000-0000-000000000000')
@@ -220,6 +231,7 @@ describe('Category Management Integration Tests', () => {
       expect(response.body.message).toContain('Category not found');
     });
 
+    // Debería permitir acceso público a operaciones de lectura
     it('should allow public access to read operations', async () => {
       // Sin token de autenticación
       await request(app).get('/api/v1/categories').expect(200);
@@ -238,6 +250,7 @@ describe('Category Management Integration Tests', () => {
       testCategoryId = category.id;
     });
 
+    // Debería actualizar categoría exitosamente
     it('should update category successfully', async () => {
       const updateData = {
         name: generateUniqueName('Updated Category Name'),
@@ -256,6 +269,7 @@ describe('Category Management Integration Tests', () => {
       validateCategoryResponse(response.body.data);
     });
 
+    // Debería actualizar campos parciales
     it('should update partial fields', async () => {
       const updateData = {
         name: generateUniqueName('Partially Updated Name'),
@@ -273,6 +287,7 @@ describe('Category Management Integration Tests', () => {
       validateCategoryResponse(response.body.data);
     });
 
+    // Debería rechazar actualización con nombre duplicado
     it('should reject update with duplicate name', async () => {
       // Crear otra categoría con nombre conocido
       const duplicateName = generateUniqueName('Another Category');
@@ -294,6 +309,7 @@ describe('Category Management Integration Tests', () => {
       expect(response.body.message).toContain('already exists');
     });
 
+    // Debería rechazar actualización sin autenticación
     it('should reject update without authentication', async () => {
       const response = await request(app)
         .put(`/api/v1/categories/${testCategoryId}`)
@@ -305,6 +321,7 @@ describe('Category Management Integration Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
+    // Debería devolver 400 para formato de UUID inválido
     it('should return 400 for invalid UUID format', async () => {
       const response = await request(app)
         .put('/api/v1/categories/invalid-uuid-format')
@@ -328,6 +345,7 @@ describe('Category Management Integration Tests', () => {
       testCategoryId = category.id;
     });
 
+    // Debería desactivar categoría
     it('should deactivate category', async () => {
       const response = await request(app)
         .patch(`/api/v1/categories/${testCategoryId}/deactivate`)
@@ -339,6 +357,7 @@ describe('Category Management Integration Tests', () => {
       validateCategoryResponse(response.body.data);
     });
 
+    // Debería activar categoría
     it('should activate category', async () => {
       // Primero desactivar
       await request(app)
@@ -356,12 +375,14 @@ describe('Category Management Integration Tests', () => {
       validateCategoryResponse(response.body.data);
     });
 
+    // Debería requerir autenticación para cambios de estado
     it('should require authentication for status changes', async () => {
       await request(app).patch(`/api/v1/categories/${testCategoryId}/deactivate`).expect(401);
 
       await request(app).patch(`/api/v1/categories/${testCategoryId}/activate`).expect(401);
     });
 
+    // Debería devolver 404 para cambio de estado de categoría inexistente
     it('should return 404 for non-existent category status change', async () => {
       const response = await request(app)
         .patch('/api/v1/categories/00000000-0000-0000-0000-000000000000/deactivate')
@@ -383,6 +404,7 @@ describe('Category Management Integration Tests', () => {
       testCategoryId = category.id;
     });
 
+    // Debería eliminar categoría exitosamente
     it('should delete category successfully', async () => {
       const response = await request(app)
         .delete(`/api/v1/categories/${testCategoryId}`)
@@ -396,6 +418,7 @@ describe('Category Management Integration Tests', () => {
       await request(app).get(`/api/v1/categories/${testCategoryId}`).expect(404);
     });
 
+    // Debería devolver 404 al eliminar categoría inexistente
     it('should return 404 when deleting non-existent category', async () => {
       const response = await request(app)
         .delete('/api/v1/categories/00000000-0000-0000-0000-000000000000')
@@ -406,6 +429,7 @@ describe('Category Management Integration Tests', () => {
       expect(response.body.message).toContain('Category not found');
     });
 
+    // Debería requerir autenticación para eliminación
     it('should require authentication for deletion', async () => {
       const response = await request(app)
         .delete(`/api/v1/categories/${testCategoryId}`)
@@ -416,6 +440,7 @@ describe('Category Management Integration Tests', () => {
   });
 
   describe('Edge Cases and Validation', () => {
+    // Debería manejar nombres de categoría muy largos
     it('should handle very long category names', async () => {
       const longName = 'A'.repeat(255);
 
@@ -430,6 +455,7 @@ describe('Category Management Integration Tests', () => {
       expect([201, 400]).toContain(response.status);
     });
 
+    // Debería manejar cadenas vacías elegantemente
     it('should handle empty strings gracefully', async () => {
       const response = await request(app)
         .post('/api/v1/categories')
@@ -443,6 +469,7 @@ describe('Category Management Integration Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
+    // Debería manejar valores nulos elegantemente
     it('should handle null values gracefully', async () => {
       const response = await request(app)
         .post('/api/v1/categories')

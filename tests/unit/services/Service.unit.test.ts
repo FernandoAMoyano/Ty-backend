@@ -12,6 +12,7 @@ describe('Service Entity', () => {
   };
 
   describe('Creation', () => {
+    // Debería crear un servicio con datos válidos
     it('should create a service with valid data', () => {
       const service = Service.create(
         validServiceData.categoryId,
@@ -32,6 +33,7 @@ describe('Service Entity', () => {
       expect(service.isActive).toBe(true);
     });
 
+    // Debería lanzar error si el nombre está vacío
     it('should throw error if name is empty', () => {
       expect(() => {
         Service.create(
@@ -45,6 +47,7 @@ describe('Service Entity', () => {
       }).toThrow(ValidationError);
     });
 
+    // Debería lanzar error si la duración es inválida
     it('should throw error if duration is invalid', () => {
       expect(() => {
         Service.create(
@@ -58,6 +61,7 @@ describe('Service Entity', () => {
       }).toThrow(ValidationError);
     });
 
+    // Debería lanzar error si la variación de duración excede la duración
     it('should throw error if duration variation exceeds duration', () => {
       expect(() => {
         Service.create(
@@ -71,6 +75,7 @@ describe('Service Entity', () => {
       }).toThrow(ValidationError);
     });
 
+    // Debería lanzar error si el precio es negativo
     it('should throw error if price is negative', () => {
       expect(() => {
         Service.create(
@@ -99,14 +104,17 @@ describe('Service Entity', () => {
       );
     });
 
+    // Debería calcular la duración mínima correctamente
     it('should calculate minimum duration correctly', () => {
       expect(service.calculateMinDuration()).toBe(45); // 60 - 15
     });
 
+    // Debería calcular la duración máxima correctamente
     it('should calculate maximum duration correctly', () => {
       expect(service.calculateMaxDuration()).toBe(75); // 60 + 15
     });
 
+    // No debería devolver duración mínima negativa
     it('should not return negative minimum duration', () => {
       const shortService = Service.create(
         validServiceData.categoryId,
@@ -122,6 +130,7 @@ describe('Service Entity', () => {
   });
 
   describe('Price formatting', () => {
+    // Debería formatear el precio correctamente
     it('should format price correctly', () => {
       const service = Service.create(
         validServiceData.categoryId,
@@ -150,6 +159,7 @@ describe('Service Entity', () => {
       );
     });
 
+    // Debería activar servicio
     it('should activate service', () => {
       service.deactivate();
       expect(service.isActive).toBe(false);
@@ -158,6 +168,7 @@ describe('Service Entity', () => {
       expect(service.isActive).toBe(true);
     });
 
+    // Debería desactivar servicio
     it('should deactivate service', () => {
       expect(service.isActive).toBe(true);
 

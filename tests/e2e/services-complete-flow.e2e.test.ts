@@ -8,6 +8,7 @@ describe('Services Complete Flow E2E Tests', () => {
     await cleanupTestData();
   });
 
+  // Debería completar el flujo completo de gestión de servicios
   it('should complete full services management flow', async () => {
     // 1. AUTENTICACIÓN: Login como administrador
     const adminToken = await loginAsAdmin();

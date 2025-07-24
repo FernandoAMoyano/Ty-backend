@@ -58,6 +58,7 @@ describe('AuthService Unit Tests', () => {
   });
 
   describe('loginService', () => {
+    // Debería delegar al caso de uso LoginUser
     it('should delegate to LoginUser use case', async () => {
       const loginDto: LoginDto = {
         email: 'test@example.com',
@@ -93,6 +94,7 @@ describe('AuthService Unit Tests', () => {
       expect(result.user.email).toBe('test@example.com');
     });
 
+    // Debería manejar errores de inicio de sesión desde el caso de uso
     it('should handle login errors from use case', async () => {
       const loginDto: LoginDto = {
         email: 'test@example.com',
@@ -109,6 +111,7 @@ describe('AuthService Unit Tests', () => {
   });
 
   describe('registerService', () => {
+    // Debería delegar al caso de uso RegisterUser con rol CLIENT por defecto
     it('should delegate to RegisterUser use case with default CLIENT role', async () => {
       // Usar roleName en lugar de roleId
       const registerDto: RegisterDto = {
@@ -145,6 +148,7 @@ describe('AuthService Unit Tests', () => {
     });
 
     // Test con rol específico
+    // Debería delegar al caso de uso RegisterUser con rol especificado
     it('should delegate to RegisterUser use case with specified role', async () => {
       const registerDto: RegisterDto = {
         name: 'Elena Martinez',
@@ -179,6 +183,7 @@ describe('AuthService Unit Tests', () => {
       expect(result.role.name).toBe('STYLIST');
     });
 
+    // Debería manejar errores de registro desde el caso de uso
     it('should handle registration errors from use case', async () => {
       //
       const registerDto: RegisterDto = {
@@ -200,6 +205,7 @@ describe('AuthService Unit Tests', () => {
     });
 
     // Test para rol inválido
+    // Debería manejar error de rol inválido desde el caso de uso
     it('should handle invalid role error from use case', async () => {
       const registerDto: RegisterDto = {
         name: 'John Doe',
@@ -223,6 +229,7 @@ describe('AuthService Unit Tests', () => {
   });
 
   describe('refreshTokenService', () => {
+    // Debería delegar al caso de uso RefreshToken
     it('should delegate to RefreshToken use case', async () => {
       const refreshToken = 'valid-refresh-token';
       const expectedResponse: LoginResponseDto = {
@@ -252,6 +259,7 @@ describe('AuthService Unit Tests', () => {
       expect(result.token).toBe('new-access-token');
     });
 
+    // Debería manejar token de refresco inválido desde el caso de uso
     it('should handle invalid refresh token from use case', async () => {
       const invalidToken = 'invalid-refresh-token';
       const error = new Error('Invalid refresh token');
@@ -267,6 +275,7 @@ describe('AuthService Unit Tests', () => {
   });
 
   describe('getUserProfileService', () => {
+    // Debería delegar al caso de uso GetUserProfile
     it('should delegate to GetUserProfile use case', async () => {
       const userId = generateUuid();
       const expectedUser: UserDto = {
@@ -292,6 +301,7 @@ describe('AuthService Unit Tests', () => {
       expect(result.id).toBe(userId);
     });
 
+    // Debería manejar usuario no encontrado desde el caso de uso
     it('should handle user not found from use case', async () => {
       const userId = 'non-existent-id';
       const error = new Error('User not found');
@@ -305,6 +315,7 @@ describe('AuthService Unit Tests', () => {
   });
 
   describe('updateProfileService', () => {
+    // Debería delegar al caso de uso UpdateUserProfile
     it('should delegate to UpdateUserProfile use case', async () => {
       const userId = generateUuid();
       const updateDto: UpdateProfileDto = {
@@ -338,6 +349,7 @@ describe('AuthService Unit Tests', () => {
   });
 
   describe('changePasswordService', () => {
+    // Debería delegar al caso de uso ChangeUserPassword
     it('should delegate to ChangeUserPassword use case', async () => {
       const userId = generateUuid();
       const changePasswordDto: ChangePasswordDto = {
@@ -352,6 +364,7 @@ describe('AuthService Unit Tests', () => {
       expect(mockChangeUserPassword.execute).toHaveBeenCalledWith(userId, changePasswordDto);
     });
 
+    // Debería manejar contraseña actual incorrecta desde el caso de uso
     it('should handle incorrect current password from use case', async () => {
       const userId = generateUuid();
       const changePasswordDto: ChangePasswordDto = {

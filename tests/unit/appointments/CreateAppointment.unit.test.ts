@@ -7,7 +7,10 @@ import { StylistRepository } from '../../../src/modules/services/domain/reposito
 import { UserRepository } from '../../../src/modules/auth/domain/repositories/User';
 import { Appointment } from '../../../src/modules/appointments/domain/entities/Appointment';
 import { AppointmentStatus } from '../../../src/modules/appointments/domain/entities/AppointmentStatus';
-import { Schedule, DayOfWeekEnum } from '../../../src/modules/appointments/domain/entities/Schedule';
+import {
+  Schedule,
+  DayOfWeekEnum,
+} from '../../../src/modules/appointments/domain/entities/Schedule';
 import { Service } from '../../../src/modules/services/domain/entities/Service';
 import { Stylist } from '../../../src/modules/services/domain/entities/Stylist';
 import { User } from '../../../src/modules/auth/domain/entities/User';
@@ -38,7 +41,7 @@ describe('CreateAppointment Use Case', () => {
   const validUserId = 'user-id-123';
 
   beforeEach(() => {
-    // Mock repositories with all methods
+    // Mock repositorios con todos los métodos
     mockAppointmentRepository = {
       findById: jest.fn(),
       findAll: jest.fn(),
@@ -139,15 +142,22 @@ describe('CreateAppointment Use Case', () => {
   });
 
   describe('execute', () => {
+    // Debería crear cita exitosamente
     it('should create appointment successfully', async () => {
       // Arrange
-      const mockUser = User.create('role-id', 'Test User', 'test@example.com', '+1234567890', 'password');
+      const mockUser = User.create(
+        'role-id',
+        'Test User',
+        'test@example.com',
+        '+1234567890',
+        'password',
+      );
       const mockStylist = Stylist.create('stylist-user-id');
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 60, 15, 2500);
       const mockStatus = AppointmentStatus.create('Pendiente', 'Cita pendiente de confirmación');
       const mockSchedule = Schedule.create(DayOfWeekEnum.MONDAY, '09:00', '18:00');
-      
-      // Set IDs manually for mocked entities
+
+      // Establecer identificaciones manualmente para entidades burladas
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id-123', writable: false });
       Object.defineProperty(mockService, 'id', { value: 'service-id-123', writable: false });
       Object.defineProperty(mockStatus, 'id', { value: 'status-id-123', writable: false });
@@ -164,7 +174,7 @@ describe('CreateAppointment Use Case', () => {
         validCreateDto.serviceIds,
       );
 
-      // Mock repository responses
+      // Mock respuestas de repositorio
       mockUserRepository.findById.mockResolvedValue(mockUser);
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
       mockServiceRepository.findById.mockResolvedValue(mockService);
@@ -185,122 +195,162 @@ describe('CreateAppointment Use Case', () => {
       expect(mockAppointmentRepository.save).toHaveBeenCalledTimes(1);
     });
 
+    // Debería lanzar ValidationError si userId está vacío
     it('should throw ValidationError if userId is empty', async () => {
-      await expect(
-        createAppointment.execute(validCreateDto, '')
-      ).rejects.toThrow(ValidationError);
+      await expect(createAppointment.execute(validCreateDto, '')).rejects.toThrow(ValidationError);
     });
 
+    // Debería lanzar ValidationError si clientId está vacío
     it('should throw ValidationError if clientId is empty', async () => {
       const invalidDto = { ...validCreateDto, clientId: '' };
-      
-      await expect(
-        createAppointment.execute(invalidDto, validUserId)
-      ).rejects.toThrow(ValidationError);
+
+      await expect(createAppointment.execute(invalidDto, validUserId)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
+    // Debería lanzar ValidationError si dateTime está vacío
     it('should throw ValidationError if dateTime is empty', async () => {
       const invalidDto = { ...validCreateDto, dateTime: '' };
-      
-      await expect(
-        createAppointment.execute(invalidDto, validUserId)
-      ).rejects.toThrow(ValidationError);
+
+      await expect(createAppointment.execute(invalidDto, validUserId)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
+    // Debería lanzar ValidationError si serviceIds está vacío
     it('should throw ValidationError if serviceIds is empty', async () => {
       const invalidDto = { ...validCreateDto, serviceIds: [] };
-      
-      await expect(
-        createAppointment.execute(invalidDto, validUserId)
-      ).rejects.toThrow(ValidationError);
+
+      await expect(createAppointment.execute(invalidDto, validUserId)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
+    // Debería lanzar ValidationError si la cita es en el pasado
     it('should throw ValidationError if appointment is in the past', async () => {
       const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000); // ayer
       const invalidDto = { ...validCreateDto, dateTime: pastDate.toISOString() };
-      
-      await expect(
-        createAppointment.execute(invalidDto, validUserId)
-      ).rejects.toThrow(ValidationError);
+
+      await expect(createAppointment.execute(invalidDto, validUserId)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
+    // Debería lanzar ValidationError si la cita es más de 6 meses por adelantado
     it('should throw ValidationError if appointment is more than 6 months in advance', async () => {
       const futureDate = new Date();
       futureDate.setMonth(futureDate.getMonth() + 7); // 7 meses en el futuro
       const invalidDto = { ...validCreateDto, dateTime: futureDate.toISOString() };
-      
-      await expect(
-        createAppointment.execute(invalidDto, validUserId)
-      ).rejects.toThrow(ValidationError);
+
+      await expect(createAppointment.execute(invalidDto, validUserId)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
+    // Debería lanzar NotFoundError si el cliente no existe
     it('should throw NotFoundError if client does not exist', async () => {
       mockUserRepository.findById.mockResolvedValue(null);
-      
-      await expect(
-        createAppointment.execute(validCreateDto, validUserId)
-      ).rejects.toThrow(NotFoundError);
+
+      await expect(createAppointment.execute(validCreateDto, validUserId)).rejects.toThrow(
+        NotFoundError,
+      );
     });
 
+    // Debería lanzar NotFoundError si el estilista no existe
     it('should throw NotFoundError if stylist does not exist', async () => {
-      const mockUser = User.create('role-id', 'Test User', 'test@example.com', '+1234567890', 'password');
+      const mockUser = User.create(
+        'role-id',
+        'Test User',
+        'test@example.com',
+        '+1234567890',
+        'password',
+      );
       mockUserRepository.findById.mockResolvedValue(mockUser);
       mockStylistRepository.findById.mockResolvedValue(null);
-      
-      await expect(
-        createAppointment.execute(validCreateDto, validUserId)
-      ).rejects.toThrow(NotFoundError);
+
+      await expect(createAppointment.execute(validCreateDto, validUserId)).rejects.toThrow(
+        NotFoundError,
+      );
     });
 
+    // Debería lanzar NotFoundError si el servicio no existe
     it('should throw NotFoundError if service does not exist', async () => {
-      const mockUser = User.create('role-id', 'Test User', 'test@example.com', '+1234567890', 'password');
+      const mockUser = User.create(
+        'role-id',
+        'Test User',
+        'test@example.com',
+        '+1234567890',
+        'password',
+      );
       const mockStylist = Stylist.create('stylist-user-id');
-      
+
       mockUserRepository.findById.mockResolvedValue(mockUser);
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
       mockServiceRepository.findById.mockResolvedValue(null);
-      
-      await expect(
-        createAppointment.execute(validCreateDto, validUserId)
-      ).rejects.toThrow(NotFoundError);
+
+      await expect(createAppointment.execute(validCreateDto, validUserId)).rejects.toThrow(
+        NotFoundError,
+      );
     });
 
+    // Debería lanzar NotFoundError si el estado pendiente no existe
     it('should throw NotFoundError if pending status does not exist', async () => {
-      const mockUser = User.create('role-id', 'Test User', 'test@example.com', '+1234567890', 'password');
+      const mockUser = User.create(
+        'role-id',
+        'Test User',
+        'test@example.com',
+        '+1234567890',
+        'password',
+      );
       const mockStylist = Stylist.create('stylist-user-id');
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 60, 15, 2500);
-      
+
       mockUserRepository.findById.mockResolvedValue(mockUser);
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
       mockServiceRepository.findById.mockResolvedValue(mockService);
       mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([]);
       mockAppointmentStatusRepository.findAll.mockResolvedValue([]);
-      
-      await expect(
-        createAppointment.execute(validCreateDto, validUserId)
-      ).rejects.toThrow(NotFoundError);
+
+      await expect(createAppointment.execute(validCreateDto, validUserId)).rejects.toThrow(
+        NotFoundError,
+      );
     });
 
+    // Debería lanzar NotFoundError si el horario no existe
     it('should throw NotFoundError if schedule does not exist', async () => {
-      const mockUser = User.create('role-id', 'Test User', 'test@example.com', '+1234567890', 'password');
+      const mockUser = User.create(
+        'role-id',
+        'Test User',
+        'test@example.com',
+        '+1234567890',
+        'password',
+      );
       const mockStylist = Stylist.create('stylist-user-id');
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 60, 15, 2500);
       const mockStatus = AppointmentStatus.create('Pendiente', 'Cita pendiente de confirmación');
-      
+
       mockUserRepository.findById.mockResolvedValue(mockUser);
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
       mockServiceRepository.findById.mockResolvedValue(mockService);
       mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([]);
       mockAppointmentStatusRepository.findAll.mockResolvedValue([mockStatus]);
       mockScheduleRepository.findAll.mockResolvedValue([]);
-      
-      await expect(
-        createAppointment.execute(validCreateDto, validUserId)
-      ).rejects.toThrow(NotFoundError);
+
+      await expect(createAppointment.execute(validCreateDto, validUserId)).rejects.toThrow(
+        NotFoundError,
+      );
     });
 
+    // Debería lanzar ConflictError si hay citas en conflicto
     it('should throw ConflictError if there are conflicting appointments', async () => {
-      const mockUser = User.create('role-id', 'Test User', 'test@example.com', '+1234567890', 'password');
+      const mockUser = User.create(
+        'role-id',
+        'Test User',
+        'test@example.com',
+        '+1234567890',
+        'password',
+      );
       const mockStylist = Stylist.create('stylist-user-id');
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 60, 15, 2500);
       const conflictingAppointment = Appointment.create(
@@ -317,23 +367,32 @@ describe('CreateAppointment Use Case', () => {
       mockUserRepository.findById.mockResolvedValue(mockUser);
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
       mockServiceRepository.findById.mockResolvedValue(mockService);
-      mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([conflictingAppointment]);
-      
-      await expect(
-        createAppointment.execute(validCreateDto, validUserId)
-      ).rejects.toThrow(ConflictError);
+      mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([
+        conflictingAppointment,
+      ]);
+
+      await expect(createAppointment.execute(validCreateDto, validUserId)).rejects.toThrow(
+        ConflictError,
+      );
     });
 
+    // Debería calcular la duración de los servicios si no se proporciona
     it('should calculate duration from services if not provided', async () => {
       const dtoWithoutDuration = { ...validCreateDto };
       delete dtoWithoutDuration.duration;
-      
-      const mockUser = User.create('role-id', 'Test User', 'test@example.com', '+1234567890', 'password');
+
+      const mockUser = User.create(
+        'role-id',
+        'Test User',
+        'test@example.com',
+        '+1234567890',
+        'password',
+      );
       const mockStylist = Stylist.create('stylist-user-id');
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500); // 45 minutos
       const mockStatus = AppointmentStatus.create('Pendiente', 'Cita pendiente de confirmación');
       const mockSchedule = Schedule.create(DayOfWeekEnum.MONDAY, '09:00', '18:00');
-      
+
       // Set IDs manually for mocked entities
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id-123', writable: false });
       Object.defineProperty(mockService, 'id', { value: 'service-id-123', writable: false });
@@ -364,15 +423,22 @@ describe('CreateAppointment Use Case', () => {
       expect(result.duration).toBe(45);
     });
 
+    // Debería funcionar sin estilista (cita de autoservicio)
     it('should work without stylist (self-service appointment)', async () => {
       const dtoWithoutStylist = { ...validCreateDto };
       delete dtoWithoutStylist.stylistId;
-      
-      const mockUser = User.create('role-id', 'Test User', 'test@example.com', '+1234567890', 'password');
+
+      const mockUser = User.create(
+        'role-id',
+        'Test User',
+        'test@example.com',
+        '+1234567890',
+        'password',
+      );
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 60, 15, 2500);
       const mockStatus = AppointmentStatus.create('Pendiente', 'Cita pendiente de confirmación');
       const mockSchedule = Schedule.create(DayOfWeekEnum.MONDAY, '09:00', '18:00');
-      
+
       // Set IDs manually for mocked entities
       Object.defineProperty(mockService, 'id', { value: 'service-id-123', writable: false });
       Object.defineProperty(mockStatus, 'id', { value: 'status-id-123', writable: false });
@@ -402,24 +468,32 @@ describe('CreateAppointment Use Case', () => {
       expect(result.clientId).toBe(validCreateDto.clientId);
     });
 
+    // Debería lanzar ValidationError para formato de fecha inválido
     it('should throw ValidationError for invalid date format', async () => {
       const invalidDto = { ...validCreateDto, dateTime: 'invalid-date' };
-      
-      await expect(
-        createAppointment.execute(invalidDto, validUserId)
-      ).rejects.toThrow(ValidationError);
+
+      await expect(createAppointment.execute(invalidDto, validUserId)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
+    // Debería usar duración mínima de 15 minutos si la duración calculada es menor
     it('should use minimum duration of 15 minutes if calculated duration is less', async () => {
       const dtoWithoutDuration = { ...validCreateDto };
       delete dtoWithoutDuration.duration;
-      
-      const mockUser = User.create('role-id', 'Test User', 'test@example.com', '+1234567890', 'password');
+
+      const mockUser = User.create(
+        'role-id',
+        'Test User',
+        'test@example.com',
+        '+1234567890',
+        'password',
+      );
       const mockStylist = Stylist.create('stylist-user-id');
       const mockService = Service.create('category-id', 'Quick Service', 'Description', 5, 0, 1000); // 5 minutos
       const mockStatus = AppointmentStatus.create('Pendiente', 'Cita pendiente de confirmación');
       const mockSchedule = Schedule.create(DayOfWeekEnum.MONDAY, '09:00', '18:00');
-      
+
       // Set IDs manually for mocked entities
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id-123', writable: false });
       Object.defineProperty(mockService, 'id', { value: 'service-id-123', writable: false });

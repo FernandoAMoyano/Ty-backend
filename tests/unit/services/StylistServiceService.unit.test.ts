@@ -82,6 +82,7 @@ describe('StylistServiceService', () => {
       customPrice: 3000,
     };
 
+    // Debería asignar servicio al estilista exitosamente
     it('should assign service to stylist successfully', async () => {
       const mockStylist = Stylist.create('user-id');
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
@@ -97,8 +98,8 @@ describe('StylistServiceService', () => {
         role: {
           id: 'stylist-role-id',
           name: 'STYLIST',
-          description: 'Estilista que ofrece servicios'
-        }
+          description: 'Estilista que ofrece servicios',
+        },
       };
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
       const mockStylistService = StylistService.create('stylist-id', 'service-id', 3000);
@@ -123,6 +124,7 @@ describe('StylistServiceService', () => {
       expect(result.serviceId).toBe('service-id');
     });
 
+    // Debería lanzar NotFoundError si el estilista no se encuentra
     it('should throw NotFoundError if stylist not found', async () => {
       mockStylistRepository.findById.mockResolvedValue(null);
 
@@ -131,6 +133,7 @@ describe('StylistServiceService', () => {
       ).rejects.toThrow(NotFoundError);
     });
 
+    // Debería lanzar NotFoundError si el servicio no se encuentra
     it('should throw NotFoundError if service not found', async () => {
       const mockStylist = Stylist.create('user-id');
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
@@ -146,8 +149,8 @@ describe('StylistServiceService', () => {
         role: {
           id: 'stylist-role-id',
           name: 'STYLIST',
-          description: 'Estilista que ofrece servicios'
-        }
+          description: 'Estilista que ofrece servicios',
+        },
       };
 
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
@@ -159,6 +162,7 @@ describe('StylistServiceService', () => {
       ).rejects.toThrow(NotFoundError);
     });
 
+    // Debería lanzar ValidationError si el usuario no es estilista
     it('should throw ValidationError if user is not a stylist', async () => {
       const mockStylist = Stylist.create('user-id');
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
@@ -174,8 +178,8 @@ describe('StylistServiceService', () => {
         role: {
           id: 'client-role-id',
           name: 'CLIENT',
-          description: 'Cliente que puede agendar citas'
-        }
+          description: 'Cliente que puede agendar citas',
+        },
       };
 
       mockStylistRepository.findById.mockResolvedValue(mockStylist);
@@ -186,6 +190,7 @@ describe('StylistServiceService', () => {
       ).rejects.toThrow(ValidationError);
     });
 
+    // Debería lanzar ConflictError si la asignación ya existe
     it('should throw ConflictError if assignment already exists', async () => {
       const mockStylist = Stylist.create('user-id');
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
@@ -201,8 +206,8 @@ describe('StylistServiceService', () => {
         role: {
           id: 'stylist-role-id',
           name: 'STYLIST',
-          description: 'Estilista que ofrece servicios'
-        }
+          description: 'Estilista que ofrece servicios',
+        },
       };
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
 
@@ -218,6 +223,7 @@ describe('StylistServiceService', () => {
   });
 
   describe('getStylistServices', () => {
+    // Debería devolver servicios del estilista exitosamente
     it('should return stylist services successfully', async () => {
       const mockStylist = Stylist.create('user-id');
       const mockStylistServices = [
@@ -249,6 +255,7 @@ describe('StylistServiceService', () => {
       expect(result).toHaveLength(2);
     });
 
+    //Debería lanzar NotFoundError si no se encuentra el estilista
     it('should throw NotFoundError if stylist not found', async () => {
       mockStylistRepository.findById.mockResolvedValue(null);
 
@@ -264,6 +271,7 @@ describe('StylistServiceService', () => {
       isOffering: false,
     };
 
+    // Debería actualizar servicio de estilista exitosamente
     it('should update stylist service successfully', async () => {
       const mockStylistService = StylistService.create('stylist-id', 'service-id', 3000);
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
@@ -287,6 +295,7 @@ describe('StylistServiceService', () => {
       expect(result.isOffering).toBe(false);
     });
 
+    // Debería lanzar NotFoundError si la asignación no se encuentra
     it('should throw NotFoundError if assignment not found', async () => {
       mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(null);
 
@@ -297,6 +306,7 @@ describe('StylistServiceService', () => {
   });
 
   describe('removeServiceFromStylist', () => {
+    // Debería remover servicio del estilista exitosamente
     it('should remove service from stylist successfully', async () => {
       mockStylistServiceRepository.existsAssignment.mockResolvedValue(true);
       mockStylistServiceRepository.delete.mockResolvedValue();
@@ -310,6 +320,7 @@ describe('StylistServiceService', () => {
       expect(mockStylistServiceRepository.delete).toHaveBeenCalledWith('stylist-id', 'service-id');
     });
 
+    //Debería lanzar NotFoundError si no se encuentra la asignación
     it('should throw NotFoundError if assignment not found', async () => {
       mockStylistServiceRepository.existsAssignment.mockResolvedValue(false);
 
@@ -320,6 +331,7 @@ describe('StylistServiceService', () => {
   });
 
   describe('getStylistsOfferingService', () => {
+    // Debería devolver estilistas que ofrecen el servicio exitosamente
     it('should return stylists offering service successfully', async () => {
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
       const mockStylistServices = [
@@ -341,6 +353,7 @@ describe('StylistServiceService', () => {
       expect(result).toHaveLength(2);
     });
 
+    //Debería lanzar NotFoundError si no se encuentra el servicio
     it('should throw NotFoundError if service not found', async () => {
       mockServiceRepository.findById.mockResolvedValue(null);
 
@@ -351,6 +364,7 @@ describe('StylistServiceService', () => {
   });
 
   describe('getStylistWithServices', () => {
+    // Debería devolver estilista con servicios exitosamente
     it('should return stylist with services successfully', async () => {
       const mockStylist = Stylist.create('user-id');
       Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
@@ -388,6 +402,7 @@ describe('StylistServiceService', () => {
   });
 
   describe('getServiceWithStylists', () => {
+    // Debería devolver servicio con estilistas exitosamente
     it('should return service with stylists successfully', async () => {
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
       Object.defineProperty(mockService, 'id', { value: 'service-id', writable: false });

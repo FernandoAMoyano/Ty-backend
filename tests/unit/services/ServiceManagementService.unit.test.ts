@@ -55,6 +55,7 @@ describe('ServiceManagementService', () => {
       price: 2500,
     };
 
+    // Debería crear servicio exitosamente
     it('should create service successfully', async () => {
       const mockCategory = Category.create('Hair Services');
       const mockService = Service.create(
@@ -78,6 +79,7 @@ describe('ServiceManagementService', () => {
       expect(result.name).toBe(validCreateDto.name);
     });
 
+    // Debería lanzar NotFoundError si la categoría no se encuentra
     it('should throw NotFoundError if category not found', async () => {
       mockCategoryRepository.findById.mockResolvedValue(null);
 
@@ -86,6 +88,7 @@ describe('ServiceManagementService', () => {
       );
     });
 
+    // Debería lanzar ConflictError si el nombre del servicio ya existe
     it('should throw ConflictError if service name already exists', async () => {
       const mockCategory = Category.create('Hair Services');
       mockCategoryRepository.findById.mockResolvedValue(mockCategory);
@@ -96,6 +99,7 @@ describe('ServiceManagementService', () => {
       );
     });
 
+    // Debería lanzar ValidationError para variación de duración inválida
     it('should throw ValidationError for invalid duration variation', async () => {
       const invalidDto = { ...validCreateDto, durationVariation: 60 }; // > duration
       const mockCategory = Category.create('Hair Services');
@@ -109,6 +113,7 @@ describe('ServiceManagementService', () => {
   });
 
   describe('getServiceById', () => {
+    // Debería devolver servicio con categoría cuando se encuentra
     it('should return service with category when found', async () => {
       const mockCategory = Category.create('Hair Services');
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
@@ -124,6 +129,7 @@ describe('ServiceManagementService', () => {
       expect(result.category).toBeDefined();
     });
 
+    // Debería lanzar NotFoundError cuando el servicio no se encuentra
     it('should throw NotFoundError when service not found', async () => {
       mockServiceRepository.findById.mockResolvedValue(null);
 
@@ -134,6 +140,7 @@ describe('ServiceManagementService', () => {
   });
 
   describe('getServicesByCategory', () => {
+    // Debería devolver servicios para categoría existente
     it('should return services for existing category', async () => {
       const mockCategory = Category.create('Hair Services');
       const mockServices = [
@@ -151,6 +158,7 @@ describe('ServiceManagementService', () => {
       expect(result).toHaveLength(2);
     });
 
+    //Debería lanzar NotFoundError si no se encuentra la categoría
     it('should throw NotFoundError if category not found', async () => {
       mockCategoryRepository.findById.mockResolvedValue(null);
 
@@ -161,6 +169,7 @@ describe('ServiceManagementService', () => {
   });
 
   describe('activateService', () => {
+    // Debería activar servicio exitosamente
     it('should activate service successfully', async () => {
       const mockCategory = Category.create('Hair Services');
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
@@ -177,6 +186,7 @@ describe('ServiceManagementService', () => {
   });
 
   describe('deleteService', () => {
+    // Debería eliminar servicio exitosamente
     it('should delete service successfully', async () => {
       mockServiceRepository.existsById.mockResolvedValue(true);
       mockServiceRepository.delete.mockResolvedValue();
@@ -187,6 +197,7 @@ describe('ServiceManagementService', () => {
       expect(mockServiceRepository.delete).toHaveBeenCalledWith('service-id');
     });
 
+    // Debería lanzar NotFoundError si el servicio no se encuentra
     it('should throw NotFoundError if service not found', async () => {
       mockServiceRepository.existsById.mockResolvedValue(false);
 
