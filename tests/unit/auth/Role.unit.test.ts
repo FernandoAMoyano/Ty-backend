@@ -4,6 +4,7 @@ import { RoleName } from '@prisma/client';
 
 describe('Role Entity', () => {
   describe('Role Creation', () => {
+    // Debería crear rol con datos válidos
     it('should create role with valid data', () => {
       const roleId = generateUuid();
       const role = new Role(roleId, RoleName.ADMIN, 'Administrator role');
@@ -13,6 +14,7 @@ describe('Role Entity', () => {
       expect(role.description).toBe('Administrator role');
     });
 
+    // Debería crear rol con método estático create
     it('should create role with static create method', () => {
       const role = Role.create(RoleName.CLIENT, 'Client role');
 
@@ -21,6 +23,7 @@ describe('Role Entity', () => {
       expect(role.id).toBeDefined();
     });
 
+    // Debería crear rol sin descripción
     it('should create role without description', () => {
       const role = Role.create(RoleName.STYLIST);
 
@@ -30,6 +33,7 @@ describe('Role Entity', () => {
   });
 
   describe('Role Type Checking', () => {
+    // Debería identificar correctamente el rol de administrador
     it('should correctly identify admin role', () => {
       const adminRole = Role.create(RoleName.ADMIN);
 
@@ -38,6 +42,7 @@ describe('Role Entity', () => {
       expect(adminRole.isClient()).toBe(false);
     });
 
+    // Debería identificar correctamente el rol de estilista
     it('should correctly identify stylist role', () => {
       const stylistRole = Role.create(RoleName.STYLIST);
 
@@ -46,6 +51,7 @@ describe('Role Entity', () => {
       expect(stylistRole.isClient()).toBe(false);
     });
 
+    // Debería identificar correctamente el rol de cliente
     it('should correctly identify client role', () => {
       const clientRole = Role.create(RoleName.CLIENT);
 
@@ -56,6 +62,7 @@ describe('Role Entity', () => {
   });
 
   describe('Role Persistence', () => {
+    // Debería convertir a formato de persistencia correctamente
     it('should convert to persistence format correctly', () => {
       const role = Role.create(RoleName.ADMIN, 'Admin description');
       const persistenceData = role.toPersistence();

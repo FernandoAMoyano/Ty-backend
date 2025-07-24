@@ -12,6 +12,7 @@ describe('User Entity', () => {
   };
 
   describe('User Creation', () => {
+    // Debería crear usuario con datos válidos
     it('should create user with valid data', () => {
       const user = new User(
         validUserData.id,
@@ -29,6 +30,7 @@ describe('User Entity', () => {
       expect(user.isActive).toBe(true);
     });
 
+    // Debería crear usuario con método estático create
     it('should create user with static create method', () => {
       const user = User.create(
         validUserData.roleId,
@@ -60,6 +62,7 @@ describe('User Entity', () => {
       );
     });
 
+    // Debería activar usuario
     it('should activate user', () => {
       user.deactivate();
       expect(user.isActive).toBe(false);
@@ -68,6 +71,7 @@ describe('User Entity', () => {
       expect(user.isActive).toBe(true);
     });
 
+    // Debería desactivar usuario
     it('should deactivate user', () => {
       user.activate();
       expect(user.isActive).toBe(true);
@@ -76,6 +80,7 @@ describe('User Entity', () => {
       expect(user.isActive).toBe(false);
     });
 
+    // Debería actualizar información del perfil
     it('should update profile information', () => {
       const newName = 'Jane Doe';
       const newPhone = '+9876543210';
@@ -88,6 +93,7 @@ describe('User Entity', () => {
       expect(user.profilePicture).toBe(newProfilePicture);
     });
 
+    // Debería actualizar contraseña
     it('should update password', () => {
       const newHashedPassword = 'newHashedPassword456';
       const originalUpdatedAt = user.updatedAt;
@@ -102,6 +108,7 @@ describe('User Entity', () => {
   });
 
   describe('User Validation', () => {
+    // Debería lanzar error para nombre vacío
     it('should throw error for empty name', () => {
       expect(() => {
         new User(
@@ -116,6 +123,7 @@ describe('User Entity', () => {
       }).toThrow('User name cannot be empty');
     });
 
+    // Debería lanzar error para teléfono inválido
     it('should throw error for invalid phone', () => {
       expect(() => {
         new User(
@@ -130,6 +138,7 @@ describe('User Entity', () => {
       }).toThrow('Invalid phone format');
     });
 
+    // Debería lanzar error para teléfono vacío
     it('should throw error for empty phone', () => {
       expect(() => {
         new User(

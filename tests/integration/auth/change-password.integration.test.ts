@@ -4,6 +4,7 @@ import { loginTestUser } from '../../setup/helpers';
 
 describe('Change Password Integration Tests', () => {
   describe('PUT /api/v1/auth/change-password', () => {
+    // Debería cambiar la contraseña con la contraseña actual válida
     it('should change password with valid current password', async () => {
       // Crear usuario de test y hacer login
       const loginResult = await loginTestUser();
@@ -37,6 +38,7 @@ describe('Change Password Integration Tests', () => {
       expect(oldLoginResponse.status).toBe(401);
     });
 
+    // Debería rechazar la contraseña actual incorrecta
     it('should reject wrong current password', async () => {
       const loginResult = await loginTestUser();
 
@@ -53,6 +55,7 @@ describe('Change Password Integration Tests', () => {
       expect(response.body.message).toContain('Current password is incorrect');
     });
 
+    // Debería validar los requisitos de la nueva contraseña
     it('should validate new password requirements', async () => {
       const loginResult = await loginTestUser();
 
@@ -69,6 +72,7 @@ describe('Change Password Integration Tests', () => {
       expect(response.body.message).toContain('New password must be at least 8 characters');
     });
 
+    // Debería rechazar el cambio de contraseña sin autenticación
     it('should reject change password without authentication', async () => {
       const response = await request(app).put('/api/v1/auth/change-password').send({
         currentPassword: 'TestPass123!',
@@ -79,6 +83,7 @@ describe('Change Password Integration Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
+    // Debería rechazar la solicitud con campos faltantes
     it('should reject request with missing fields', async () => {
       const loginResult = await loginTestUser();
       const response = await request(app)

@@ -3,6 +3,7 @@ import app from '../../../src/app';
 
 describe('Profile Integration Tests', () => {
   describe('GET /api/v1/auth/profile', () => {
+    // Debería obtener el perfil del usuario con token válido
     it('should get user profile with valid token', async () => {
       const registerResponse = await request(app)
         .post('/api/v1/auth/register')
@@ -41,6 +42,7 @@ describe('Profile Integration Tests', () => {
       expect(response.body.data).toHaveProperty('updatedAt');
     });
 
+    // Debería rechazar el acceso sin token
     it('should reject access without token', async () => {
       const response = await request(app).get('/api/v1/auth/profile');
 
@@ -48,6 +50,7 @@ describe('Profile Integration Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
+    // Debería rechazar el acceso con token inválido
     it('should reject access with invalid token', async () => {
       const response = await request(app)
         .get('/api/v1/auth/profile')
@@ -59,6 +62,7 @@ describe('Profile Integration Tests', () => {
   });
 
   describe('PUT /api/v1/auth/profile', () => {
+    // Debería actualizar el perfil del usuario exitosamente
     it('should update user profile successfully', async () => {
       const registerResponse = await request(app)
         .post('/api/v1/auth/register')
@@ -96,6 +100,7 @@ describe('Profile Integration Tests', () => {
       expect(updateResponse.body.data.email).toBe(registerResponse.body.data.email);
     });
 
+    // Debería obtener el perfil actualizado después de la actualización
     it('should get updated profile after update', async () => {
       const registerResponse = await request(app)
         .post('/api/v1/auth/register')
@@ -132,6 +137,7 @@ describe('Profile Integration Tests', () => {
       expect(response.body.data.phone).toBe('+9876543210');
     });
 
+    // Debería actualizar el perfil con datos parciales
     it('should update profile with partial data', async () => {
       const registerResponse = await request(app)
         .post('/api/v1/auth/register')
@@ -162,6 +168,7 @@ describe('Profile Integration Tests', () => {
       expect(response.body.data.name).toBe('Partial Update Name');
     });
 
+    // Debería rechazar la actualización del perfil sin token
     it('should reject profile update without token', async () => {
       const response = await request(app).put('/api/v1/auth/profile').send({
         name: 'Should Fail',
@@ -170,6 +177,7 @@ describe('Profile Integration Tests', () => {
       expect(response.status).toBe(401);
     });
 
+    // Debería rechazar la actualización del perfil con datos inválidos
     it('should reject profile update with invalid data', async () => {
       const registerResponse = await request(app)
         .post('/api/v1/auth/register')

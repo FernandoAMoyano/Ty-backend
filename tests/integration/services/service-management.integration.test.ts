@@ -31,6 +31,7 @@ describe('Service Management Integration Tests', () => {
   });
 
   describe('POST /api/v1/services - Create Service', () => {
+    // Debería crear un nuevo servicio exitosamente
     it('should create a new service successfully', async () => {
       const serviceData = generateValidServiceData(testCategoryId, {
         name: 'Test Haircut Service',
@@ -62,6 +63,7 @@ describe('Service Management Integration Tests', () => {
       testServiceId = service.id;
     });
 
+    // Debería rechazar la creación de servicio sin autenticación
     it('should reject service creation without authentication', async () => {
       const serviceData = generateValidServiceData(testCategoryId, {
         name: 'Unauthorized Service',
@@ -73,6 +75,7 @@ describe('Service Management Integration Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
+    // Debería rechazar la creación de servicio con categoría inválida
     it('should reject service creation with invalid category', async () => {
       const serviceData = generateValidServiceData('00000000-0000-0000-0000-000000000000', {
         name: 'Invalid Category Service',
@@ -88,6 +91,7 @@ describe('Service Management Integration Tests', () => {
       expect(response.body.message).toContain('Category not found');
     });
 
+    // Debería rechazar nombre de servicio duplicado
     it('should reject duplicate service name', async () => {
       const serviceData = generateValidServiceData(testCategoryId, {
         name: 'Duplicate Service Name',
@@ -114,6 +118,7 @@ describe('Service Management Integration Tests', () => {
       expect(response.body.message).toContain('already exists');
     });
 
+    // Debería validar los campos requeridos
     it('should validate required fields', async () => {
       const response = await request(app)
         .post('/api/v1/services')
@@ -127,6 +132,7 @@ describe('Service Management Integration Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
+    // Debería validar que la variación de duración no exceda la duración base
     it('should validate duration variation not exceeding base duration', async () => {
       const serviceData = generateValidServiceData(testCategoryId, {
         name: 'Invalid Duration Service',
@@ -166,6 +172,7 @@ describe('Service Management Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`);
     });
 
+    // Debería obtener todos los servicios
     it('should get all services', async () => {
       const response = await request(app).get('/api/v1/services').expect(200);
 
@@ -181,6 +188,7 @@ describe('Service Management Integration Tests', () => {
       expect(inactiveServices.length).toBeGreaterThanOrEqual(1);
     });
 
+    // Debería obtener solo los servicios activos
     it('should get only active services', async () => {
       const response = await request(app).get('/api/v1/services/active').expect(200);
 
@@ -193,6 +201,7 @@ describe('Service Management Integration Tests', () => {
       });
     });
 
+    // Debería obtener servicio por ID
     it('should get service by ID', async () => {
       const response = await request(app).get(`/api/v1/services/${testServiceId}`).expect(200);
 
@@ -203,6 +212,7 @@ describe('Service Management Integration Tests', () => {
       validateServiceResponse(response.body.data);
     });
 
+    // Debería devolver 404 para servicio inexistente
     it('should return 404 for non-existent service', async () => {
       const response = await request(app)
         .get('/api/v1/services/00000000-0000-0000-0000-000000000000')
@@ -212,6 +222,7 @@ describe('Service Management Integration Tests', () => {
       expect(response.body.message).toContain('Service not found');
     });
 
+    // Debería obtener servicios por categoría
     it('should get services by category', async () => {
       const response = await request(app)
         .get(`/api/v1/services/category/${testCategoryId}`)
@@ -226,6 +237,7 @@ describe('Service Management Integration Tests', () => {
       });
     });
 
+    // Debería obtener servicios activos por categoría
     it('should get active services by category', async () => {
       const response = await request(app)
         .get(`/api/v1/services/category/${testCategoryId}/active`)
@@ -252,6 +264,7 @@ describe('Service Management Integration Tests', () => {
       testServiceId = service.id;
     });
 
+    // Debería actualizar servicio exitosamente
     it('should update service successfully', async () => {
       const updateData = {
         name: 'Updated Service Name',
@@ -276,6 +289,7 @@ describe('Service Management Integration Tests', () => {
       validateServiceResponse(response.body.data);
     });
 
+    // Debería actualizar campos parciales
     it('should update partial fields', async () => {
       const updateData = {
         name: 'Partially Updated Name',
@@ -293,6 +307,7 @@ describe('Service Management Integration Tests', () => {
       validateServiceResponse(response.body.data);
     });
 
+    // Debería rechazar actualización con nombre duplicado
     it('should reject update with duplicate name', async () => {
       // Crear otro servicio usando helper
       await createTestService(adminToken, testCategoryId, {
@@ -324,6 +339,7 @@ describe('Service Management Integration Tests', () => {
       testServiceId = service.id;
     });
 
+    // Debería desactivar servicio
     it('should deactivate service', async () => {
       const response = await request(app)
         .patch(`/api/v1/services/${testServiceId}/deactivate`)
@@ -335,6 +351,7 @@ describe('Service Management Integration Tests', () => {
       validateServiceResponse(response.body.data);
     });
 
+    // Debería activar servicio
     it('should activate service', async () => {
       // Primero desactivar
       await request(app)
@@ -363,6 +380,7 @@ describe('Service Management Integration Tests', () => {
       testServiceId = service.id;
     });
 
+    // Debería eliminar servicio exitosamente
     it('should delete service successfully', async () => {
       const response = await request(app)
         .delete(`/api/v1/services/${testServiceId}`)
@@ -376,6 +394,7 @@ describe('Service Management Integration Tests', () => {
       await request(app).get(`/api/v1/services/${testServiceId}`).expect(404);
     });
 
+    // Debería devolver 404 al eliminar servicio inexistente
     it('should return 404 when deleting non-existent service', async () => {
       const response = await request(app)
         .delete('/api/v1/services/00000000-0000-0000-0000-000000000000')
@@ -397,6 +416,7 @@ describe('Service Management Integration Tests', () => {
       testServiceId = service.id;
     });
 
+    // Debería permitir acceso público a operaciones de lectura
     it('should allow public access to read operations', async () => {
       // Sin token de autenticación
       await request(app).get('/api/v1/services').expect(200);
@@ -406,6 +426,7 @@ describe('Service Management Integration Tests', () => {
       await request(app).get(`/api/v1/services/${testServiceId}`).expect(200);
     });
 
+    // Debería requerir autenticación de administrador para operaciones de escritura
     it('should require admin authentication for write operations', async () => {
       const serviceData = generateValidServiceData(testCategoryId, {
         name: 'Unauthorized Service',

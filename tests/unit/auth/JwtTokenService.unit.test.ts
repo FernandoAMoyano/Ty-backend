@@ -6,7 +6,7 @@ describe('JwtTokenService Unit Tests', () => {
   let mockPayload: JwtPayload;
 
   beforeEach(() => {
-    // Set test environment variables
+    // Establecer variables de entorno de prueba
     process.env.JWT_ACCESS_SECRET = 'test-access-secret';
     process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
     process.env.JWT_ACCESS_EXPIRY = '15m';
@@ -21,6 +21,7 @@ describe('JwtTokenService Unit Tests', () => {
   });
 
   describe('generateAccessToken', () => {
+    // Debería generar un token de acceso válido
     it('should generate a valid access token', () => {
       const token = jwtService.generateAccessToken(mockPayload);
 
@@ -29,6 +30,7 @@ describe('JwtTokenService Unit Tests', () => {
       expect(token.split('.')).toHaveLength(3); // JWT structure
     });
 
+    // Debería generar diferentes tokens para diferentes payloads
     it('should generate different tokens for different payloads', () => {
       const payload1 = { ...mockPayload, userId: 'user-1' };
       const payload2 = { ...mockPayload, userId: 'user-2' };
@@ -41,6 +43,7 @@ describe('JwtTokenService Unit Tests', () => {
   });
 
   describe('generateRefreshToken', () => {
+    // Debería generar un token de refresco válido
     it('should generate a valid refresh token', () => {
       const token = jwtService.generateRefreshToken(mockPayload);
 
@@ -49,6 +52,7 @@ describe('JwtTokenService Unit Tests', () => {
       expect(token.split('.')).toHaveLength(3);
     });
 
+    // Debería generar un token de refresco diferente al token de acceso
     it('should generate different refresh token than access token', () => {
       const accessToken = jwtService.generateAccessToken(mockPayload);
       const refreshToken = jwtService.generateRefreshToken(mockPayload);
@@ -58,6 +62,7 @@ describe('JwtTokenService Unit Tests', () => {
   });
 
   describe('verifyAccessToken', () => {
+    // Debería verificar token de acceso válido
     it('should verify valid access token', () => {
       const token = jwtService.generateAccessToken(mockPayload);
       const decoded = jwtService.verifyAccessToken(token);
@@ -67,12 +72,14 @@ describe('JwtTokenService Unit Tests', () => {
       expect(decoded.email).toBe(mockPayload.email);
     });
 
+    // Debería lanzar error para token inválido
     it('should throw error for invalid token', () => {
       expect(() => {
         jwtService.verifyAccessToken('invalid.token.here');
       }).toThrow('Invalid access token');
     });
 
+    // Debería lanzar error para token mal formado
     it('should throw error for malformed token', () => {
       expect(() => {
         jwtService.verifyAccessToken('malformed-token');
@@ -81,6 +88,7 @@ describe('JwtTokenService Unit Tests', () => {
   });
 
   describe('verifyRefreshToken', () => {
+    // Debería verificar token de refresco válido
     it('should verify valid refresh token', () => {
       const token = jwtService.generateRefreshToken(mockPayload);
       const decoded = jwtService.verifyRefreshToken(token);
@@ -90,12 +98,14 @@ describe('JwtTokenService Unit Tests', () => {
       expect(decoded.email).toBe(mockPayload.email);
     });
 
+    // Debería lanzar error para token de refresco inválido
     it('should throw error for invalid refresh token', () => {
       expect(() => {
         jwtService.verifyRefreshToken('invalid.refresh.token');
       }).toThrow('Invalid refresh token');
     });
 
+    // No debería verificar token de acceso como token de refresco
     it('should not verify access token as refresh token', () => {
       const accessToken = jwtService.generateAccessToken(mockPayload);
 

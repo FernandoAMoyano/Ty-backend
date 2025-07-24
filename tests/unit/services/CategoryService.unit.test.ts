@@ -31,6 +31,7 @@ describe('CategoryService', () => {
       description: 'Professional hair styling services',
     };
 
+    // Debería crear categoría exitosamente
     it('should create category successfully', async () => {
       const mockCategory = Category.create(validCreateDto.name, validCreateDto.description);
       mockCategoryRepository.existsByName.mockResolvedValue(false);
@@ -44,12 +45,14 @@ describe('CategoryService', () => {
       expect(result.description).toBe(validCreateDto.description);
     });
 
+    // Debería lanzar ValidationError para nombre vacío
     it('should throw ValidationError for empty name', async () => {
       const invalidDto = { ...validCreateDto, name: '' };
 
       await expect(categoryService.createCategory(invalidDto)).rejects.toThrow(ValidationError);
     });
 
+    // Debería lanzar ConflictError si el nombre ya existe
     it('should throw ConflictError if name already exists', async () => {
       mockCategoryRepository.existsByName.mockResolvedValue(true);
 
@@ -63,6 +66,7 @@ describe('CategoryService', () => {
       description: 'Updated description',
     };
 
+    // Debería actualizar categoría exitosamente
     it('should update category successfully', async () => {
       const existingCategory = Category.create('Hair Services', 'Original description');
       const updatedCategory = Category.create(validUpdateDto.name!, validUpdateDto.description);
@@ -78,6 +82,7 @@ describe('CategoryService', () => {
       expect(result.name).toBe(validUpdateDto.name);
     });
 
+    // Debería lanzar NotFoundError si la categoría no se encuentra
     it('should throw NotFoundError if category not found', async () => {
       mockCategoryRepository.findById.mockResolvedValue(null);
 
@@ -86,6 +91,7 @@ describe('CategoryService', () => {
       ).rejects.toThrow(NotFoundError);
     });
 
+    // Debería lanzar ConflictError si el nuevo nombre ya existe
     it('should throw ConflictError if new name already exists', async () => {
       const existingCategory = Category.create('Hair Services');
       mockCategoryRepository.findById.mockResolvedValue(existingCategory);
@@ -98,6 +104,7 @@ describe('CategoryService', () => {
   });
 
   describe('getCategoryById', () => {
+    // Debería devolver categoría cuando se encuentra
     it('should return category when found', async () => {
       const mockCategory = Category.create('Hair Services');
       mockCategoryRepository.findById.mockResolvedValue(mockCategory);
@@ -108,6 +115,7 @@ describe('CategoryService', () => {
       expect(result.id).toBe(mockCategory.id);
     });
 
+    // Debería lanzar NotFoundError cuando la categoría no se encuentra
     it('should throw NotFoundError when category not found', async () => {
       mockCategoryRepository.findById.mockResolvedValue(null);
 
@@ -118,6 +126,7 @@ describe('CategoryService', () => {
   });
 
   describe('getAllCategories', () => {
+    // Debería devolver todas las categorías
     it('should return all categories', async () => {
       const mockCategories = [Category.create('Hair Services'), Category.create('Nail Services')];
       mockCategoryRepository.findAll.mockResolvedValue(mockCategories);
@@ -130,6 +139,7 @@ describe('CategoryService', () => {
   });
 
   describe('getActiveCategories', () => {
+    // Debería devolver solo las categorías activas
     it('should return only active categories', async () => {
       const mockCategories = [Category.create('Hair Services'), Category.create('Nail Services')];
       mockCategoryRepository.findActive.mockResolvedValue(mockCategories);
@@ -142,6 +152,7 @@ describe('CategoryService', () => {
   });
 
   describe('activateCategory', () => {
+    // Debería activar categoría exitosamente
     it('should activate category successfully', async () => {
       const category = Category.create('Hair Services');
       category.deactivate();
@@ -156,6 +167,7 @@ describe('CategoryService', () => {
       expect(result.isActive).toBe(true);
     });
 
+    //Debería lanzar NotFoundError si no se encuentra la categoría
     it('should throw NotFoundError if category not found', async () => {
       mockCategoryRepository.findById.mockResolvedValue(null);
 
@@ -166,6 +178,7 @@ describe('CategoryService', () => {
   });
 
   describe('deactivateCategory', () => {
+    // Debería desactivar categoría exitosamente
     it('should deactivate category successfully', async () => {
       const category = Category.create('Hair Services');
 
@@ -181,6 +194,7 @@ describe('CategoryService', () => {
   });
 
   describe('deleteCategory', () => {
+    // Debería eliminar categoría exitosamente
     it('should delete category successfully', async () => {
       mockCategoryRepository.existsById.mockResolvedValue(true);
       mockCategoryRepository.delete.mockResolvedValue();
@@ -191,6 +205,7 @@ describe('CategoryService', () => {
       expect(mockCategoryRepository.delete).toHaveBeenCalledWith('test-id');
     });
 
+    //Debería lanzar NotFoundError si no se encuentra la categoría
     it('should throw NotFoundError if category not found', async () => {
       mockCategoryRepository.existsById.mockResolvedValue(false);
 

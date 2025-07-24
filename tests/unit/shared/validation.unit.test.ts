@@ -2,6 +2,7 @@ import { isValidEmail, isValidPassword, isValidPhone } from '../../../src/shared
 
 describe('Validation Utils Unit Tests', () => {
   describe('isValidEmail', () => {
+    // Debería devolver true para emails válidos
     it('should return true for valid emails', () => {
       const validEmails = [
         'test@example.com',
@@ -15,6 +16,7 @@ describe('Validation Utils Unit Tests', () => {
       });
     });
 
+    // Debería devolver false para emails inválidos
     it('should return false for invalid emails', () => {
       const invalidEmails = [
         'invalid-email',
@@ -32,6 +34,7 @@ describe('Validation Utils Unit Tests', () => {
   });
 
   describe('isValidPassword', () => {
+    // Debería devolver true para contraseñas válidas
     it('should return true for valid passwords', () => {
       const validPasswords = ['Password123!', 'MySecure1Pass', 'Complex9Password', 'Test123Pass'];
 
@@ -40,6 +43,7 @@ describe('Validation Utils Unit Tests', () => {
       });
     });
 
+    // Debería devolver false para contraseñas inválidas
     it('should return false for invalid passwords', () => {
       const invalidPasswords = [
         'short1A', // Too short
@@ -57,6 +61,7 @@ describe('Validation Utils Unit Tests', () => {
   });
 
   describe('isValidPhone', () => {
+    // Debería devolver true para números de teléfono válidos
     it('should return true for valid phone numbers', () => {
       const validPhones = ['+1234567890', '+123456789012345', '1234567890', '+598123456789'];
 
@@ -65,6 +70,7 @@ describe('Validation Utils Unit Tests', () => {
       });
     });
 
+    // Debería devolver false para números de teléfono inválidos
     it('should return false for invalid phone numbers', () => {
       const invalidPhones = [
         'abc123',
