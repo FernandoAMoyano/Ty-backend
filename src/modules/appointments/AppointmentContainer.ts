@@ -24,6 +24,7 @@ import { PrismaUserRepository } from '../auth/infrastructure/persistence/PrismaU
 // Casos de uso
 import { CreateAppointment } from './application/use-cases/CreateAppointment';
 import { GetAppointmentById } from './application/use-cases/GetAppointmentById';
+import { CancelAppointment } from './application/use-cases/CancelAppointment';
 
 /**
  * Contenedor de dependencias para el módulo de citas
@@ -37,16 +38,17 @@ export class AppointmentContainer {
   private _appointmentController: AppointmentController;
   private _appointmentRoutes: AppointmentRoutes;
 
-  // Use Cases
+  // Casos de uso
   private _createAppointment: CreateAppointment;
   private _getAppointmentById: GetAppointmentById;
+  private _cancelAppointment: CancelAppointment;
 
-  // Repositories - Own module
+  // Repositorios - Módulo propio
   private _appointmentRepository: AppointmentRepository;
   private _appointmentStatusRepository: AppointmentStatusRepository;
   private _scheduleRepository: ScheduleRepository;
 
-  // Repositories - External modules
+  // Repositorios - Módulos externos
   private _serviceRepository: ServiceRepository;
   private _stylistRepository: StylistRepository;
   private _userRepository: UserRepository;
@@ -84,17 +86,17 @@ export class AppointmentContainer {
    * @description Inyecta dependencias siguiendo el orden: repositories -> use cases -> controllers
    */
   private setupDependencies(): void {
-    // Own Module Repositories
+    // Repositorios de módulos propios
     this._appointmentRepository = new PrismaAppointmentRepository(this.prisma);
     this._appointmentStatusRepository = new PrismaAppointmentStatusRepository(this.prisma);
     this._scheduleRepository = new PrismaScheduleRepository(this.prisma);
 
-    // External Module Repositories
+    // Repositorios de módulos externos
     this._serviceRepository = new PrismaServiceRepository(this.prisma);
     this._stylistRepository = new PrismaStylistRepository(this.prisma);
     this._userRepository = new PrismaUserRepository(this.prisma);
 
-    // Use Cases - CreateAppointment y GetAppointmentById implementados
+    // Casos de uso implementados
     this._createAppointment = new CreateAppointment(
       this._appointmentRepository,
       this._appointmentStatusRepository,
@@ -104,22 +106,21 @@ export class AppointmentContainer {
       this._userRepository,
     );
 
-    this._getAppointmentById = new GetAppointmentById(
+    this._getAppointmentById = new GetAppointmentById(this._appointmentRepository);
+
+    this._cancelAppointment = new CancelAppointment(
       this._appointmentRepository,
+      this._appointmentStatusRepository,
     );
 
     // HTTP Layer - Inyectamos los casos de uso implementados
     this._appointmentController = new AppointmentController(
       this._createAppointment,
       this._getAppointmentById,
-      // TODO: Inyectar otros casos de uso cuando se implementen:
-      // this._updateAppointmentUseCase,
-      // this._cancelAppointmentUseCase,
-      // this._confirmAppointmentUseCase,
-      // this._getAppointmentsByClientUseCase,
-      // this._getAppointmentsByStylistUseCase,
-      // this._getAvailableSlotsUseCase,
+      this._cancelAppointment,
     );
+    // this._getAppointmentsByStylistUseCase,
+    // this._getAvailableSlotsUseCase,
 
     this._appointmentRoutes = new AppointmentRoutes(
       this._appointmentController,
@@ -161,6 +162,14 @@ export class AppointmentContainer {
    */
   get getAppointmentById(): GetAppointmentById {
     return this._getAppointmentById;
+  }
+
+  /**
+   * Obtiene el caso de uso de cancelación de citas configurado
+   * @returns Instancia de CancelAppointment para uso directo o testing
+   */
+  get cancelAppointment(): CancelAppointment {
+    return this._cancelAppointment;
   }
 
   // Getters para repositorios (para testing o uso directo)
