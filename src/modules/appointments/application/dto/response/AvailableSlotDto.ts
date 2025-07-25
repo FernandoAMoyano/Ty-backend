@@ -1,5 +1,5 @@
 export interface AvailableSlotDto {
-  time: string; //Formato: "HH: MM"
+  time: string; // Formato: "HH:MM"
   available: boolean;
   duration: number; // en minutos
   conflictReason?: string;
@@ -13,7 +13,7 @@ export interface AvailableSlotDto {
 }
 
 export interface DayAvailabilityDto {
-  date: string; // Formato: "aaaa yyyy-mm-dd"
+  date: string; // Formato: "YYYY-MM-DD"
   dayOfWeek: string;
   isWorkingDay: boolean;
   totalSlots: number;
@@ -22,7 +22,7 @@ export interface DayAvailabilityDto {
 
   // Información de horario opcional
   workingHours?: {
-    start: string; // Formato: "HH: MM"
-    end: string; // Formato: "HH: MM"
+    start: string; // Formato: "HH:MM"
+    end: string; // Formato: "HH:MM"
   };
 }

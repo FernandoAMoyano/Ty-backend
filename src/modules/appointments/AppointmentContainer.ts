@@ -25,6 +25,7 @@ import { PrismaUserRepository } from '../auth/infrastructure/persistence/PrismaU
 import { CreateAppointment } from './application/use-cases/CreateAppointment';
 import { GetAppointmentById } from './application/use-cases/GetAppointmentById';
 import { CancelAppointment } from './application/use-cases/CancelAppointment';
+import { GetAvailableSlots } from './application/use-cases/GetAvailableSlots';
 
 /**
  * Contenedor de dependencias para el módulo de citas
@@ -42,6 +43,7 @@ export class AppointmentContainer {
   private _createAppointment: CreateAppointment;
   private _getAppointmentById: GetAppointmentById;
   private _cancelAppointment: CancelAppointment;
+  private _getAvailableSlots: GetAvailableSlots;
 
   // Repositorios - Módulo propio
   private _appointmentRepository: AppointmentRepository;
@@ -113,14 +115,18 @@ export class AppointmentContainer {
       this._appointmentStatusRepository,
     );
 
+    this._getAvailableSlots = new GetAvailableSlots(
+      this._appointmentRepository,
+      this._scheduleRepository,
+    );
+
     // HTTP Layer - Inyectamos los casos de uso implementados
     this._appointmentController = new AppointmentController(
       this._createAppointment,
       this._getAppointmentById,
       this._cancelAppointment,
+      this._getAvailableSlots,
     );
-    // this._getAppointmentsByStylistUseCase,
-    // this._getAvailableSlotsUseCase,
 
     this._appointmentRoutes = new AppointmentRoutes(
       this._appointmentController,
@@ -170,6 +176,14 @@ export class AppointmentContainer {
    */
   get cancelAppointment(): CancelAppointment {
     return this._cancelAppointment;
+  }
+
+  /**
+   * Obtiene el caso de uso de consulta de slots disponibles configurado
+   * @returns Instancia de GetAvailableSlots para uso directo o testing
+   */
+  get getAvailableSlots(): GetAvailableSlots {
+    return this._getAvailableSlots;
   }
 
   // Getters para repositorios (para testing o uso directo)

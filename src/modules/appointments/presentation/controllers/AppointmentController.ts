@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CreateAppointment } from '../../application/use-cases/CreateAppointment';
 import { GetAppointmentById } from '../../application/use-cases/GetAppointmentById';
 import { CancelAppointment } from '../../application/use-cases/CancelAppointment';
+import { GetAvailableSlots } from '../../application/use-cases/GetAvailableSlots';
 import { AuthenticatedRequest } from '../../../auth/presentation/middleware/AuthMiddleware';
 import { CreateAppointmentDto } from '../../application/dto/request/CreateAppointmentDto';
 import { UpdateAppointmentDto } from '../../application/dto/request/UpdateAppointmentDto';
@@ -17,15 +18,16 @@ export class AppointmentController {
     private createAppointmentUseCase: CreateAppointment,
     private getAppointmentByIdUseCase: GetAppointmentById,
     private cancelAppointmentUseCase: CancelAppointment,
+    private getAvailableSlotsUseCase: GetAvailableSlots,
   ) {}
 
   /**
    * Crea una nueva cita en el sistema
+   * @description Crea una nueva cita validando disponibilidad y reglas de negocio
    * @route POST /appointments
    * @param req - Request de Express con CreateAppointmentDto en el body y usuario autenticado
    * @param res - Response de Express
    * @returns Promise<Response | void>
-   * @description Crea una nueva cita validando disponibilidad y reglas de negocio
    * @responseStatus 201 - Cita creada exitosamente
    * @throws ValidationError si los datos no son válidos
    * @throws NotFoundError si alguna entidad relacionada no existe
@@ -58,11 +60,11 @@ export class AppointmentController {
 
   /**
    * Obtiene una cita específica por su ID
+   * @description Retorna información completa de una cita específica
    * @route GET /appointments/:id
    * @param req - Request de Express con ID de cita en los parámetros
    * @param res - Response de Express
    * @returns Promise<Response | void>
-   * @description Retorna información completa de una cita específica
    * @responseStatus 200 - Cita encontrada exitosamente
    * @throws NotFoundError si la cita no existe
    * @throws ValidationError si el ID no es válido
@@ -85,11 +87,11 @@ export class AppointmentController {
 
   /**
    * Obtiene todas las citas de un cliente específico
+   * @description Retorna lista de citas ordenada por fecha para un cliente
    * @route GET /appointments/client/:clientId
    * @param req - Request de Express con ID de cliente en los parámetros
    * @param res - Response de Express
    * @returns Promise<Response | void>
-   * @description Retorna lista de citas ordenada por fecha para un cliente
    * @responseStatus 200 - Citas obtenidas exitosamente
    * @throws NotFoundError si el cliente no existe
    * @throws ValidationError si el ID de cliente no es válido
@@ -116,11 +118,11 @@ export class AppointmentController {
 
   /**
    * Obtiene todas las citas de un estilista específico
+   * @description Retorna lista de citas ordenada por fecha para un estilista
    * @route GET /appointments/stylist/:stylistId
    * @param req - Request de Express con ID de estilista en los parámetros
    * @param res - Response de Express
    * @returns Promise<Response | void>
-   * @description Retorna lista de citas ordenada por fecha para un estilista
    * @responseStatus 200 - Citas obtenidas exitosamente
    * @throws NotFoundError si el estilista no existe
    * @throws ValidationError si el ID de estilista no es válido
@@ -147,11 +149,11 @@ export class AppointmentController {
 
   /**
    * Obtiene citas filtradas por rango de fechas
+   * @description Retorna citas dentro del rango de fechas especificado
    * @route GET /appointments/date-range?startDate=&endDate=
    * @param req - Request de Express con fechas en query parameters
    * @param res - Response de Express
    * @returns Promise<Response | void>
-   * @description Retorna citas dentro del rango de fechas especificado
    * @responseStatus 200 - Citas obtenidas exitosamente
    * @throws ValidationError si las fechas no son válidas
    */
@@ -184,11 +186,11 @@ export class AppointmentController {
 
   /**
    * Actualiza una cita existente
+   * @description Modifica datos de una cita validando reglas de negocio
    * @route PUT /appointments/:id
    * @param req - Request de Express con UpdateAppointmentDto en el body
    * @param res - Response de Express
    * @returns Promise<Response | void>
-   * @description Modifica datos de una cita validando reglas de negocio
    * @responseStatus 200 - Cita actualizada exitosamente
    * @throws NotFoundError si la cita no existe
    * @throws ValidationError si los datos no son válidos
@@ -215,11 +217,11 @@ export class AppointmentController {
 
   /**
    * Confirma una cita pendiente
+   * @description Marca una cita como confirmada y actualiza su estado
    * @route POST /appointments/:id/confirm
    * @param req - Request de Express con ID de cita en los parámetros
    * @param res - Response de Express
    * @returns Promise<Response | void>
-   * @description Marca una cita como confirmada y actualiza su estado
    * @responseStatus 200 - Cita confirmada exitosamente
    * @throws NotFoundError si la cita no existe
    * @throws ValidationError si la cita ya está confirmada o no se puede confirmar
@@ -243,11 +245,11 @@ export class AppointmentController {
 
   /**
    * Cancela una cita existente
+   * @description Marca una cita como cancelada con razón opcional y validaciones de negocio
    * @route POST /appointments/:id/cancel
    * @param req - Request de Express con ID de cita y datos de cancelación
    * @param res - Response de Express
    * @returns Promise<Response | void>
-   * @description Marca una cita como cancelada con razón opcional y validaciones de negocio
    * @responseStatus 200 - Cita cancelada exitosamente
    * @throws NotFoundError si la cita no existe
    * @throws ValidationError si los datos no son válidos
@@ -281,33 +283,37 @@ export class AppointmentController {
 
   /**
    * Obtiene slots de tiempo disponibles para agendar citas
-   * @route GET /appointments/available-slots?date=&duration=&stylistId=
+   * @description Retorna horarios disponibles basados en criterios de filtrado
+   * @route GET /appointments/available-slots?date=&duration=&stylistId=&serviceIds=
    * @param req - Request de Express con parámetros de consulta
    * @param res - Response de Express
    * @returns Promise<Response | void>
-   * @description Retorna horarios disponibles basados en criterios de filtrado
    * @responseStatus 200 - Slots disponibles obtenidos exitosamente
    * @throws ValidationError si los parámetros no son válidos
+   * @throws BusinessRuleError si la fecha no es válida para agendar
    */
   async getAvailableSlots(req: Request, res: Response): Promise<Response | void> {
     try {
-      const { date, duration, stylistId } = req.query;
+      const { date, duration, stylistId, serviceIds } = req.query;
 
+      // Construir DTO con validación de parámetros
       const getAvailableSlotsDto: GetAvailableSlotsDto = {
         date: date as string,
         duration: duration ? parseInt(duration as string) : undefined,
         stylistId: stylistId as string | undefined,
+        serviceIds: serviceIds
+          ? Array.isArray(serviceIds)
+            ? (serviceIds as string[])
+            : [serviceIds as string]
+          : undefined,
       };
 
-      // TODO: Implementar el caso de uso GetAvailableSlots
-      // const result = await this.getAvailableSlots.execute(getAvailableSlotsDto);
+      // Ejecutar caso de uso
+      const result = await this.getAvailableSlotsUseCase.execute(getAvailableSlotsDto);
 
       return res.status(200).json({
         success: true,
-        data: {
-          query: getAvailableSlotsDto,
-          message: 'GetAvailableSlots use case not implemented yet',
-        },
+        data: result,
         message: 'Available slots retrieved successfully',
       });
     } catch (error) {
@@ -317,13 +323,14 @@ export class AppointmentController {
 
   /**
    * Obtiene estadísticas de citas para dashboard administrativo
+   * @description Retorna métricas y estadísticas de citas del sistema
    * @route GET /appointments/statistics
    * @param req - Request de Express con posibles filtros en query
    * @param res - Response de Express
    * @returns Promise<Response | void>
-   * @description Retorna métricas y estadísticas de citas del sistema
    * @responseStatus 200 - Estadísticas obtenidas exitosamente
    */
+
   async getAppointmentStatistics(
     req: AuthenticatedRequest,
     res: Response,

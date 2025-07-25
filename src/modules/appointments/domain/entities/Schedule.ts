@@ -25,8 +25,8 @@ export class Schedule {
   constructor(
     public id: string,
     public dayOfWeek: DayOfWeekEnum,
-    public startTime: string, // Formato: "HH: MM"
-    public endTime: string, // Formato: "HH: MM"
+    public startTime: string, // Formato: "HH:MM"
+    public endTime: string, // Formato: "HH:MM"
     public createdAt: Date = new Date(),
     public updatedAt: Date = new Date(),
     public holidayId?: string,
