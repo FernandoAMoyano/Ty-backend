@@ -222,7 +222,7 @@ export class AppointmentValidations {
 
   /**
    * Validaciones para cancelar una cita
-   * @description Valida UUID del parámetro y razón opcional de cancelación
+   * @description Valida UUID del parámetro y datos opcionales de cancelación
    */
   static cancelAppointment = [
     param('id').isUUID().withMessage('Appointment ID must be a valid UUID'),
@@ -234,6 +234,16 @@ export class AppointmentValidations {
       .trim()
       .isLength({ max: 500 })
       .withMessage('Cancellation reason cannot exceed 500 characters'),
+
+    body('cancelledBy')
+      .optional()
+      .isIn(['client', 'stylist', 'admin', 'system'])
+      .withMessage('Cancelled by must be one of: client, stylist, admin, system'),
+
+    body('notifyClient')
+      .optional()
+      .isBoolean()
+      .withMessage('Notify client must be a boolean value'),
   ];
 
   /**

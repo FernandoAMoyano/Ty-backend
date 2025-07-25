@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import { CreateAppointment } from '../../application/use-cases/CreateAppointment';
 import { GetAppointmentById } from '../../application/use-cases/GetAppointmentById';
+import { CancelAppointment } from '../../application/use-cases/CancelAppointment';
 import { AuthenticatedRequest } from '../../../auth/presentation/middleware/AuthMiddleware';
 import { CreateAppointmentDto } from '../../application/dto/request/CreateAppointmentDto';
 import { UpdateAppointmentDto } from '../../application/dto/request/UpdateAppointmentDto';
+import { CancelAppointmentDto } from '../../application/dto/request/CancelAppointmentDto';
 import { GetAvailableSlotsDto } from '../../application/dto/request/GetAvailableSlotsDto';
 
 /**
@@ -14,6 +16,7 @@ export class AppointmentController {
   constructor(
     private createAppointmentUseCase: CreateAppointment,
     private getAppointmentByIdUseCase: GetAppointmentById,
+    private cancelAppointmentUseCase: CancelAppointment,
   ) {}
 
   /**
@@ -241,25 +244,34 @@ export class AppointmentController {
   /**
    * Cancela una cita existente
    * @route POST /appointments/:id/cancel
-   * @param req - Request de Express con ID de cita y razón opcional
+   * @param req - Request de Express con ID de cita y datos de cancelación
    * @param res - Response de Express
    * @returns Promise<Response | void>
-   * @description Marca una cita como cancelada con razón opcional
+   * @description Marca una cita como cancelada con razón opcional y validaciones de negocio
    * @responseStatus 200 - Cita cancelada exitosamente
    * @throws NotFoundError si la cita no existe
-   * @throws ValidationError si la cita no se puede cancelar
+   * @throws ValidationError si los datos no son válidos
+   * @throws BusinessRuleError si no se puede cancelar según reglas de negocio
+   * @throws UnauthorizedError si no hay autenticación o permisos
    */
   async cancelAppointment(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const { id } = req.params;
-      const { reason } = req.body;
+      const userId = req.user?.userId;
 
-      // TODO: Implementar el caso de uso CancelAppointment
-      // const result = await this.cancelAppointment.execute(id, reason);
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+        });
+      }
+
+      const cancelDto: CancelAppointmentDto = req.body;
+      const result = await this.cancelAppointmentUseCase.execute(id, cancelDto, userId);
 
       return res.status(200).json({
         success: true,
-        data: { id, reason, message: 'CancelAppointment use case not implemented yet' },
+        data: result,
         message: 'Appointment cancelled successfully',
       });
     } catch (error) {
