@@ -26,6 +26,7 @@ import { CreateAppointment } from './application/use-cases/CreateAppointment';
 import { GetAppointmentById } from './application/use-cases/GetAppointmentById';
 import { CancelAppointment } from './application/use-cases/CancelAppointment';
 import { GetAvailableSlots } from './application/use-cases/GetAvailableSlots';
+import { ConfirmAppointment } from './application/use-cases/ConfirmAppointment';
 
 /**
  * Contenedor de dependencias para el módulo de citas
@@ -44,6 +45,7 @@ export class AppointmentContainer {
   private _getAppointmentById: GetAppointmentById;
   private _cancelAppointment: CancelAppointment;
   private _getAvailableSlots: GetAvailableSlots;
+  private _confirmAppointment: ConfirmAppointment;
 
   // Repositorios - Módulo propio
   private _appointmentRepository: AppointmentRepository;
@@ -120,12 +122,18 @@ export class AppointmentContainer {
       this._scheduleRepository,
     );
 
+    this._confirmAppointment = new ConfirmAppointment(
+      this._appointmentRepository,
+      this._appointmentStatusRepository,
+    );
+
     // HTTP Layer - Inyectamos los casos de uso implementados
     this._appointmentController = new AppointmentController(
       this._createAppointment,
       this._getAppointmentById,
       this._cancelAppointment,
       this._getAvailableSlots,
+      this._confirmAppointment,
     );
 
     this._appointmentRoutes = new AppointmentRoutes(
@@ -184,6 +192,14 @@ export class AppointmentContainer {
    */
   get getAvailableSlots(): GetAvailableSlots {
     return this._getAvailableSlots;
+  }
+
+  /**
+   * Obtiene el caso de uso de confirmación de citas configurado
+   * @returns Instancia de ConfirmAppointment para uso directo o testing
+   */
+  get confirmAppointment(): ConfirmAppointment {
+    return this._confirmAppointment;
   }
 
   // Getters para repositorios (para testing o uso directo)

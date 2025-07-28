@@ -214,10 +214,28 @@ export class AppointmentValidations {
 
   /**
    * Validaciones para confirmar una cita
-   * @description Valida UUID del parámetro de cita
+   * @description Valida UUID del parámetro y datos opcionales de confirmación
    */
   static confirmAppointment = [
-    param('id').isUUID().withMessage('Appointment ID must be a valid UUID')
+    param('id').isUUID().withMessage('Appointment ID must be a valid UUID'),
+
+    body('notes')
+      .optional()
+      .isString()
+      .withMessage('Confirmation notes must be a string')
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Confirmation notes cannot exceed 500 characters'),
+
+    body('notifyClient')
+      .optional()
+      .isBoolean()
+      .withMessage('Notify client must be a boolean value'),
+
+    body('confirmedBy')
+      .optional()
+      .isUUID()
+      .withMessage('Confirmed by ID must be a valid UUID'),
   ];
 
   /**
