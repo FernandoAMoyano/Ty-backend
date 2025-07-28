@@ -3,10 +3,12 @@ import { CreateAppointment } from '../../application/use-cases/CreateAppointment
 import { GetAppointmentById } from '../../application/use-cases/GetAppointmentById';
 import { CancelAppointment } from '../../application/use-cases/CancelAppointment';
 import { GetAvailableSlots } from '../../application/use-cases/GetAvailableSlots';
+import { ConfirmAppointment } from '../../application/use-cases/ConfirmAppointment';
 import { AuthenticatedRequest } from '../../../auth/presentation/middleware/AuthMiddleware';
 import { CreateAppointmentDto } from '../../application/dto/request/CreateAppointmentDto';
 import { UpdateAppointmentDto } from '../../application/dto/request/UpdateAppointmentDto';
 import { CancelAppointmentDto } from '../../application/dto/request/CancelAppointmentDto';
+import { ConfirmAppointmentDto } from '../../application/dto/request/ConfirmAppointmentDto';
 import { GetAvailableSlotsDto } from '../../application/dto/request/GetAvailableSlotsDto';
 
 /**
@@ -19,6 +21,7 @@ export class AppointmentController {
     private getAppointmentByIdUseCase: GetAppointmentById,
     private cancelAppointmentUseCase: CancelAppointment,
     private getAvailableSlotsUseCase: GetAvailableSlots,
+    private confirmAppointmentUseCase: ConfirmAppointment,
   ) {}
 
   /**
@@ -219,23 +222,33 @@ export class AppointmentController {
    * Confirma una cita pendiente
    * @description Marca una cita como confirmada y actualiza su estado
    * @route POST /appointments/:id/confirm
-   * @param req - Request de Express con ID de cita en los parámetros
+   * @param req - Request de Express con ID de cita en los parámetros y datos de confirmación
    * @param res - Response de Express
    * @returns Promise<Response | void>
    * @responseStatus 200 - Cita confirmada exitosamente
    * @throws NotFoundError si la cita no existe
-   * @throws ValidationError si la cita ya está confirmada o no se puede confirmar
+   * @throws ValidationError si los datos no son válidos
+   * @throws BusinessRuleError si no se puede confirmar según reglas de negocio
+   * @throws UnauthorizedError si no hay autenticación o permisos
    */
   async confirmAppointment(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const { id } = req.params;
+      const userId = req.user?.userId;
 
-      // TODO: Implementar el caso de uso ConfirmAppointment
-      // const result = await this.confirmAppointment.execute(id);
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+        });
+      }
+
+      const confirmDto: ConfirmAppointmentDto = req.body;
+      const result = await this.confirmAppointmentUseCase.execute(id, confirmDto, userId);
 
       return res.status(200).json({
         success: true,
-        data: { id, message: 'ConfirmAppointment use case not implemented yet' },
+        data: result,
         message: 'Appointment confirmed successfully',
       });
     } catch (error) {
