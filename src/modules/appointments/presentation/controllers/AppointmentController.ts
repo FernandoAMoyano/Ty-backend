@@ -4,6 +4,7 @@ import { GetAppointmentById } from '../../application/use-cases/GetAppointmentBy
 import { CancelAppointment } from '../../application/use-cases/CancelAppointment';
 import { GetAvailableSlots } from '../../application/use-cases/GetAvailableSlots';
 import { ConfirmAppointment } from '../../application/use-cases/ConfirmAppointment';
+import { UpdateAppointment } from '../../application/use-cases/UpdateAppointment';
 import { AuthenticatedRequest } from '../../../auth/presentation/middleware/AuthMiddleware';
 import { CreateAppointmentDto } from '../../application/dto/request/CreateAppointmentDto';
 import { UpdateAppointmentDto } from '../../application/dto/request/UpdateAppointmentDto';
@@ -22,6 +23,7 @@ export class AppointmentController {
     private cancelAppointmentUseCase: CancelAppointment,
     private getAvailableSlotsUseCase: GetAvailableSlots,
     private confirmAppointmentUseCase: ConfirmAppointment,
+    private updateAppointmentUseCase: UpdateAppointment,
   ) {}
 
   /**
@@ -203,14 +205,21 @@ export class AppointmentController {
   async updateAppointment(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const { id } = req.params;
-      const updateDto: UpdateAppointmentDto = req.body;
+      const userId = req.user?.userId;
 
-      // TODO: Implementar el caso de uso UpdateAppointment
-      // const result = await this.updateAppointment.execute(id, updateDto);
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+        });
+      }
+
+      const updateDto: UpdateAppointmentDto = req.body;
+      const result = await this.updateAppointmentUseCase.execute(id, updateDto, userId);
 
       return res.status(200).json({
         success: true,
-        data: { id, updateDto, message: 'UpdateAppointment use case not implemented yet' },
+        data: result,
         message: 'Appointment updated successfully',
       });
     } catch (error) {
