@@ -22,7 +22,7 @@ export class AppointmentValidations {
       .custom((value) => {
         const appointmentDate = new Date(value);
         const now = new Date();
-        
+
         if (appointmentDate <= now) {
           throw new Error('Appointment cannot be scheduled in the past');
         }
@@ -30,7 +30,7 @@ export class AppointmentValidations {
         // Validar que no sea más de 6 meses en el futuro
         const sixMonthsFromNow = new Date();
         sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
-        
+
         if (appointmentDate > sixMonthsFromNow) {
           throw new Error('Appointment cannot be scheduled more than 6 months in advance');
         }
@@ -38,14 +38,9 @@ export class AppointmentValidations {
         return true;
       }),
 
-    body('clientId')
-      .isUUID()
-      .withMessage('Client ID must be a valid UUID'),
+    body('clientId').isUUID().withMessage('Client ID must be a valid UUID'),
 
-    body('stylistId')
-      .optional()
-      .isUUID()
-      .withMessage('Stylist ID must be a valid UUID'),
+    body('stylistId').optional().isUUID().withMessage('Stylist ID must be a valid UUID'),
 
     body('serviceIds')
       .isArray({ min: 1 })
@@ -54,15 +49,16 @@ export class AppointmentValidations {
         if (!Array.isArray(serviceIds) || serviceIds.length === 0) {
           throw new Error('Service IDs must be a non-empty array');
         }
-        
+
         // Validar que todos los elementos sean UUIDs válidos
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
         for (const serviceId of serviceIds) {
           if (!uuidRegex.test(serviceId)) {
             throw new Error('All service IDs must be valid UUIDs');
           }
         }
-        
+
         return true;
       }),
 
@@ -85,6 +81,7 @@ export class AppointmentValidations {
    * - id: UUID válido requerido en parámetros
    * - Todos los campos de creación pero opcionales
    * - Mantiene todas las validaciones de negocio
+   * - Incluye validaciones para nuevos campos como notes y reason
    */
   static updateAppointment = [
     param('id').isUUID().withMessage('Appointment ID must be a valid UUID'),
@@ -94,48 +91,22 @@ export class AppointmentValidations {
       .isISO8601()
       .withMessage('DateTime must be a valid ISO 8601 date')
       .custom((value) => {
-        if (!value) return true; // Optional field
-        
+        if (!value) return true; // Campo opcional
+
         const appointmentDate = new Date(value);
         const now = new Date();
-        
+
         if (appointmentDate <= now) {
           throw new Error('Appointment cannot be rescheduled to the past');
         }
 
         const sixMonthsFromNow = new Date();
         sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
-        
+
         if (appointmentDate > sixMonthsFromNow) {
           throw new Error('Appointment cannot be scheduled more than 6 months in advance');
         }
 
-        return true;
-      }),
-
-    body('stylistId')
-      .optional()
-      .isUUID()
-      .withMessage('Stylist ID must be a valid UUID'),
-
-    body('serviceIds')
-      .optional()
-      .isArray({ min: 1 })
-      .withMessage('At least one service must be selected')
-      .custom((serviceIds) => {
-        if (!serviceIds) return true; // Optional field
-        
-        if (!Array.isArray(serviceIds) || serviceIds.length === 0) {
-          throw new Error('Service IDs must be a non-empty array');
-        }
-        
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        for (const serviceId of serviceIds) {
-          if (!uuidRegex.test(serviceId)) {
-            throw new Error('All service IDs must be valid UUIDs');
-          }
-        }
-        
         return true;
       }),
 
@@ -149,6 +120,87 @@ export class AppointmentValidations {
         }
         return true;
       }),
+
+    body('stylistId')
+      .optional()
+      .custom((value) => {
+        // Permitir null o undefined para quitar el estilista
+        if (value === null || value === undefined || value === '') {
+          return true;
+        }
+
+        // Si se proporciona un valor, debe ser un UUID válido
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(value)) {
+          throw new Error('Stylist ID must be a valid UUID or null');
+        }
+
+        return true;
+      }),
+
+    body('serviceIds')
+      .optional()
+      .isArray({ min: 1 })
+      .withMessage('At least one service must be selected')
+      .custom((serviceIds) => {
+        if (!serviceIds) return true; // Campo opcional
+
+        if (!Array.isArray(serviceIds) || serviceIds.length === 0) {
+          throw new Error('Service IDs must be a non-empty array');
+        }
+
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        for (const serviceId of serviceIds) {
+          if (!uuidRegex.test(serviceId)) {
+            throw new Error('All service IDs must be valid UUIDs');
+          }
+        }
+
+        return true;
+      }),
+
+    body('notes')
+      .optional()
+      .isString()
+      .withMessage('Notes must be a string')
+      .trim()
+      .isLength({ min: 1, max: 500 })
+      .withMessage('Notes must be between 1 and 500 characters'),
+
+    body('reason')
+      .optional()
+      .isString()
+      .withMessage('Reason must be a string')
+      .trim()
+      .isLength({ min: 1, max: 300 })
+      .withMessage('Reason must be between 1 and 300 characters'),
+
+    body('notifyClient')
+      .optional()
+      .isBoolean()
+      .withMessage('Notify client must be a boolean value'),
+
+    // Validación personalizada para asegurar que al menos un campo esté presente
+    body().custom((body) => {
+      const allowedFields = [
+        'dateTime',
+        'duration',
+        'stylistId',
+        'serviceIds',
+        'notes',
+        'reason',
+        'notifyClient',
+      ];
+      const hasValidUpdate = allowedFields.some((field) => body[field] !== undefined);
+
+      if (!hasValidUpdate) {
+        throw new Error('At least one field must be provided for update');
+      }
+
+      return true;
+    }),
   ];
 
   /**
@@ -156,7 +208,7 @@ export class AppointmentValidations {
    * @description Valida que el parámetro ID sea un UUID válido
    */
   static appointmentById = [
-    param('id').isUUID().withMessage('Appointment ID must be a valid UUID')
+    param('id').isUUID().withMessage('Appointment ID must be a valid UUID'),
   ];
 
   /**
@@ -164,7 +216,7 @@ export class AppointmentValidations {
    * @description Valida que el parámetro clientId sea un UUID válido
    */
   static appointmentsByClient = [
-    param('clientId').isUUID().withMessage('Client ID must be a valid UUID')
+    param('clientId').isUUID().withMessage('Client ID must be a valid UUID'),
   ];
 
   /**
@@ -172,7 +224,7 @@ export class AppointmentValidations {
    * @description Valida que el parámetro stylistId sea un UUID válido
    */
   static appointmentsByStylist = [
-    param('stylistId').isUUID().withMessage('Stylist ID must be a valid UUID')
+    param('stylistId').isUUID().withMessage('Stylist ID must be a valid UUID'),
   ];
 
   /**
@@ -180,9 +232,7 @@ export class AppointmentValidations {
    * @description Valida fechas de inicio y fin en query parameters
    */
   static appointmentsByDateRange = [
-    query('startDate')
-      .isISO8601()
-      .withMessage('Start date must be a valid ISO 8601 date'),
+    query('startDate').isISO8601().withMessage('Start date must be a valid ISO 8601 date'),
 
     query('endDate')
       .isISO8601()
@@ -192,22 +242,22 @@ export class AppointmentValidations {
         if (!req.query || !req.query.startDate) {
           throw new Error('Start date is required for end date validation');
         }
-        
+
         const startDate = new Date(req.query.startDate as string);
         const end = new Date(endDate);
-        
+
         if (end <= startDate) {
           throw new Error('End date must be after start date');
         }
-        
+
         // Limitar rango máximo a 1 año
         const oneYearFromStart = new Date(startDate);
         oneYearFromStart.setFullYear(oneYearFromStart.getFullYear() + 1);
-        
+
         if (end > oneYearFromStart) {
           throw new Error('Date range cannot exceed 1 year');
         }
-        
+
         return true;
       }),
   ];
@@ -232,10 +282,7 @@ export class AppointmentValidations {
       .isBoolean()
       .withMessage('Notify client must be a boolean value'),
 
-    body('confirmedBy')
-      .optional()
-      .isUUID()
-      .withMessage('Confirmed by ID must be a valid UUID'),
+    body('confirmedBy').optional().isUUID().withMessage('Confirmed by ID must be a valid UUID'),
   ];
 
   /**
@@ -276,11 +323,11 @@ export class AppointmentValidations {
         const date = new Date(value);
         const now = new Date();
         now.setHours(0, 0, 0, 0);
-        
+
         if (date < now) {
           throw new Error('Cannot check availability for past dates');
         }
-        
+
         return true;
       }),
 
@@ -295,9 +342,6 @@ export class AppointmentValidations {
         return true;
       }),
 
-    query('stylistId')
-      .optional()
-      .isUUID()
-      .withMessage('Stylist ID must be a valid UUID'),
+    query('stylistId').optional().isUUID().withMessage('Stylist ID must be a valid UUID'),
   ];
 }
