@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { CreateAppointment } from '../../application/use-cases/CreateAppointment';
 import { GetAppointmentById } from '../../application/use-cases/GetAppointmentById';
+import { GetAppointmentsByClient } from '../../application/use-cases/GetAppointmentsByClient';
 import { CancelAppointment } from '../../application/use-cases/CancelAppointment';
 import { GetAvailableSlots } from '../../application/use-cases/GetAvailableSlots';
 import { ConfirmAppointment } from '../../application/use-cases/ConfirmAppointment';
@@ -20,6 +21,7 @@ export class AppointmentController {
   constructor(
     private createAppointmentUseCase: CreateAppointment,
     private getAppointmentByIdUseCase: GetAppointmentById,
+    private getAppointmentsByClientUseCase: GetAppointmentsByClient,
     private cancelAppointmentUseCase: CancelAppointment,
     private getAvailableSlotsUseCase: GetAvailableSlots,
     private confirmAppointmentUseCase: ConfirmAppointment,
@@ -108,12 +110,11 @@ export class AppointmentController {
     try {
       const { clientId } = req.params;
 
-      // TODO: Implementar el caso de uso GetAppointmentsByClient
-      // const result = await this.getAppointmentsByClient.execute(clientId);
+      const result = await this.getAppointmentsByClientUseCase.execute(clientId);
 
       return res.status(200).json({
         success: true,
-        data: { clientId, message: 'GetAppointmentsByClient use case not implemented yet' },
+        data: result,
         message: 'Client appointments retrieved successfully',
       });
     } catch (error) {

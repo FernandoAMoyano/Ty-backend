@@ -24,6 +24,7 @@ import { PrismaUserRepository } from '../auth/infrastructure/persistence/PrismaU
 // Casos de uso
 import { CreateAppointment } from './application/use-cases/CreateAppointment';
 import { GetAppointmentById } from './application/use-cases/GetAppointmentById';
+import { GetAppointmentsByClient } from './application/use-cases/GetAppointmentsByClient';
 import { CancelAppointment } from './application/use-cases/CancelAppointment';
 import { GetAvailableSlots } from './application/use-cases/GetAvailableSlots';
 import { ConfirmAppointment } from './application/use-cases/ConfirmAppointment';
@@ -44,6 +45,7 @@ export class AppointmentContainer {
   // Casos de uso
   private _createAppointment: CreateAppointment;
   private _getAppointmentById: GetAppointmentById;
+  private _getAppointmentsByClient: GetAppointmentsByClient;
   private _cancelAppointment: CancelAppointment;
   private _getAvailableSlots: GetAvailableSlots;
   private _confirmAppointment: ConfirmAppointment;
@@ -114,6 +116,8 @@ export class AppointmentContainer {
 
     this._getAppointmentById = new GetAppointmentById(this._appointmentRepository);
 
+    this._getAppointmentsByClient = new GetAppointmentsByClient(this._appointmentRepository);
+
     this._cancelAppointment = new CancelAppointment(
       this._appointmentRepository,
       this._appointmentStatusRepository,
@@ -140,6 +144,7 @@ export class AppointmentContainer {
     this._appointmentController = new AppointmentController(
       this._createAppointment,
       this._getAppointmentById,
+      this._getAppointmentsByClient,
       this._cancelAppointment,
       this._getAvailableSlots,
       this._confirmAppointment,
@@ -186,6 +191,14 @@ export class AppointmentContainer {
    */
   get getAppointmentById(): GetAppointmentById {
     return this._getAppointmentById;
+  }
+
+  /**
+   * Obtiene el caso de uso de consulta de citas por cliente configurado
+   * @returns Instancia de GetAppointmentsByClient para uso directo o testing
+   */
+  get getAppointmentsByClient(): GetAppointmentsByClient {
+    return this._getAppointmentsByClient;
   }
 
   /**
