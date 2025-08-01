@@ -25,6 +25,7 @@ import { PrismaUserRepository } from '../auth/infrastructure/persistence/PrismaU
 import { CreateAppointment } from './application/use-cases/CreateAppointment';
 import { GetAppointmentById } from './application/use-cases/GetAppointmentById';
 import { GetAppointmentsByClient } from './application/use-cases/GetAppointmentsByClient';
+import { GetAppointmentsByStylist } from './application/use-cases/GetAppointmentsByStylist';
 import { CancelAppointment } from './application/use-cases/CancelAppointment';
 import { GetAvailableSlots } from './application/use-cases/GetAvailableSlots';
 import { ConfirmAppointment } from './application/use-cases/ConfirmAppointment';
@@ -46,6 +47,7 @@ export class AppointmentContainer {
   private _createAppointment: CreateAppointment;
   private _getAppointmentById: GetAppointmentById;
   private _getAppointmentsByClient: GetAppointmentsByClient;
+  private _getAppointmentsByStylist: GetAppointmentsByStylist;
   private _cancelAppointment: CancelAppointment;
   private _getAvailableSlots: GetAvailableSlots;
   private _confirmAppointment: ConfirmAppointment;
@@ -118,6 +120,8 @@ export class AppointmentContainer {
 
     this._getAppointmentsByClient = new GetAppointmentsByClient(this._appointmentRepository);
 
+    this._getAppointmentsByStylist = new GetAppointmentsByStylist(this._appointmentRepository);
+
     this._cancelAppointment = new CancelAppointment(
       this._appointmentRepository,
       this._appointmentStatusRepository,
@@ -145,6 +149,7 @@ export class AppointmentContainer {
       this._createAppointment,
       this._getAppointmentById,
       this._getAppointmentsByClient,
+      this._getAppointmentsByStylist,
       this._cancelAppointment,
       this._getAvailableSlots,
       this._confirmAppointment,
@@ -199,6 +204,14 @@ export class AppointmentContainer {
    */
   get getAppointmentsByClient(): GetAppointmentsByClient {
     return this._getAppointmentsByClient;
+  }
+
+  /**
+   * Obtiene el caso de uso de consulta de citas por estilista configurado
+   * @returns Instancia de GetAppointmentsByStylist para uso directo o testing
+   */
+  get getAppointmentsByStylist(): GetAppointmentsByStylist {
+    return this._getAppointmentsByStylist;
   }
 
   /**

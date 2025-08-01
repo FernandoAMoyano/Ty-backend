@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CreateAppointment } from '../../application/use-cases/CreateAppointment';
 import { GetAppointmentById } from '../../application/use-cases/GetAppointmentById';
 import { GetAppointmentsByClient } from '../../application/use-cases/GetAppointmentsByClient';
+import { GetAppointmentsByStylist } from '../../application/use-cases/GetAppointmentsByStylist';
 import { CancelAppointment } from '../../application/use-cases/CancelAppointment';
 import { GetAvailableSlots } from '../../application/use-cases/GetAvailableSlots';
 import { ConfirmAppointment } from '../../application/use-cases/ConfirmAppointment';
@@ -22,6 +23,7 @@ export class AppointmentController {
     private createAppointmentUseCase: CreateAppointment,
     private getAppointmentByIdUseCase: GetAppointmentById,
     private getAppointmentsByClientUseCase: GetAppointmentsByClient,
+    private getAppointmentsByStylistUseCase: GetAppointmentsByStylist,
     private cancelAppointmentUseCase: CancelAppointment,
     private getAvailableSlotsUseCase: GetAvailableSlots,
     private confirmAppointmentUseCase: ConfirmAppointment,
@@ -140,12 +142,11 @@ export class AppointmentController {
     try {
       const { stylistId } = req.params;
 
-      // TODO: Implementar el caso de uso GetAppointmentsByStylist
-      // const result = await this.getAppointmentsByStylist.execute(stylistId);
+      const result = await this.getAppointmentsByStylistUseCase.execute(stylistId);
 
       return res.status(200).json({
         success: true,
-        data: { stylistId, message: 'GetAppointmentsByStylist use case not implemented yet' },
+        data: result,
         message: 'Stylist appointments retrieved successfully',
       });
     } catch (error) {
