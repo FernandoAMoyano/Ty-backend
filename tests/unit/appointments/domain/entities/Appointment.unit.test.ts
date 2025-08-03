@@ -22,6 +22,7 @@ describe('Appointment Entity', () => {
   };
 
   describe('Appointment Creation', () => {
+    // Debería crear una cita con datos válidos
     it('should create appointment with valid data', () => {
       const appointment = new Appointment(
         validAppointmentData.id,
@@ -50,6 +51,7 @@ describe('Appointment Entity', () => {
       expect(appointment.updatedAt).toBeInstanceOf(Date);
     });
 
+    // Debería crear una cita usando el método estático create
     it('should create appointment with static create method', () => {
       const futureDate = getFutureDate(15); // 15 días en el futuro
 
@@ -71,6 +73,7 @@ describe('Appointment Entity', () => {
       expect(appointment.serviceIds).toEqual(validAppointmentData.serviceIds);
     });
 
+    // Debería crear una cita desde datos de persistencia
     it('should create appointment from persistence data', () => {
       const futureDate = getFutureDate(20);
       const confirmedAt = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 día atrás
@@ -99,6 +102,7 @@ describe('Appointment Entity', () => {
   });
 
   describe('Appointment Validation', () => {
+    // Debería lanzar error para fecha en el pasado
     it('should throw error for past date', () => {
       const pastDate = new Date('2020-01-01T10:00:00.000Z');
 
@@ -115,6 +119,7 @@ describe('Appointment Entity', () => {
       }).toThrow('Appointment cannot be scheduled in the past');
     });
 
+    // Debería lanzar error para duración cero
     it('should throw error for zero duration', () => {
       expect(() => {
         new Appointment(
@@ -129,6 +134,7 @@ describe('Appointment Entity', () => {
       }).toThrow('Duration must be greater than 0');
     });
 
+    // Debería lanzar error para duración menor a 15 minutos
     it('should throw error for duration less than 15 minutes', () => {
       expect(() => {
         new Appointment(
@@ -143,6 +149,7 @@ describe('Appointment Entity', () => {
       }).toThrow('Minimum appointment duration is 15 minutes');
     });
 
+    // Debería lanzar error para duración mayor a 8 horas
     it('should throw error for duration more than 8 hours', () => {
       expect(() => {
         new Appointment(
@@ -157,6 +164,7 @@ describe('Appointment Entity', () => {
       }).toThrow('Maximum appointment duration is 8 hours');
     });
 
+    // Debería lanzar error para duración que no sea múltiplo de 15 minutos
     it('should throw error for duration not in 15-minute increments', () => {
       expect(() => {
         new Appointment(
@@ -171,6 +179,7 @@ describe('Appointment Entity', () => {
       }).toThrow('Duration must be in 15-minute increments');
     });
 
+    // Debería lanzar error para userId vacío
     it('should throw error for empty userId', () => {
       expect(() => {
         new Appointment(
@@ -185,6 +194,7 @@ describe('Appointment Entity', () => {
       }).toThrow('userId is required');
     });
 
+    // Debería lanzar error para clientId vacío
     it('should throw error for empty clientId', () => {
       expect(() => {
         new Appointment(
@@ -219,6 +229,7 @@ describe('Appointment Entity', () => {
     });
 
     describe('Confirmation', () => {
+      // Debería confirmar la cita
       it('should confirm appointment', () => {
         expect(appointment.isConfirmed()).toBe(false);
 
@@ -229,6 +240,7 @@ describe('Appointment Entity', () => {
         expect(appointment.confirmedAt!.getTime()).toBeCloseTo(Date.now(), -3);
       });
 
+      // Debería lanzar error al confirmar una cita ya confirmada
       it('should throw error when confirming already confirmed appointment', () => {
         appointment.confirm();
 
@@ -239,6 +251,7 @@ describe('Appointment Entity', () => {
     });
 
     describe('Rescheduling', () => {
+      // Debería reprogramar la cita a una fecha futura
       it('should reschedule appointment to future date', () => {
         const newDate = getFutureDate(60); // 60 días en el futuro
         const originalUpdatedAt = appointment.updatedAt;
@@ -250,6 +263,7 @@ describe('Appointment Entity', () => {
         expect(appointment.updatedAt.getTime()).toBeGreaterThanOrEqual(originalUpdatedAt.getTime());
       });
 
+      // Debería reprogramar la cita con nueva duración
       it('should reschedule appointment with new duration', () => {
         const newDate = getFutureDate(45); // 45 días en el futuro
         const newDuration = 90;
@@ -260,6 +274,7 @@ describe('Appointment Entity', () => {
         expect(appointment.duration).toBe(newDuration);
       });
 
+      // Debería lanzar error al reprogramar a fecha pasada
       it('should throw error when rescheduling to past date', () => {
         const pastDate = new Date('2020-01-01T10:00:00.000Z');
 
@@ -270,6 +285,7 @@ describe('Appointment Entity', () => {
     });
 
     describe('Service Management', () => {
+      // Debería agregar servicio a la cita
       it('should add service to appointment', () => {
         const newServiceId = generateUuid();
         const originalLength = appointment.serviceIds.length;
@@ -280,6 +296,7 @@ describe('Appointment Entity', () => {
         expect(appointment.serviceIds.length).toBe(originalLength + 1);
       });
 
+      // Debería lanzar error al agregar servicio duplicado
       it('should throw error when adding duplicate service', () => {
         const existingServiceId = appointment.serviceIds[0];
 
@@ -288,12 +305,14 @@ describe('Appointment Entity', () => {
         }).toThrow('Service is already added to this appointment');
       });
 
+      // Debería lanzar error al agregar servicio con ID vacío
       it('should throw error when adding empty service ID', () => {
         expect(() => {
           appointment.addService('');
         }).toThrow('Service ID is required');
       });
 
+      // Debería remover servicio de la cita
       it('should remove service from appointment', () => {
         const serviceToRemove = appointment.serviceIds[0];
         const originalLength = appointment.serviceIds.length;
@@ -304,6 +323,7 @@ describe('Appointment Entity', () => {
         expect(appointment.serviceIds.length).toBe(originalLength - 1);
       });
 
+      // Debería lanzar error al remover servicio inexistente
       it('should throw error when removing non-existent service', () => {
         const nonExistentServiceId = generateUuid();
 
@@ -314,6 +334,7 @@ describe('Appointment Entity', () => {
     });
 
     describe('Stylist Management', () => {
+      // Debería actualizar el estilista
       it('should update stylist', () => {
         const newStylistId = generateUuid();
 
@@ -322,6 +343,7 @@ describe('Appointment Entity', () => {
         expect(appointment.stylistId).toBe(newStylistId);
       });
 
+      // Debería lanzar error al actualizar con ID de estilista vacío
       it('should throw error when updating with empty stylist ID', () => {
         expect(() => {
           appointment.updateStylist('');
@@ -330,6 +352,7 @@ describe('Appointment Entity', () => {
     });
 
     describe('Time Calculations', () => {
+      // Debería calcular la hora de finalización correcta
       it('should calculate correct end time', () => {
         const expectedEndTime = new Date(
           appointment.dateTime.getTime() + appointment.duration * 60000,
@@ -340,6 +363,7 @@ describe('Appointment Entity', () => {
         expect(endTime).toEqual(expectedEndTime);
       });
 
+      // Debería detectar si la cita está en el pasado
       it('should detect if appointment is in past', () => {
         const pastAppointment = new Appointment(
           generateUuid(),
@@ -357,6 +381,7 @@ describe('Appointment Entity', () => {
         expect(pastAppointment.isInPast()).toBe(true);
       });
 
+      // Debería verificar si la cita puede ser modificada
       it('should check if appointment can be modified', () => {
         // Cita en más de 24 horas
         const futureAppointment = new Appointment(
@@ -387,6 +412,7 @@ describe('Appointment Entity', () => {
     });
 
     describe('Conflict Detection', () => {
+      // Debería detectar conflicto con cita superpuesta
       it('should detect conflict with overlapping appointment', () => {
         const conflictingAppointment = new Appointment(
           generateUuid(),
@@ -401,6 +427,7 @@ describe('Appointment Entity', () => {
         expect(appointment.hasConflictWith(conflictingAppointment)).toBe(true);
       });
 
+      // No debería detectar conflicto con cita no superpuesta
       it('should not detect conflict with non-overlapping appointment', () => {
         const nonConflictingAppointment = new Appointment(
           generateUuid(),
@@ -415,6 +442,7 @@ describe('Appointment Entity', () => {
         expect(appointment.hasConflictWith(nonConflictingAppointment)).toBe(false);
       });
 
+      // No debería detectar conflicto con cita adyacente
       it('should not detect conflict with adjacent appointment', () => {
         const adjacentAppointment = new Appointment(
           generateUuid(),
@@ -431,6 +459,7 @@ describe('Appointment Entity', () => {
     });
 
     describe('Status Management', () => {
+      // Debería cambiar el estado
       it('should change status', () => {
         const newStatusId = generateUuid();
 
@@ -439,12 +468,14 @@ describe('Appointment Entity', () => {
         expect(appointment.statusId).toBe(newStatusId);
       });
 
+      // Debería lanzar error al cambiar a estado vacío
       it('should throw error when changing to empty status', () => {
         expect(() => {
           appointment.changeStatus('');
         }).toThrow('Status ID is required');
       });
 
+      // Debería marcar como confirmada con cambio de estado
       it('should mark as confirmed with status change', () => {
         const confirmedStatusId = generateUuid();
 
@@ -454,6 +485,7 @@ describe('Appointment Entity', () => {
         expect(appointment.statusId).toBe(confirmedStatusId);
       });
 
+      // Debería marcar como cancelada
       it('should mark as cancelled', () => {
         const cancelledStatusId = generateUuid();
 
@@ -462,6 +494,7 @@ describe('Appointment Entity', () => {
         expect(appointment.statusId).toBe(cancelledStatusId);
       });
 
+      // Debería marcar como completada
       it('should mark as completed', () => {
         const completedStatusId = generateUuid();
 
@@ -470,6 +503,7 @@ describe('Appointment Entity', () => {
         expect(appointment.statusId).toBe(completedStatusId);
       });
 
+      // Debería marcar como en progreso
       it('should mark as in progress', () => {
         const inProgressStatusId = generateUuid();
 
@@ -478,6 +512,7 @@ describe('Appointment Entity', () => {
         expect(appointment.statusId).toBe(inProgressStatusId);
       });
 
+      // Debería marcar como no show (cliente no se presentó)
       it('should mark as no show', () => {
         const noShowStatusId = generateUuid();
 
@@ -488,6 +523,7 @@ describe('Appointment Entity', () => {
     });
 
     describe('Persistence Conversion', () => {
+      // Debería convertir a formato de persistencia
       it('should convert to persistence format', () => {
         const persistenceData = appointment.toPersistence();
 
