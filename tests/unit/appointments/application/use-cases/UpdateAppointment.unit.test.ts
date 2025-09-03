@@ -210,6 +210,7 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Successful Execution', () => {
+    // Debería actualizar cita exitosamente con datos completos
     it('should update appointment successfully with complete data', async () => {
       const completeUpdateDto: UpdateAppointmentDto = {
         dateTime: getFutureISOString(72),
@@ -238,6 +239,7 @@ describe('UpdateAppointment Use Case', () => {
       expect(result.id).toBe(appointment.id);
     });
 
+    // Debería actualizar cita exitosamente con cambios mínimos
     it('should update appointment successfully with minimal changes', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -253,6 +255,7 @@ describe('UpdateAppointment Use Case', () => {
       expect(mockServiceRepository.findById).not.toHaveBeenCalled();
     });
 
+    // Debería permitir actualización por el estilista asignado
     it('should allow update by assigned stylist', async () => {
       const appointment = createMockAppointment({
         stylistId: validRequesterId,
@@ -267,18 +270,21 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Input Validation', () => {
+    // Debería lanzar error para appointmentId vacío
     it('should throw error for empty appointmentId', async () => {
       await expect(useCase.execute('', minimalUpdateDto, validRequesterId)).rejects.toThrow(
         new ValidationError('Appointment ID is required'),
       );
     });
 
+    // Debería lanzar error para appointmentId con formato UUID inválido
     it('should throw error for invalid appointmentId UUID format', async () => {
       await expect(
         useCase.execute('invalid-uuid', minimalUpdateDto, validRequesterId),
       ).rejects.toThrow(new ValidationError('Appointment ID must be a valid UUID'));
     });
 
+    // Debería lanzar error si no se proporcionan campos para actualizar
     it('should throw error if no fields provided for update', async () => {
       const emptyDto: UpdateAppointmentDto = {};
       await expect(useCase.execute(validAppointmentId, emptyDto, validRequesterId)).rejects.toThrow(
@@ -286,6 +292,7 @@ describe('UpdateAppointment Use Case', () => {
       );
     });
 
+    // Debería lanzar error para fecha en el pasado
     it('should throw error for past dateTime', async () => {
       const pastDate = new Date();
       pastDate.setHours(pastDate.getHours() - 1);
@@ -296,6 +303,7 @@ describe('UpdateAppointment Use Case', () => {
       ).rejects.toThrow(new ValidationError('Appointment cannot be rescheduled to the past'));
     });
 
+    // Debería lanzar error para valores de duración inválidos
     it('should throw error for invalid duration values', async () => {
       const testCases = [
         { duration: 0, expectedError: 'Duration must be greater than 0' },
@@ -312,6 +320,7 @@ describe('UpdateAppointment Use Case', () => {
       }
     });
 
+    // Debería lanzar error para notas demasiado largas
     it('should throw error for notes too long', async () => {
       const longNotesDto: UpdateAppointmentDto = { notes: 'x'.repeat(501) };
       await expect(
@@ -321,6 +330,7 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Business Rules Validation', () => {
+    // Debería lanzar BusinessRuleError para usuario sin permisos
     it('should throw BusinessRuleError for user without permissions', async () => {
       const unauthorizedUserId = generateUuid();
       const appointment = createMockAppointment({ userId: validUserId, stylistId: validStylistId });
@@ -333,6 +343,7 @@ describe('UpdateAppointment Use Case', () => {
       );
     });
 
+    // Debería lanzar BusinessRuleError para citas con estados terminales
     it('should throw BusinessRuleError for terminal status appointments', async () => {
       const terminalStatuses = ['COMPLETED', 'CANCELLED', 'NO_SHOW'];
 
@@ -352,6 +363,7 @@ describe('UpdateAppointment Use Case', () => {
       }
     });
 
+    // Debería requerir nota para cambios de fecha en citas confirmadas
     it('should require note for dateTime changes in confirmed appointments', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -376,6 +388,7 @@ describe('UpdateAppointment Use Case', () => {
       );
     });
 
+    // Debería lanzar BusinessRuleError para modificaciones demasiado tarde
     it('should throw BusinessRuleError for too late modifications', async () => {
       const appointment = createMockAppointment({ userId: validRequesterId });
       const confirmedStatus = createMockAppointmentStatus(AppointmentStatusEnum.CONFIRMED);
@@ -397,6 +410,7 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Not Found Handling', () => {
+    // Debería lanzar NotFoundError cuando la cita no existe
     it('should throw NotFoundError when appointment does not exist', async () => {
       mockAppointmentRepository.findById.mockResolvedValue(null);
 
@@ -405,6 +419,7 @@ describe('UpdateAppointment Use Case', () => {
       ).rejects.toThrow(new NotFoundError('Appointment', validAppointmentId));
     });
 
+    // Debería lanzar NotFoundError cuando el estilista no existe
     it('should throw NotFoundError when stylist does not exist', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -421,6 +436,7 @@ describe('UpdateAppointment Use Case', () => {
       ).rejects.toThrow(new NotFoundError('Stylist', validNewStylistId));
     });
 
+    // Debería lanzar NotFoundError cuando el servicio no existe
     it('should throw NotFoundError when service does not exist', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -439,6 +455,7 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Conflict Detection', () => {
+    // Debería lanzar ConflictError para conflictos de horario
     it('should throw ConflictError for scheduling conflicts', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -472,6 +489,7 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Repository Integration', () => {
+    // Debería llamar repositorios con parámetros correctos
     it('should call repositories with correct parameters', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -488,6 +506,7 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Data Mapping', () => {
+    // Debería mapear fechas a formato ISO string
     it('should map dates to ISO string format', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -503,6 +522,7 @@ describe('UpdateAppointment Use Case', () => {
       expect(result.updatedAt).toBe(appointment.updatedAt.toISOString());
     });
 
+    // Debería mantener la estructura de arrays intacta
     it('should maintain array structure intact', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
