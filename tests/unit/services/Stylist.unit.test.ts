@@ -46,20 +46,23 @@ describe('Stylist Entity', () => {
   describe('updateInfo', () => {
     // Debería actualizar marcas de tiempo
     it('should update timestamps', () => {
+      // Usar fake timers de Jest para control preciso del tiempo
+      jest.useFakeTimers();
+      const initialTime = new Date('2024-06-15T10:00:00.000Z');
+      jest.setSystemTime(initialTime);
+
       const stylist = Stylist.create('user-id-123');
       const originalUpdatedAt = stylist.updatedAt;
 
-      // Guardar el método original
-      const originalNow = Date.now;
-
-      // Mock Date.now para simular tiempo posterior
-      Date.now = jest.fn(() => originalUpdatedAt.getTime() + 1000);
+      // Avanzar el tiempo 1 segundo
+      jest.advanceTimersByTime(1000);
 
       stylist.updateInfo();
 
       expect(stylist.updatedAt.getTime()).toBeGreaterThan(originalUpdatedAt.getTime());
 
-      Date.now = originalNow;
+      // Restaurar timers reales
+      jest.useRealTimers();
     });
   });
 
