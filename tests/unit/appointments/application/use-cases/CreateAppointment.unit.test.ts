@@ -80,7 +80,7 @@ describe('CreateAppointment Use Case', () => {
   const createMockAppointment = (overrides: any = {}): Appointment => {
     const baseData = {
       id: generateUuid(),
-      dateTime: new Date('2025-09-08T10:00:00.000Z'), // Fecha futura específica
+      dateTime: getFutureDate(48), // Fecha dinámica futura (48 horas desde ahora)
       duration: 60,
       userId: validUserId,
       clientId: validClientId,
