@@ -16,10 +16,10 @@ import { PrismaScheduleRepository } from './infrastructure/persistence/PrismaSch
 // Repositorios de módulos externos
 import { ServiceRepository } from '../services/domain/repositories/ServiceRepository';
 import { StylistRepository } from '../services/domain/repositories/StylistRepository';
-import { UserRepository } from '../auth/domain/repositories/User';
+import { ClientRepository } from '../auth/domain/repositories/Client';
 import { PrismaServiceRepository } from '../services/infrastructure/persistence/PrismaServiceRepository';
 import { PrismaStylistRepository } from '../services/infrastructure/persistence/PrismaStylistRepository';
-import { PrismaUserRepository } from '../auth/infrastructure/persistence/PrismaUserRepository';
+import { PrismaClientRepository } from '../auth/infrastructure/persistence/PrismaClientRepository';
 
 // Casos de uso
 import { CreateAppointment } from './application/use-cases/CreateAppointment';
@@ -61,7 +61,7 @@ export class AppointmentContainer {
   // Repositorios - Módulos externos
   private _serviceRepository: ServiceRepository;
   private _stylistRepository: StylistRepository;
-  private _userRepository: UserRepository;
+  private _clientRepository: ClientRepository;
 
   /**
    * Constructor privado que inicializa todas las dependencias del módulo
@@ -104,7 +104,7 @@ export class AppointmentContainer {
     // Repositorios de módulos externos
     this._serviceRepository = new PrismaServiceRepository(this.prisma);
     this._stylistRepository = new PrismaStylistRepository(this.prisma);
-    this._userRepository = new PrismaUserRepository(this.prisma);
+    this._clientRepository = new PrismaClientRepository(this.prisma);
 
     // Casos de uso implementados
     this._createAppointment = new CreateAppointment(
@@ -113,7 +113,7 @@ export class AppointmentContainer {
       this._scheduleRepository,
       this._serviceRepository,
       this._stylistRepository,
-      this._userRepository,
+      this._clientRepository,
     );
 
     this._getAppointmentById = new GetAppointmentById(this._appointmentRepository);
@@ -289,10 +289,10 @@ export class AppointmentContainer {
   }
 
   /**
-   * Obtiene el repositorio de usuarios configurado
-   * @returns Instancia de UserRepository para uso directo o testing
+   * Obtiene el repositorio de clientes configurado
+   * @returns Instancia de ClientRepository para uso directo o testing
    */
-  get userRepository(): UserRepository {
-    return this._userRepository;
+  get clientRepository(): ClientRepository {
+    return this._clientRepository;
   }
 }
