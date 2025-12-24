@@ -4,7 +4,7 @@ import { AppointmentStatusRepository } from '../../domain/repositories/Appointme
 import { ScheduleRepository } from '../../domain/repositories/ScheduleRepository';
 import { ServiceRepository } from '../../../services/domain/repositories/ServiceRepository';
 import { StylistRepository } from '../../../services/domain/repositories/StylistRepository';
-import { UserRepository } from '../../../auth/domain/repositories/User';
+import { ClientRepository } from '../../../auth/domain/repositories/Client';
 import { CreateAppointmentDto } from '../dto/request/CreateAppointmentDto';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
@@ -22,7 +22,7 @@ export class CreateAppointment {
     private scheduleRepository: ScheduleRepository,
     private serviceRepository: ServiceRepository,
     private stylistRepository: StylistRepository,
-    private userRepository: UserRepository,
+    private clientRepository: ClientRepository,
   ) {}
 
   /**
@@ -38,8 +38,8 @@ export class CreateAppointment {
     // 1. Validar datos básicos
     await this.validateBasicData(createDto, userId);
 
-    // 2. Validar que todas las entidades relacionadas existen
-    await this.validateRelatedEntities(createDto);
+    // 2. Validar que todas las entidades relacionadas existen y obtener Client.id real
+    const clientId = await this.validateRelatedEntitiesAndGetClientId(createDto);
 
     // 3. Calcular duración total si no se proporciona
     const totalDuration = await this.calculateTotalDuration(createDto);
@@ -53,12 +53,12 @@ export class CreateAppointment {
     // 6. Obtener horario apropiado
     const schedule = await this.getAppropriateSchedule(createDto.dateTime);
 
-    // 7. Crear la entidad de cita
+    // 7. Crear la entidad de cita con el Client.id correcto
     const appointment = Appointment.create(
       new Date(createDto.dateTime),
       totalDuration,
       userId,
-      createDto.clientId,
+      clientId, // Usar el Client.id real, no el userId del DTO
       schedule.id,
       pendingStatus.id,
       createDto.stylistId,
@@ -115,13 +115,24 @@ export class CreateAppointment {
   }
 
   /**
-   * Valida que todas las entidades relacionadas existen
+   * Valida que todas las entidades relacionadas existen y retorna el Client.id real
    * @param createDto - Datos de la cita
+   * @returns Promise con el Client.id real
    * @throws NotFoundError si alguna entidad no existe
    */
-  private async validateRelatedEntities(createDto: CreateAppointmentDto): Promise<void> {
-    // Validar que el cliente existe
-    const client = await this.userRepository.findById(createDto.clientId);
+  private async validateRelatedEntitiesAndGetClientId(createDto: CreateAppointmentDto): Promise<string> {
+    // El DTO recibe clientId que puede ser:
+    // - Un User.id (el usuario cliente pasa su ID de usuario)
+    // - Un Client.id (si ya se conoce el ID de la entidad Client)
+    // Primero intentamos buscar por Client.id, si no existe, buscamos por User.id
+    
+    let client = await this.clientRepository.findById(createDto.clientId);
+    
+    if (!client) {
+      // Intentar buscar el Client por userId
+      client = await this.clientRepository.findByUserId(createDto.clientId);
+    }
+    
     if (!client) {
       throw new NotFoundError('Client', createDto.clientId);
     }
@@ -141,6 +152,8 @@ export class CreateAppointment {
         throw new NotFoundError('Service', serviceId);
       }
     }
+
+    return client.id;
   }
 
   /**
