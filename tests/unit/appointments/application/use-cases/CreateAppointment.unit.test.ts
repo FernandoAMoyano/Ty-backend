@@ -4,13 +4,13 @@ import { AppointmentStatusRepository } from '../../../../../src/modules/appointm
 import { ScheduleRepository } from '../../../../../src/modules/appointments/domain/repositories/ScheduleRepository';
 import { ServiceRepository } from '../../../../../src/modules/services/domain/repositories/ServiceRepository';
 import { StylistRepository } from '../../../../../src/modules/services/domain/repositories/StylistRepository';
-import { UserRepository } from '../../../../../src/modules/auth/domain/repositories/User';
+import { ClientRepository } from '../../../../../src/modules/auth/domain/repositories/Client';
 import { Appointment } from '../../../../../src/modules/appointments/domain/entities/Appointment';
 import { AppointmentStatus } from '../../../../../src/modules/appointments/domain/entities/AppointmentStatus';
 import { Schedule } from '../../../../../src/modules/appointments/domain/entities/Schedule';
 import { Service } from '../../../../../src/modules/services/domain/entities/Service';
 import { Stylist } from '../../../../../src/modules/services/domain/entities/Stylist';
-import { User } from '../../../../../src/modules/auth/domain/entities/User';
+import { Client } from '../../../../../src/modules/auth/domain/entities/Client';
 import { CreateAppointmentDto } from '../../../../../src/modules/appointments/application/dto/request/CreateAppointmentDto';
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
@@ -24,7 +24,7 @@ describe('CreateAppointment Use Case', () => {
   let mockScheduleRepository: jest.Mocked<ScheduleRepository>;
   let mockServiceRepository: jest.Mocked<ServiceRepository>;
   let mockStylistRepository: jest.Mocked<StylistRepository>;
-  let mockUserRepository: jest.Mocked<UserRepository>;
+  let mockClientRepository: jest.Mocked<ClientRepository>;
 
   // Utilidades de fecha dinámicas y mantenibles
   const getNextMonday = (hoursFromNow: number = 48): Date => {
@@ -154,22 +154,17 @@ describe('CreateAppointment Use Case', () => {
     } as unknown as Stylist;
   };
 
-  const createMockUser = (id: string = generateUuid(), role: string = 'client'): User => {
+  const createMockClient = (id: string = validClientId, userId: string = generateUuid()): Client => {
     return {
       id,
-      email: `user${id.slice(-4)}@test.com`,
-      name: `User ${id.slice(-4)}`,
-      role,
-      isActive: true,
+      userId,
+      preferences: null,
       createdAt: new Date(),
       updatedAt: new Date(),
       validate: jest.fn(),
-      updateProfile: jest.fn(),
-      changePassword: jest.fn(),
-      activate: jest.fn(),
-      deactivate: jest.fn(),
+      updatePreferences: jest.fn(),
       toPersistence: jest.fn(),
-    } as unknown as User;
+    } as unknown as Client;
   };
 
   const createMockSchedule = (
@@ -196,13 +191,14 @@ describe('CreateAppointment Use Case', () => {
   // Helper para configurar mocks exitosos básicos
   const setupBasicSuccessfulMocks = (appointment: Appointment = createMockAppointment()) => {
     const pendingStatus = createMockAppointmentStatus('Pendiente');
-    const client = createMockUser(validClientId, 'client');
+    const client = createMockClient(validClientId);
     const stylist = createMockStylist(validStylistId);
     const service = createMockService(validServiceId1, 60);
     const schedule = createMockSchedule('MONDAY');
 
     mockAppointmentStatusRepository.findAll.mockResolvedValue([pendingStatus]);
-    mockUserRepository.findById.mockResolvedValue(client);
+    mockClientRepository.findById.mockResolvedValue(client);
+    mockClientRepository.findByUserId.mockResolvedValue(null); // No necesario si findById encuentra
     mockStylistRepository.findById.mockResolvedValue(stylist);
     mockServiceRepository.findById.mockResolvedValue(service);
     mockScheduleRepository.findAll.mockResolvedValue([schedule]);
@@ -287,17 +283,17 @@ describe('CreateAppointment Use Case', () => {
       existsById: jest.fn(),
     } as unknown as jest.Mocked<StylistRepository>;
 
-    // Mock de UserRepository
-    mockUserRepository = {
+    // Mock de ClientRepository
+    mockClientRepository = {
       findById: jest.fn(),
-      findByEmail: jest.fn(),
+      findByUserId: jest.fn(),
       findAll: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
       existsById: jest.fn(),
-      existsByEmail: jest.fn(),
-    } as unknown as jest.Mocked<UserRepository>;
+      existsByUserId: jest.fn(),
+    } as unknown as jest.Mocked<ClientRepository>;
 
     useCase = new CreateAppointment(
       mockAppointmentRepository,
@@ -305,7 +301,7 @@ describe('CreateAppointment Use Case', () => {
       mockScheduleRepository,
       mockServiceRepository,
       mockStylistRepository,
-      mockUserRepository,
+      mockClientRepository,
     );
   });
 
@@ -435,17 +431,43 @@ describe('CreateAppointment Use Case', () => {
   describe('Not Found Handling', () => {
     // Debería lanzar NotFoundError cuando el cliente no existe
     it('should throw NotFoundError when client does not exist', async () => {
-      mockUserRepository.findById.mockResolvedValue(null);
+      mockClientRepository.findById.mockResolvedValue(null);
+      mockClientRepository.findByUserId.mockResolvedValue(null);
 
       await expect(useCase.execute(validCreateDto, validUserId)).rejects.toThrow(
         new NotFoundError('Client', validClientId),
       );
     });
 
+    // Debería encontrar cliente por userId si no se encuentra por id
+    it('should find client by userId if not found by id', async () => {
+      const client = createMockClient(validClientId);
+      const stylist = createMockStylist(validStylistId);
+      const service = createMockService(validServiceId1);
+      const pendingStatus = createMockAppointmentStatus('Pendiente');
+      const schedule = createMockSchedule('MONDAY');
+      const appointment = createMockAppointment();
+
+      // No encuentra por id, pero sí por userId
+      mockClientRepository.findById.mockResolvedValue(null);
+      mockClientRepository.findByUserId.mockResolvedValue(client);
+      mockStylistRepository.findById.mockResolvedValue(stylist);
+      mockServiceRepository.findById.mockResolvedValue(service);
+      mockAppointmentStatusRepository.findAll.mockResolvedValue([pendingStatus]);
+      mockScheduleRepository.findAll.mockResolvedValue([schedule]);
+      mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([]);
+      mockAppointmentRepository.save.mockResolvedValue(appointment);
+
+      const result = await useCase.execute(validCreateDto, validUserId);
+
+      expect(mockClientRepository.findByUserId).toHaveBeenCalledWith(validClientId);
+      expect(result.id).toBe(appointment.id);
+    });
+
     // Debería lanzar NotFoundError cuando el estilista no existe
     it('should throw NotFoundError when stylist does not exist', async () => {
-      const client = createMockUser(validClientId);
-      mockUserRepository.findById.mockResolvedValue(client);
+      const client = createMockClient(validClientId);
+      mockClientRepository.findById.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(null);
 
       await expect(useCase.execute(validCreateDto, validUserId)).rejects.toThrow(
@@ -455,10 +477,10 @@ describe('CreateAppointment Use Case', () => {
 
     // Debería lanzar NotFoundError cuando un servicio no existe
     it('should throw NotFoundError when service does not exist', async () => {
-      const client = createMockUser(validClientId);
+      const client = createMockClient(validClientId);
       const stylist = createMockStylist(validStylistId);
 
-      mockUserRepository.findById.mockResolvedValue(client);
+      mockClientRepository.findById.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(stylist);
       mockServiceRepository.findById.mockResolvedValue(null);
 
@@ -472,13 +494,13 @@ describe('CreateAppointment Use Case', () => {
     // Debería lanzar ConflictError cuando hay citas en conflicto
     it('should throw ConflictError when there are conflicting appointments', async () => {
       const conflictingAppointment = createMockAppointment({ id: generateUuid() });
-      const client = createMockUser(validClientId);
+      const client = createMockClient(validClientId);
       const stylist = createMockStylist(validStylistId);
       const service = createMockService(validServiceId1);
       const pendingStatus = createMockAppointmentStatus('Pendiente');
       const schedule = createMockSchedule('MONDAY');
 
-      mockUserRepository.findById.mockResolvedValue(client);
+      mockClientRepository.findById.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(stylist);
       mockServiceRepository.findById.mockResolvedValue(service);
       mockAppointmentStatusRepository.findAll.mockResolvedValue([pendingStatus]);
@@ -501,7 +523,7 @@ describe('CreateAppointment Use Case', () => {
 
       await useCase.execute(validCreateDto, validUserId);
 
-      expect(mockUserRepository.findById).toHaveBeenCalledWith(validClientId);
+      expect(mockClientRepository.findById).toHaveBeenCalledWith(validClientId);
       expect(mockStylistRepository.findById).toHaveBeenCalledWith(validStylistId);
       expect(mockServiceRepository.findById).toHaveBeenCalledWith(validServiceId1);
       expect(mockAppointmentStatusRepository.findAll).toHaveBeenCalled();
