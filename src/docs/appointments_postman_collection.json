@@ -1,0 +1,1342 @@
+{
+  "info": {
+    "name": "Appointments API v1.0",
+    "description": "Colección para el módulo Appointments - Gestión de citas, slots disponibles, confirmaciones y cancelaciones",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "appointment_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "stylist_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "service_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "future_date",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication Setup",
+      "description": "Setup de autenticación y variables necesarias para testing",
+      "item": [
+        {
+          "name": "Login Admin (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    console.log('✅ Admin login exitoso');",
+                  "    console.log('Token guardado automáticamente');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@turnity.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login con admin del seed. Guarda token automáticamente."
+          }
+        },
+        {
+          "name": "Login Client María (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    if (response.data.user.client) {",
+                  "        pm.collectionVariables.set('client_id', response.data.user.client.id);",
+                  "        console.log('✅ Client ID guardado:', response.data.user.client.id);",
+                  "    }",
+                  "    console.log('✅ Cliente María login exitoso');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"maria@example.com\",\n  \"password\": \"client123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login con cliente María. Guarda token y client_id automáticamente."
+          }
+        },
+        {
+          "name": "Login Stylist Lucía (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    if (response.data.user.stylist) {",
+                  "        pm.collectionVariables.set('stylist_id', response.data.user.stylist.id);",
+                  "        console.log('✅ Stylist ID guardado:', response.data.user.stylist.id);",
+                  "    }",
+                  "    console.log('✅ Estilista Lucía login exitoso');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"lucia@turnity.com\",\n  \"password\": \"stylist123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login con estilista Lucía. Guarda token y stylist_id automáticamente."
+          }
+        },
+        {
+          "name": "Get Services (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.length > 0) {",
+                  "        pm.collectionVariables.set('service_id', response.data[0].id);",
+                  "        console.log('✅ Service ID guardado:', response.data[0].id);",
+                  "        console.log('Servicio:', response.data[0].name);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/services/active",
+              "host": ["{{base_url}}"],
+              "path": ["services", "active"]
+            },
+            "description": "Obtiene servicios activos y guarda el primer service_id"
+          }
+        },
+        {
+          "name": "Generate Future Date (Setup)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generar fecha 7 días en el futuro (YYYY-MM-DD)",
+                  "const futureDate = new Date();",
+                  "futureDate.setDate(futureDate.getDate() + 7);",
+                  "const dateStr = futureDate.toISOString().split('T')[0];",
+                  "pm.collectionVariables.set('future_date', dateStr);",
+                  "console.log('📅 Fecha futura generada:', dateStr);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "console.log('✅ Variables de fecha configuradas');",
+                  "console.log('future_date:', pm.collectionVariables.get('future_date'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/services",
+              "host": ["{{base_url}}"],
+              "path": ["services"]
+            },
+            "description": "Request dummy para ejecutar pre-request script que genera future_date"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Available Slots (Public)",
+      "description": "Consulta de slots disponibles - Endpoint público",
+      "item": [
+        {
+          "name": "Get Available Slots",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generar fecha 7 días en el futuro si no existe",
+                  "if (!pm.collectionVariables.get('future_date')) {",
+                  "    const futureDate = new Date();",
+                  "    futureDate.setDate(futureDate.getDate() + 7);",
+                  "    pm.collectionVariables.set('future_date', futureDate.toISOString().split('T')[0]);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Success response', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "    pm.test('Has required properties', function () {",
+                  "        pm.expect(response.data).to.have.property('date');",
+                  "        pm.expect(response.data).to.have.property('dayOfWeek');",
+                  "        pm.expect(response.data).to.have.property('isWorkingDay');",
+                  "        pm.expect(response.data).to.have.property('slots');",
+                  "    });",
+                  "    console.log('📅 Fecha consultada:', response.data.date);",
+                  "    console.log('📆 Día de la semana:', response.data.dayOfWeek);",
+                  "    console.log('🏢 Es día laboral:', response.data.isWorkingDay);",
+                  "    console.log('🕐 Slots disponibles:', response.data.slots.length);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/appointments/available-slots?date={{future_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "available-slots"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{future_date}}"
+                }
+              ]
+            },
+            "description": "Consulta slots disponibles para una fecha. Endpoint público, no requiere autenticación."
+          }
+        },
+        {
+          "name": "Get Available Slots with Duration",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.collectionVariables.get('future_date')) {",
+                  "    const futureDate = new Date();",
+                  "    futureDate.setDate(futureDate.getDate() + 7);",
+                  "    pm.collectionVariables.set('future_date', futureDate.toISOString().split('T')[0]);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Slots have correct duration', function () {",
+                  "        if (response.data.slots.length > 0) {",
+                  "            pm.expect(response.data.slots[0].duration).to.eql(60);",
+                  "        }",
+                  "    });",
+                  "    console.log('🕐 Duración solicitada: 60 minutos');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/appointments/available-slots?date={{future_date}}&duration=60",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "available-slots"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{future_date}}"
+                },
+                {
+                  "key": "duration",
+                  "value": "60"
+                }
+              ]
+            },
+            "description": "Consulta slots disponibles especificando duración de 60 minutos"
+          }
+        },
+        {
+          "name": "Get Available Slots with Stylist Filter",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.collectionVariables.get('future_date')) {",
+                  "    const futureDate = new Date();",
+                  "    futureDate.setDate(futureDate.getDate() + 7);",
+                  "    pm.collectionVariables.set('future_date', futureDate.toISOString().split('T')[0]);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('🎨 Slots filtrados por estilista');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/appointments/available-slots?date={{future_date}}&stylistId={{stylist_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "available-slots"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{future_date}}"
+                },
+                {
+                  "key": "stylistId",
+                  "value": "{{stylist_id}}"
+                }
+              ]
+            },
+            "description": "Consulta slots disponibles filtrados por un estilista específico"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointment CRUD",
+      "description": "Operaciones CRUD de citas - Requiere autenticación",
+      "item": [
+        {
+          "name": "Create Appointment",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generar fecha/hora 7 días en el futuro a las 10:00",
+                  "const futureDate = new Date();",
+                  "futureDate.setDate(futureDate.getDate() + 7);",
+                  "futureDate.setHours(10, 0, 0, 0);",
+                  "pm.collectionVariables.set('appointment_datetime', futureDate.toISOString());",
+                  "console.log('📅 DateTime para cita:', futureDate.toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('appointment_id', response.data.id);",
+                  "    pm.test('Appointment created successfully', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('id');",
+                  "    });",
+                  "    console.log('✅ Cita creada con ID:', response.data.id);",
+                  "    console.log('📅 Fecha:', response.data.dateTime);",
+                  "    console.log('⏱️ Duración:', response.data.duration, 'minutos');",
+                  "} else {",
+                  "    console.log('❌ Error:', pm.response.json().message);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateTime\": \"{{appointment_datetime}}\",\n  \"clientId\": \"{{client_id}}\",\n  \"stylistId\": \"{{stylist_id}}\",\n  \"serviceIds\": [\"{{service_id}}\"],\n  \"duration\": 60\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["appointments"]
+            },
+            "description": "Crea una nueva cita. Requiere autenticación. La fecha debe ser futura y dentro de los horarios disponibles."
+          }
+        },
+        {
+          "name": "Create Appointment (Minimal)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generar fecha/hora 8 días en el futuro a las 14:00",
+                  "const futureDate = new Date();",
+                  "futureDate.setDate(futureDate.getDate() + 8);",
+                  "futureDate.setHours(14, 0, 0, 0);",
+                  "pm.collectionVariables.set('appointment_datetime_2', futureDate.toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('✅ Cita mínima creada');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateTime\": \"{{appointment_datetime_2}}\",\n  \"clientId\": \"{{client_id}}\",\n  \"serviceIds\": [\"{{service_id}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["appointments"]
+            },
+            "description": "Crea cita con datos mínimos requeridos (sin stylist, duración calculada automáticamente)"
+          }
+        },
+        {
+          "name": "Get Appointment by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Appointment retrieved', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.id).to.eql(pm.collectionVariables.get('appointment_id'));",
+                  "    });",
+                  "    console.log('📋 Cita encontrada');",
+                  "    console.log('Estado:', response.data.statusId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/{{appointment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "{{appointment_id}}"]
+            },
+            "description": "Obtiene una cita por su ID. Requiere autenticación."
+          }
+        },
+        {
+          "name": "Update Appointment",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Nueva fecha/hora 9 días en el futuro a las 11:00",
+                  "const newDate = new Date();",
+                  "newDate.setDate(newDate.getDate() + 9);",
+                  "newDate.setHours(11, 0, 0, 0);",
+                  "pm.collectionVariables.set('new_appointment_datetime', newDate.toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Appointment updated', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "    console.log('✅ Cita actualizada');",
+                  "    console.log('Nueva fecha:', response.data.dateTime);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateTime\": \"{{new_appointment_datetime}}\",\n  \"duration\": 90\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments/{{appointment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "{{appointment_id}}"]
+            },
+            "description": "Actualiza una cita existente. Solo se pueden actualizar citas en estado PENDING."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointment Actions",
+      "description": "Acciones sobre citas: confirmar, cancelar",
+      "item": [
+        {
+          "name": "Confirm Appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Appointment confirmed', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.confirmedAt).to.not.be.null;",
+                  "    });",
+                  "    console.log('✅ Cita confirmada');",
+                  "    console.log('Confirmada el:', response.data.confirmedAt);",
+                  "} else {",
+                  "    console.log('❌ Error:', pm.response.json().message);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Cliente confirmó asistencia por teléfono\",\n  \"notifyClient\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments/{{appointment_id}}/confirm",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "{{appointment_id}}", "confirm"]
+            },
+            "description": "Confirma una cita pendiente. Debe hacerse al menos 1 hora antes de la cita. Solo el creador o estilista pueden confirmar."
+          }
+        },
+        {
+          "name": "Cancel Appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Appointment cancelled', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "    console.log('✅ Cita cancelada');",
+                  "} else {",
+                  "    console.log('❌ Error:', pm.response.json().message);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Cliente solicitó cancelación por imprevisto personal\",\n  \"cancelledBy\": \"client\",\n  \"notifyClient\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments/{{appointment_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "{{appointment_id}}", "cancel"]
+            },
+            "description": "Cancela una cita. Debe hacerse al menos 2 horas antes. cancelledBy puede ser: client, stylist, admin, system"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointment Queries",
+      "description": "Consultas de citas por diferentes criterios",
+      "item": [
+        {
+          "name": "Get Appointments by Client",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Array of appointments returned', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(Array.isArray(response.data)).to.be.true;",
+                  "    });",
+                  "    console.log('📋 Citas del cliente:', response.data.length);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/client/{{client_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "client", "{{client_id}}"]
+            },
+            "description": "Obtiene todas las citas de un cliente específico"
+          }
+        },
+        {
+          "name": "Get Appointments by Stylist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Array of appointments returned', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(Array.isArray(response.data)).to.be.true;",
+                  "    });",
+                  "    console.log('📋 Citas del estilista:', response.data.length);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/stylist/{{stylist_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "stylist", "{{stylist_id}}"]
+            },
+            "description": "Obtiene todas las citas asignadas a un estilista"
+          }
+        },
+        {
+          "name": "Get Appointments by Date Range",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generar rango de fechas: hoy hasta 30 días en el futuro",
+                  "const startDate = new Date();",
+                  "const endDate = new Date();",
+                  "endDate.setDate(endDate.getDate() + 30);",
+                  "pm.collectionVariables.set('start_date', startDate.toISOString().split('T')[0]);",
+                  "pm.collectionVariables.set('end_date', endDate.toISOString().split('T')[0]);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Array of appointments returned', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "    console.log('📅 Citas en el rango:', response.data.length || 0);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/date-range?startDate={{start_date}}&endDate={{end_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "date-range"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "{{start_date}}"
+                },
+                {
+                  "key": "endDate",
+                  "value": "{{end_date}}"
+                }
+              ]
+            },
+            "description": "Obtiene citas dentro de un rango de fechas"
+          }
+        },
+        {
+          "name": "Get Appointment Statistics (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Statistics returned', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "    console.log('📊 Estadísticas obtenidas');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "statistics"]
+            },
+            "description": "Obtiene estadísticas de citas. Solo para ADMIN."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Testing",
+      "description": "Tests de validación de errores y reglas de negocio",
+      "item": [
+        {
+          "name": "Invalid Date Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Invalid date format', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "    pm.expect(pm.response.json().success).to.be.false;",
+                  "});",
+                  "console.log('✅ Error esperado - formato de fecha inválido');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/appointments/available-slots?date=01-15-2025",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "available-slots"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "01-15-2025"
+                }
+              ]
+            },
+            "description": "Test de formato de fecha inválido (debe ser YYYY-MM-DD)"
+          }
+        },
+        {
+          "name": "Past Date",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Fecha 5 días en el pasado",
+                  "const pastDate = new Date();",
+                  "pastDate.setDate(pastDate.getDate() - 5);",
+                  "pm.collectionVariables.set('past_date', pastDate.toISOString().split('T')[0]);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Past date not allowed', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "    pm.expect(pm.response.json().success).to.be.false;",
+                  "});",
+                  "console.log('✅ Error esperado - fecha en el pasado');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/appointments/available-slots?date={{past_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "available-slots"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{past_date}}"
+                }
+              ]
+            },
+            "description": "Test de fecha en el pasado - no permitida"
+          }
+        },
+        {
+          "name": "Empty Date",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Empty date', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - fecha vacía');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/appointments/available-slots?date=",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "available-slots"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Test de fecha vacía"
+          }
+        },
+        {
+          "name": "Non-existent Appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 404 - Appointment not found', function () {",
+                  "    pm.expect(pm.response.code).to.eql(404);",
+                  "    pm.expect(pm.response.json().success).to.be.false;",
+                  "});",
+                  "console.log('✅ Error esperado - cita no encontrada');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/123e4567-e89b-12d3-a456-426614174000",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "123e4567-e89b-12d3-a456-426614174000"]
+            },
+            "description": "Test de cita no existente con UUID válido"
+          }
+        },
+        {
+          "name": "Invalid UUID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Invalid UUID', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - UUID inválido');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/invalid-uuid-format",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "invalid-uuid-format"]
+            },
+            "description": "Test de UUID con formato inválido"
+          }
+        },
+        {
+          "name": "Unauthorized Access",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 401 - Unauthorized', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});",
+                  "console.log('✅ Error esperado - sin autenticación');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/appointments/{{appointment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "{{appointment_id}}"]
+            },
+            "description": "Test de acceso sin token a ruta protegida"
+          }
+        },
+        {
+          "name": "Invalid Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 401 - Invalid token', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});",
+                  "console.log('✅ Error esperado - token inválido');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid.token.here",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/{{appointment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "{{appointment_id}}"]
+            },
+            "description": "Test de acceso con token inválido"
+          }
+        },
+        {
+          "name": "Create Appointment - Invalid Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Validation failed', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "    pm.expect(pm.response.json().success).to.be.false;",
+                  "});",
+                  "console.log('✅ Error esperado - datos inválidos');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateTime\": \"\",\n  \"clientId\": \"\",\n  \"serviceIds\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["appointments"]
+            },
+            "description": "Test de creación con datos inválidos"
+          }
+        },
+        {
+          "name": "Create Appointment - Empty Services",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const futureDate = new Date();",
+                  "futureDate.setDate(futureDate.getDate() + 7);",
+                  "futureDate.setHours(10, 0, 0, 0);",
+                  "pm.collectionVariables.set('test_datetime', futureDate.toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Services required', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - servicios vacíos');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateTime\": \"{{test_datetime}}\",\n  \"clientId\": \"{{client_id}}\",\n  \"serviceIds\": []\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["appointments"]
+            },
+            "description": "Test de creación sin servicios"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Business Rules Testing",
+      "description": "Tests de reglas de negocio específicas",
+      "item": [
+        {
+          "name": "Cancellation Reason Validation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Este test verifica que se acepta una razón de cancelación válida",
+                  "const response = pm.response.json();",
+                  "console.log('Response code:', pm.response.code);",
+                  "console.log('Message:', response.message || 'Success');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Motivo de cancelación con texto válido de menos de 500 caracteres\",\n  \"cancelledBy\": \"client\",\n  \"notifyClient\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments/{{appointment_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "{{appointment_id}}", "cancel"]
+            },
+            "description": "Test de cancelación con razón válida"
+          }
+        },
+        {
+          "name": "Duration Limits Test",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const futureDate = new Date();",
+                  "futureDate.setDate(futureDate.getDate() + 10);",
+                  "futureDate.setHours(10, 0, 0, 0);",
+                  "pm.collectionVariables.set('duration_test_datetime', futureDate.toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Duración de 5 minutos debería fallar (mínimo 15)",
+                  "pm.test('Error for duration below minimum', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - duración menor al mínimo (15 min)');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dateTime\": \"{{duration_test_datetime}}\",\n  \"clientId\": \"{{client_id}}\",\n  \"serviceIds\": [\"{{service_id}}\"],\n  \"duration\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["appointments"]
+            },
+            "description": "Test de duración por debajo del mínimo (15 minutos)"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Script global que se ejecuta antes de cada request",
+          "console.log('🚀 Request:', pm.request.method, pm.request.url.toString());",
+          "",
+          "// Verificar token para requests autenticados",
+          "const authHeader = pm.request.headers.get('Authorization');",
+          "if (authHeader && authHeader.includes('{{jwt_token}}')) {",
+          "    const token = pm.collectionVariables.get('jwt_token');",
+          "    if (!token) {",
+          "        console.log('⚠️ Token no encontrado - ejecuta primero un request de Login');",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}
