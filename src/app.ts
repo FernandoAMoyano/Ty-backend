@@ -13,6 +13,7 @@ import { prisma } from './shared/config/Prisma';
 import { AuthContainer } from './modules/auth/AuthContainer';
 import { ServicesContainer } from './modules/services/ServicesContainer';
 import { AppointmentContainer } from './modules/appointments/AppointmentContainer';
+import { NotificationContainer } from './modules/notifications/NotificationContainer';
 import { setupSwagger } from './shared/middleware/swagger';
 
 import dotenv from 'dotenv';
@@ -23,6 +24,7 @@ class App {
   private authContainer: AuthContainer;
   private serviceContainer: ServicesContainer;
   private appointmentContainer: AppointmentContainer;
+  private notificationContainer: NotificationContainer;
 
   constructor() {
     this.app = express();
@@ -32,6 +34,10 @@ class App {
       this.authContainer.authMiddleware,
     );
     this.appointmentContainer = AppointmentContainer.getInstance(
+      prisma,
+      this.authContainer.authMiddleware,
+    );
+    this.notificationContainer = NotificationContainer.getInstance(
       prisma,
       this.authContainer.authMiddleware,
     );
@@ -73,6 +79,7 @@ class App {
     this.app.use('/api/v1/auth', this.authContainer.authRoutes.getRouter());
     this.app.use('/api/v1', this.serviceContainer.servicesRoutes.getRouter());
     this.app.use('/api/v1/appointments', this.appointmentContainer.appointmentRoutes.getRouter());
+    this.app.use('/api/v1/notifications', this.notificationContainer.notificationRoutes.getRouter());
 
     this.app.use((req, res) => {
       res.status(404).json({
