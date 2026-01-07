@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../../application/services/JwtService';
 import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
+import { prisma } from '../../../../shared/config/Prisma';
 
 /**
  * Interfaz extendida de Request que incluye información del usuario autenticado
@@ -71,15 +72,10 @@ export class AuthMiddleware {
           throw new UnauthorizedError('Authentication required');
         }
 
-        // Obtener el rol del usuario desde la base de datos
-        const { PrismaClient } = require('@prisma/client');
-        const prisma = new PrismaClient();
-        
+        // Obtener el rol del usuario desde la base de datos usando el cliente compartido
         const userRole = await prisma.role.findUnique({
           where: { id: req.user.roleId }
         });
-        
-        await prisma.$disconnect();
 
         if (!userRole || !allowedRoles.includes(userRole.name)) {
           throw new UnauthorizedError('Insufficient permissions');
