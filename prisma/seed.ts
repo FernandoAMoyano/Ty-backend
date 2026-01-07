@@ -347,21 +347,28 @@ async function main() {
   console.log('🔔 Creando estados de notificaciones...');
   const pendingNotifStatus = await prisma.notificationStatus.create({
     data: {
-      name: 'Pendiente',
+      name: 'PENDING',
       description: 'Notificación pendiente de envío',
     },
   });
 
   const sentNotifStatus = await prisma.notificationStatus.create({
     data: {
-      name: 'Enviada',
+      name: 'SENT',
       description: 'Notificación enviada exitosamente',
+    },
+  });
+
+  const readNotifStatus = await prisma.notificationStatus.create({
+    data: {
+      name: 'READ',
+      description: 'Notificación leída por el usuario',
     },
   });
 
   const failedNotifStatus = await prisma.notificationStatus.create({
     data: {
-      name: 'Fallida',
+      name: 'FAILED',
       description: 'Error al enviar la notificación',
     },
   });
@@ -431,7 +438,6 @@ async function main() {
     },
   });
 
-  const reminderDate = subDays(futureDateAt10, 1);
   await prisma.notification.create({
     data: {
       userId: client1.id,
@@ -467,6 +473,9 @@ async function main() {
     pendingStatusId: pendingStatus.id,
     cancelledStatusId: cancelledStatus.id,
     newYearHolidayId: newYearHoliday.id,
+    appointment1Id: appointment1.id,
+    readNotifStatusId: readNotifStatus.id,
+    failedNotifStatusId: failedNotifStatus.id,
   });
 }
 
