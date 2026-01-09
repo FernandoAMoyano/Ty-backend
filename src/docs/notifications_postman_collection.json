@@ -1,0 +1,946 @@
+{
+  "info": {
+    "name": "Notifications API v1.0",
+    "description": "Colección para el módulo Notifications - Gestión de notificaciones de usuario",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notification_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication Setup",
+      "description": "Setup de autenticación para testing",
+      "item": [
+        {
+          "name": "Login Admin (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    pm.collectionVariables.set('user_id', response.data.user.id);",
+                  "    console.log('✅ Admin login exitoso');",
+                  "    console.log('User ID:', response.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@turnity.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login con admin. Guarda token y user_id automáticamente."
+          }
+        },
+        {
+          "name": "Login Client María (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    pm.collectionVariables.set('user_id', response.data.user.id);",
+                  "    console.log('✅ Cliente María login exitoso');",
+                  "    console.log('User ID:', response.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"maria@example.com\",\n  \"password\": \"client123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login con cliente María. Guarda token y user_id automáticamente."
+          }
+        },
+        {
+          "name": "Login Stylist Lucía (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    pm.collectionVariables.set('user_id', response.data.user.id);",
+                  "    console.log('✅ Estilista Lucía login exitosa');",
+                  "    console.log('User ID:', response.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"lucia@turnity.com\",\n  \"password\": \"stylist123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login con estilista Lucía. Guarda token y user_id automáticamente."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notification Queries",
+      "description": "Consultas de notificaciones - Requiere autenticación",
+      "item": [
+        {
+          "name": "Get My Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Success response', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('notifications');",
+                  "        pm.expect(response.data).to.have.property('total');",
+                  "    });",
+                  "    if (response.data.notifications.length > 0) {",
+                  "        pm.collectionVariables.set('notification_id', response.data.notifications[0].id);",
+                  "        console.log('✅ Notification ID guardado:', response.data.notifications[0].id);",
+                  "    }",
+                  "    console.log('📬 Total notificaciones:', response.data.total);",
+                  "    console.log('📄 En esta página:', response.data.notifications.length);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"]
+            },
+            "description": "Obtiene las notificaciones del usuario autenticado"
+          }
+        },
+        {
+          "name": "Get My Notifications (Paginated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Pagination info present', function () {",
+                  "        pm.expect(response.data.page).to.eql(1);",
+                  "        pm.expect(response.data.limit).to.eql(5);",
+                  "        pm.expect(response.data).to.have.property('totalPages');",
+                  "        pm.expect(response.data).to.have.property('hasNextPage');",
+                  "    });",
+                  "    console.log('📄 Página:', response.data.page, 'de', response.data.totalPages);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications?page=1&limit=5",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Obtiene notificaciones con paginación"
+          }
+        },
+        {
+          "name": "Get Unread Notifications Only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Success response', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "    console.log('📬 Notificaciones no leídas:', response.data.notifications.length);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications?unreadOnly=true",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"],
+              "query": [
+                {
+                  "key": "unreadOnly",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Obtiene solo las notificaciones no leídas"
+          }
+        },
+        {
+          "name": "Get Notifications by Type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('All notifications are of correct type', function () {",
+                  "        response.data.notifications.forEach(n => {",
+                  "            pm.expect(n.type).to.eql('APPOINTMENT_CONFIRMATION');",
+                  "        });",
+                  "    });",
+                  "    console.log('📬 Confirmaciones de cita:', response.data.notifications.length);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications?type=APPOINTMENT_CONFIRMATION",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "APPOINTMENT_CONFIRMATION"
+                }
+              ]
+            },
+            "description": "Filtra notificaciones por tipo"
+          }
+        },
+        {
+          "name": "Get Notification by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Notification retrieved', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.id).to.eql(pm.collectionVariables.get('notification_id'));",
+                  "    });",
+                  "    console.log('📋 Tipo:', response.data.type);",
+                  "    console.log('📝 Mensaje:', response.data.message);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/{{notification_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "{{notification_id}}"]
+            },
+            "description": "Obtiene una notificación específica por ID"
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Unread count returned', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('unreadCount');",
+                  "        pm.expect(response.data.unreadCount).to.be.a('number');",
+                  "    });",
+                  "    console.log('🔔 Notificaciones sin leer:', response.data.unreadCount);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/unread-count",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "unread-count"]
+            },
+            "description": "Obtiene el conteo de notificaciones no leídas"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notification Actions",
+      "description": "Acciones sobre notificaciones",
+      "item": [
+        {
+          "name": "Mark Single Notification as Read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Notification marked as read', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.isRead).to.be.true;",
+                  "    });",
+                  "    console.log('✅ Notificación marcada como leída');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/{{notification_id}}/read",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "{{notification_id}}", "read"]
+            },
+            "description": "Marca una notificación específica como leída"
+          }
+        },
+        {
+          "name": "Mark Multiple Notifications as Read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Notifications marked as read', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('updatedCount');",
+                  "    });",
+                  "    console.log('✅ Notificaciones actualizadas:', response.data.updatedCount);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notificationId\": \"{{notification_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications/mark-read",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "mark-read"]
+            },
+            "description": "Marca una o múltiples notificaciones como leídas"
+          }
+        },
+        {
+          "name": "Mark All Notifications as Read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('All notifications marked as read', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('updatedCount');",
+                  "    });",
+                  "    console.log('✅ Todas las notificaciones marcadas como leídas:', response.data.updatedCount);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/mark-all-read",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "mark-all-read"]
+            },
+            "description": "Marca todas las notificaciones del usuario como leídas"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Operations",
+      "description": "Operaciones de administrador - Solo ADMIN",
+      "item": [
+        {
+          "name": "Create Notification (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('notification_id', response.data.id);",
+                  "    pm.test('Notification created', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('id');",
+                  "    });",
+                  "    console.log('✅ Notificación creada:', response.data.id);",
+                  "} else {",
+                  "    console.log('❌ Error:', pm.response.json().message);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"SYSTEM\",\n  \"message\": \"Este es un mensaje de prueba del sistema\",\n  \"userId\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"]
+            },
+            "description": "Crea una nueva notificación. Solo ADMIN puede crear notificaciones."
+          }
+        },
+        {
+          "name": "Create Appointment Confirmation (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Appointment confirmation created', function () {",
+                  "        pm.expect(response.data.type).to.eql('APPOINTMENT_CONFIRMATION');",
+                  "    });",
+                  "    console.log('✅ Confirmación de cita creada');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"APPOINTMENT_CONFIRMATION\",\n  \"message\": \"Tu cita ha sido confirmada para mañana a las 10:00 AM\",\n  \"userId\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"]
+            },
+            "description": "Crea una notificación de confirmación de cita"
+          }
+        },
+        {
+          "name": "Create Promotional Notification (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Promotional notification created', function () {",
+                  "        pm.expect(response.data.type).to.eql('PROMOTIONAL');",
+                  "    });",
+                  "    console.log('✅ Notificación promocional creada');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"PROMOTIONAL\",\n  \"message\": \"¡Aprovecha nuestra promoción de verano! 20% de descuento en todos los servicios\",\n  \"userId\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"]
+            },
+            "description": "Crea una notificación promocional"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Testing",
+      "description": "Tests de validación de errores",
+      "item": [
+        {
+          "name": "Get Notification - Invalid UUID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Invalid UUID', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - UUID inválido');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/invalid-uuid",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "invalid-uuid"]
+            },
+            "description": "Test de UUID inválido"
+          }
+        },
+        {
+          "name": "Get Notification - Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 404 - Not found', function () {",
+                  "    pm.expect(pm.response.code).to.eql(404);",
+                  "});",
+                  "console.log('✅ Error esperado - No encontrada');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/123e4567-e89b-12d3-a456-426614174000",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "123e4567-e89b-12d3-a456-426614174000"]
+            },
+            "description": "Test de notificación no existente"
+          }
+        },
+        {
+          "name": "Unauthorized Access",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 401 - Unauthorized', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});",
+                  "console.log('✅ Error esperado - Sin autenticación');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"]
+            },
+            "description": "Test de acceso sin token"
+          }
+        },
+        {
+          "name": "Invalid Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 401 - Invalid token', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});",
+                  "console.log('✅ Error esperado - Token inválido');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid.token.here",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"]
+            },
+            "description": "Test de token inválido"
+          }
+        },
+        {
+          "name": "Create - Invalid Type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Invalid type', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - Tipo inválido');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"INVALID_TYPE\",\n  \"message\": \"Test message\",\n  \"userId\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"]
+            },
+            "description": "Test de tipo de notificación inválido"
+          }
+        },
+        {
+          "name": "Create - Empty Message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Empty message', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - Mensaje vacío');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"SYSTEM\",\n  \"message\": \"\",\n  \"userId\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"]
+            },
+            "description": "Test de mensaje vacío"
+          }
+        },
+        {
+          "name": "Mark Read - Empty IDs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - No IDs provided', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - Sin IDs');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications/mark-read",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "mark-read"]
+            },
+            "description": "Test de marcar como leído sin IDs"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Script global que se ejecuta antes de cada request",
+          "console.log('🚀 Request:', pm.request.method, pm.request.url.toString());",
+          "",
+          "// Verificar token para requests autenticados",
+          "const authHeader = pm.request.headers.get('Authorization');",
+          "if (authHeader && authHeader.includes('{{jwt_token}}')) {",
+          "    const token = pm.collectionVariables.get('jwt_token');",
+          "    if (!token) {",
+          "        console.log('⚠️ Token no encontrado - ejecuta primero un request de Login');",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}
