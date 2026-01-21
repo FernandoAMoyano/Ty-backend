@@ -32,34 +32,11 @@ export class NotificationRoutes {
    * - PATCH /notifications/:id/read - Marcar una como leída (autenticado)
    */
   private setupRoutes(): void {
-    // Rutas específicas primero (antes de :id)
-    this.router.get(
-      '/unread-count',
-      this.authMiddleware.authenticate.bind(this.authMiddleware),
-      (req: Request, res: Response, next: NextFunction) => {
-        this.notificationController.getUnreadCountHandler(req, res).catch(next);
-      },
-    );
-
-    this.router.post(
-      '/mark-read',
-      this.authMiddleware.authenticate.bind(this.authMiddleware),
-      NotificationValidations.markAsRead,
-      this.handleValidationErrors,
-      (req: Request, res: Response, next: NextFunction) => {
-        this.notificationController.markAsRead(req, res).catch(next);
-      },
-    );
-
-    this.router.post(
-      '/mark-all-read',
-      this.authMiddleware.authenticate.bind(this.authMiddleware),
-      (req: Request, res: Response, next: NextFunction) => {
-        this.notificationController.markAllAsRead(req, res).catch(next);
-      },
-    );
-
-    // Ruta para obtener todas las notificaciones del usuario
+    // ==========================================
+    // RUTAS BASE (/ ) - DEBEN IR PRIMERO
+    // ==========================================
+    
+    // GET / - Obtener todas las notificaciones del usuario
     this.router.get(
       '/',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
@@ -70,7 +47,7 @@ export class NotificationRoutes {
       },
     );
 
-    // Ruta para crear notificación (solo admin)
+    // POST / - Crear notificación (solo admin)
     this.router.post(
       '/',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
@@ -82,7 +59,44 @@ export class NotificationRoutes {
       },
     );
 
-    // Ruta para obtener notificación por ID
+    // ==========================================
+    // RUTAS ESPECÍFICAS (sin parámetros dinámicos)
+    // ==========================================
+
+    // GET /unread-count - Conteo de no leídas
+    this.router.get(
+      '/unread-count',
+      this.authMiddleware.authenticate.bind(this.authMiddleware),
+      (req: Request, res: Response, next: NextFunction) => {
+        this.notificationController.getUnreadCountHandler(req, res).catch(next);
+      },
+    );
+
+    // POST /mark-read - Marcar múltiples como leídas
+    this.router.post(
+      '/mark-read',
+      this.authMiddleware.authenticate.bind(this.authMiddleware),
+      NotificationValidations.markAsRead,
+      this.handleValidationErrors,
+      (req: Request, res: Response, next: NextFunction) => {
+        this.notificationController.markAsRead(req, res).catch(next);
+      },
+    );
+
+    // POST /mark-all-read - Marcar todas como leídas
+    this.router.post(
+      '/mark-all-read',
+      this.authMiddleware.authenticate.bind(this.authMiddleware),
+      (req: Request, res: Response, next: NextFunction) => {
+        this.notificationController.markAllAsRead(req, res).catch(next);
+      },
+    );
+
+    // ==========================================
+    // RUTAS CON PARÁMETROS DINÁMICOS - AL FINAL
+    // ==========================================
+
+    // GET /:id - Obtener notificación por ID
     this.router.get(
       '/:id',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
@@ -93,7 +107,7 @@ export class NotificationRoutes {
       },
     );
 
-    // Ruta para marcar una notificación como leída
+    // PATCH /:id/read - Marcar una notificación como leída
     this.router.patch(
       '/:id/read',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
