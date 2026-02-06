@@ -8,7 +8,7 @@ import { RefundPayment } from '../../application/use-cases/RefundPayment';
 import { CancelPayment } from '../../application/use-cases/CancelPayment';
 import { GetPaymentStatistics } from '../../application/use-cases/GetPaymentStatistics';
 import { UpdatePayment } from '../../application/use-cases/UpdatePayment';
-import { PaymentMethodEnum } from '../../domain/entities/Payment';
+import { PaymentMethodEnum, PaymentStatusEnum } from '../../domain/entities/Payment';
 import { AuthenticatedRequest } from '../../../auth/presentation/middleware/AuthMiddleware';
 
 /**
@@ -104,7 +104,7 @@ export class PaymentController {
     const result = await this.getPaymentsUseCase.execute({
       page: page ? parseInt(page as string, 10) : undefined,
       limit: limit ? parseInt(limit as string, 10) : undefined,
-      status: status as string | undefined,
+      status: status as PaymentStatusEnum | undefined,
       appointmentId: appointmentId as string | undefined,
       startDate: startDate as string | undefined,
       endDate: endDate as string | undefined,
