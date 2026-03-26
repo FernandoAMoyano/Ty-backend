@@ -1425,6 +1425,430 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
+  # PAYMENTS
+  /payments:
+    get:
+      tags: [Payments]
+      summary: Obtener todos los pagos (Solo Admin)
+      description: Lista paginada de todos los pagos del sistema con filtros opcionales
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+            example: 10
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, COMPLETED, REFUNDED, FAILED]
+            example: "PENDING"
+        - name: appointmentId
+          in: query
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+            example: "2025-12-31"
+      responses:
+        '200':
+          description: Lista de pagos obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Payments retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      payments:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Payment'
+                      total:
+                        type: integer
+                        example: 50
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 10
+                      totalPages:
+                        type: integer
+                        example: 5
+                      hasNextPage:
+                        type: boolean
+                        example: true
+                      hasPreviousPage:
+                        type: boolean
+                        example: false
+        '401':
+          $ref: '#/components/responses/Error401'
+
+    post:
+      tags: [Payments]
+      summary: Crear nuevo pago (Admin, Stylist)
+      description: Crea un pago pendiente asociado a una cita
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, appointmentId]
+              properties:
+                amount:
+                  type: number
+                  format: float
+                  minimum: 0.01
+                  example: 150.00
+                  description: "Monto del pago (debe ser mayor a 0)"
+                appointmentId:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                  description: "ID de la cita asociada"
+      responses:
+        '201':
+          description: Pago creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Payment created successfully"
+                  data:
+                    $ref: '#/components/schemas/Payment'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  /payments/statistics:
+    get:
+      tags: [Payments]
+      summary: Obtener estadísticas de pagos (Solo Admin)
+      description: Estadísticas agregadas de pagos con filtros de fecha opcionales
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+            example: "2025-01-01"
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+            example: "2025-12-31"
+      responses:
+        '200':
+          description: Estadísticas obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Payment statistics retrieved successfully"
+                  data:
+                    $ref: '#/components/schemas/PaymentStatistics'
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  /payments/appointment/{appointmentId}:
+    get:
+      tags: [Payments]
+      summary: Obtener pagos de una cita
+      description: Lista todos los pagos asociados a una cita específica
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Pagos de la cita obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Payments by appointment retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Payment'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  /payments/{id}:
+    get:
+      tags: [Payments]
+      summary: Obtener pago por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Pago obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Payment retrieved successfully"
+                  data:
+                    $ref: '#/components/schemas/Payment'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+    put:
+      tags: [Payments]
+      summary: Actualizar monto del pago (Solo Admin)
+      description: Actualiza el monto de un pago pendiente. No se puede actualizar pagos procesados.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  format: float
+                  minimum: 0.01
+                  example: 175.00
+      responses:
+        '200':
+          description: Pago actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Payment updated successfully"
+                  data:
+                    $ref: '#/components/schemas/Payment'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
+
+  /payments/{id}/process:
+    post:
+      tags: [Payments]
+      summary: Procesar pago (Admin, Stylist)
+      description: Procesa un pago pendiente con el método de pago especificado
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [method]
+              properties:
+                method:
+                  type: string
+                  enum: [CASH, CREDIT_CARD, DEBIT_CARD, TRANSFER, ONLINE]
+                  example: "CREDIT_CARD"
+                  description: "Método de pago utilizado"
+      responses:
+        '200':
+          description: Pago procesado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Payment processed successfully"
+                  data:
+                    $ref: '#/components/schemas/Payment'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
+
+  /payments/{id}/refund:
+    post:
+      tags: [Payments]
+      summary: Reembolsar pago (Solo Admin)
+      description: Reembolsa un pago completado. Solo se pueden reembolsar pagos con estado COMPLETED.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+                  example: "Cliente solicitó cancelación del servicio"
+                  description: "Razón del reembolso (opcional)"
+      responses:
+        '200':
+          description: Pago reembolsado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Payment refunded successfully"
+                  data:
+                    $ref: '#/components/schemas/Payment'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
+
+  /payments/{id}/cancel:
+    post:
+      tags: [Payments]
+      summary: Cancelar pago (Admin, Stylist)
+      description: Cancela un pago pendiente. Solo se pueden cancelar pagos con estado PENDING.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Pago cancelado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Payment cancelled successfully"
+                  data:
+                    $ref: '#/components/schemas/Payment'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
+
 
 components:
   securitySchemes:
@@ -1692,6 +2116,102 @@ components:
           example: "123e4567-e89b-12d3-a456-426614174000"
           description: "ID del estilista para este slot (opcional)"
 
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        amount:
+          type: number
+          format: float
+          example: 150.00
+          description: "Monto del pago"
+        status:
+          type: string
+          enum: [PENDING, COMPLETED, REFUNDED, FAILED]
+          example: "PENDING"
+          description: "Estado actual del pago"
+        method:
+          type: string
+          enum: [CASH, CREDIT_CARD, DEBIT_CARD, TRANSFER, ONLINE]
+          example: "CREDIT_CARD"
+          nullable: true
+          description: "Método de pago (null si está pendiente)"
+        appointmentId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: "ID de la cita asociada"
+        paymentDate:
+          type: string
+          format: date-time
+          example: "2025-12-22T10:30:00.000Z"
+          nullable: true
+          description: "Fecha de procesamiento del pago (null si está pendiente)"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-12-22T10:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-12-22T10:30:00.000Z"
+
+    PaymentStatistics:
+      type: object
+      properties:
+        totalRevenue:
+          type: number
+          format: float
+          example: 15000.00
+          description: "Ingresos totales (solo pagos completados)"
+        totalPayments:
+          type: integer
+          example: 150
+          description: "Número total de pagos"
+        completedPayments:
+          type: integer
+          example: 120
+          description: "Número de pagos completados"
+        pendingPayments:
+          type: integer
+          example: 20
+          description: "Número de pagos pendientes"
+        refundedPayments:
+          type: integer
+          example: 5
+          description: "Número de pagos reembolsados"
+        failedPayments:
+          type: integer
+          example: 5
+          description: "Número de pagos fallidos/cancelados"
+        averagePayment:
+          type: number
+          format: float
+          example: 125.00
+          description: "Promedio de pago (solo completados)"
+        paymentsByMethod:
+          type: object
+          properties:
+            CASH:
+              type: integer
+              example: 30
+            CREDIT_CARD:
+              type: integer
+              example: 50
+            DEBIT_CARD:
+              type: integer
+              example: 20
+            TRANSFER:
+              type: integer
+              example: 15
+            ONLINE:
+              type: integer
+              example: 5
+          description: "Distribución de pagos por método"
+
   responses:
     Error400:
       description: Datos de entrada inválidos
@@ -1748,6 +2268,17 @@ components:
             message: "Resource already exists"
             code: "CONFLICT"
 
+    Error422:
+      description: Error de regla de negocio
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Business rule violation"
+            code: "BUSINESS_RULE_ERROR"
+
 tags:
   - name: Authentication
     description: Endpoints para autenticación y gestión de sesiones
@@ -1763,3 +2294,6 @@ tags:
 
   - name: Appointments
     description: Gestión de citas del sistema (Requiere autenticación, slots disponibles públicos)
+
+  - name: Payments
+    description: Gestión de pagos del sistema (Admin tiene acceso completo, Stylist acceso limitado)
