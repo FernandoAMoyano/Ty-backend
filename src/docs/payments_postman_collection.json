@@ -1,0 +1,1459 @@
+{
+  "info": {
+    "name": "Payments API v1.0",
+    "description": "Colección para el módulo Payments - Gestión de pagos del sistema",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "payment_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "appointment_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication Setup",
+      "description": "Setup de autenticación para testing",
+      "item": [
+        {
+          "name": "Login Admin (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    console.log('✅ Admin login exitoso');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@turnity.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login con admin. Guarda token automáticamente."
+          }
+        },
+        {
+          "name": "Login Stylist Lucía (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    console.log('✅ Estilista Lucía login exitosa');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"lucia@turnity.com\",\n  \"password\": \"stylist123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login con estilista Lucía. Guarda token automáticamente."
+          }
+        },
+        {
+          "name": "Login Client María (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    console.log('✅ Cliente María login exitoso');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"maria@example.com\",\n  \"password\": \"client123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login con cliente María. Guarda token automáticamente."
+          }
+        },
+        {
+          "name": "Get Appointment ID (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.length > 0) {",
+                  "        pm.collectionVariables.set('appointment_id', response.data[0].id);",
+                  "        console.log('✅ Appointment ID guardado:', response.data[0].id);",
+                  "    } else {",
+                  "        console.log('⚠️ No hay citas disponibles');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/date-range?startDate=2020-01-01T00:00:00.000Z&endDate=2030-12-31T23:59:59.999Z",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "date-range"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2020-01-01T00:00:00.000Z"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2030-12-31T23:59:59.999Z"
+                }
+              ]
+            },
+            "description": "Obtiene una cita existente para usar en los tests de pagos"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment CRUD",
+      "description": "Operaciones CRUD de pagos",
+      "item": [
+        {
+          "name": "Create Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('payment_id', response.data.id);",
+                  "    pm.test('Payment created successfully', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.status).to.eql('PENDING');",
+                  "        pm.expect(response.data.method).to.be.null;",
+                  "    });",
+                  "    console.log('✅ Pago creado:', response.data.id);",
+                  "    console.log('💰 Monto:', response.data.amount);",
+                  "} else {",
+                  "    console.log('❌ Error:', pm.response.json().message);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 150.00,\n  \"appointmentId\": \"{{appointment_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments",
+              "host": ["{{base_url}}"],
+              "path": ["payments"]
+            },
+            "description": "Crea un nuevo pago pendiente. Requiere rol ADMIN o STYLIST."
+          }
+        },
+        {
+          "name": "Get Payment by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Payment retrieved successfully', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.id).to.eql(pm.collectionVariables.get('payment_id'));",
+                  "    });",
+                  "    console.log('📋 Estado:', response.data.status);",
+                  "    console.log('💰 Monto:', response.data.amount);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{payment_id}}"]
+            },
+            "description": "Obtiene un pago específico por ID"
+          }
+        },
+        {
+          "name": "Update Payment Amount",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Payment updated successfully', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.amount).to.eql(175);",
+                  "    });",
+                  "    console.log('✅ Monto actualizado a:', response.data.amount);",
+                  "} else if (pm.response.code === 422) {",
+                  "    console.log('⚠️ El pago ya fue procesado, no se puede actualizar');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 175.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{payment_id}}"]
+            },
+            "description": "Actualiza el monto de un pago pendiente. Solo ADMIN. No funciona si el pago ya fue procesado."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment Queries",
+      "description": "Consultas de pagos - Solo Admin",
+      "item": [
+        {
+          "name": "Get All Payments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Payments list retrieved', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('payments');",
+                  "        pm.expect(response.data).to.have.property('total');",
+                  "    });",
+                  "    console.log('📊 Total pagos:', response.data.total);",
+                  "    console.log('📄 En esta página:', response.data.payments.length);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments",
+              "host": ["{{base_url}}"],
+              "path": ["payments"]
+            },
+            "description": "Lista todos los pagos del sistema. Solo ADMIN."
+          }
+        },
+        {
+          "name": "Get Payments (Paginated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Pagination info present', function () {",
+                  "        pm.expect(response.data.page).to.eql(1);",
+                  "        pm.expect(response.data.limit).to.eql(5);",
+                  "        pm.expect(response.data).to.have.property('totalPages');",
+                  "        pm.expect(response.data).to.have.property('hasNextPage');",
+                  "    });",
+                  "    console.log('📄 Página:', response.data.page, 'de', response.data.totalPages);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments?page=1&limit=5",
+              "host": ["{{base_url}}"],
+              "path": ["payments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Lista pagos con paginación"
+          }
+        },
+        {
+          "name": "Get Payments by Status (PENDING)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('All payments are PENDING', function () {",
+                  "        response.data.payments.forEach(p => {",
+                  "            pm.expect(p.status).to.eql('PENDING');",
+                  "        });",
+                  "    });",
+                  "    console.log('⏳ Pagos pendientes:', response.data.payments.length);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments?status=PENDING",
+              "host": ["{{base_url}}"],
+              "path": ["payments"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
+            },
+            "description": "Filtra pagos por estado PENDING"
+          }
+        },
+        {
+          "name": "Get Payments by Status (COMPLETED)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('All payments are COMPLETED', function () {",
+                  "        response.data.payments.forEach(p => {",
+                  "            pm.expect(p.status).to.eql('COMPLETED');",
+                  "        });",
+                  "    });",
+                  "    console.log('✅ Pagos completados:', response.data.payments.length);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments?status=COMPLETED",
+              "host": ["{{base_url}}"],
+              "path": ["payments"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "COMPLETED"
+                }
+              ]
+            },
+            "description": "Filtra pagos por estado COMPLETED"
+          }
+        },
+        {
+          "name": "Get Payments by Appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Payments retrieved', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(Array.isArray(response.data)).to.be.true;",
+                  "    });",
+                  "    console.log('📋 Pagos de la cita:', response.data.length);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/appointment/{{appointment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "appointment", "{{appointment_id}}"]
+            },
+            "description": "Obtiene todos los pagos de una cita específica"
+          }
+        },
+        {
+          "name": "Get Payment Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Statistics retrieved', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('totalRevenue');",
+                  "        pm.expect(response.data).to.have.property('totalPayments');",
+                  "        pm.expect(response.data).to.have.property('paymentsByMethod');",
+                  "    });",
+                  "    console.log('💰 Ingresos totales:', response.data.totalRevenue);",
+                  "    console.log('📊 Total pagos:', response.data.totalPayments);",
+                  "    console.log('✅ Completados:', response.data.completedPayments);",
+                  "    console.log('⏳ Pendientes:', response.data.pendingPayments);",
+                  "    console.log('↩️ Reembolsados:', response.data.refundedPayments);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "statistics"]
+            },
+            "description": "Obtiene estadísticas de pagos. Solo ADMIN."
+          }
+        },
+        {
+          "name": "Get Statistics (Date Range)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Statistics retrieved with date filter', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "    });",
+                  "    console.log('📅 Estadísticas del período');",
+                  "    console.log('💰 Ingresos:', response.data.totalRevenue);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/statistics?startDate=2025-01-01&endDate=2025-12-31",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "statistics"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-12-31"
+                }
+              ]
+            },
+            "description": "Obtiene estadísticas filtradas por rango de fechas"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment Actions",
+      "description": "Acciones sobre pagos (procesar, reembolsar, cancelar)",
+      "item": [
+        {
+          "name": "Process Payment (CASH)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Payment processed', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.status).to.eql('COMPLETED');",
+                  "        pm.expect(response.data.method).to.eql('CASH');",
+                  "    });",
+                  "    console.log('✅ Pago procesado con CASH');",
+                  "    console.log('📅 Fecha pago:', response.data.paymentDate);",
+                  "} else if (pm.response.code === 422) {",
+                  "    console.log('⚠️ Error de regla de negocio:', pm.response.json().message);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"CASH\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/process",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{payment_id}}", "process"]
+            },
+            "description": "Procesa un pago pendiente con método CASH"
+          }
+        },
+        {
+          "name": "Process Payment (CREDIT_CARD)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Payment processed', function () {",
+                  "        pm.expect(response.data.status).to.eql('COMPLETED');",
+                  "        pm.expect(response.data.method).to.eql('CREDIT_CARD');",
+                  "    });",
+                  "    console.log('✅ Pago procesado con CREDIT_CARD');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"CREDIT_CARD\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/process",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{payment_id}}", "process"]
+            },
+            "description": "Procesa un pago pendiente con tarjeta de crédito"
+          }
+        },
+        {
+          "name": "Process Payment (TRANSFER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Payment processed', function () {",
+                  "        pm.expect(response.data.status).to.eql('COMPLETED');",
+                  "        pm.expect(response.data.method).to.eql('TRANSFER');",
+                  "    });",
+                  "    console.log('✅ Pago procesado con TRANSFER');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"TRANSFER\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/process",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{payment_id}}", "process"]
+            },
+            "description": "Procesa un pago pendiente con transferencia"
+          }
+        },
+        {
+          "name": "Refund Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Payment refunded', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.status).to.eql('REFUNDED');",
+                  "    });",
+                  "    console.log('↩️ Pago reembolsado');",
+                  "} else if (pm.response.code === 422) {",
+                  "    console.log('⚠️ Solo se pueden reembolsar pagos COMPLETED');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Cliente solicitó cancelación del servicio\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/refund",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{payment_id}}", "refund"]
+            },
+            "description": "Reembolsa un pago completado. Solo ADMIN. El pago debe estar en estado COMPLETED."
+          }
+        },
+        {
+          "name": "Refund Payment (No Reason)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Payment refunded without reason', function () {",
+                  "        pm.expect(response.data.status).to.eql('REFUNDED');",
+                  "    });",
+                  "    console.log('↩️ Pago reembolsado (sin razón)');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/refund",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{payment_id}}", "refund"]
+            },
+            "description": "Reembolsa sin proporcionar razón (la razón es opcional)"
+          }
+        },
+        {
+          "name": "Cancel Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Payment cancelled', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.status).to.eql('FAILED');",
+                  "    });",
+                  "    console.log('❌ Pago cancelado');",
+                  "} else if (pm.response.code === 422) {",
+                  "    console.log('⚠️ Solo se pueden cancelar pagos PENDING');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{payment_id}}", "cancel"]
+            },
+            "description": "Cancela un pago pendiente. El pago debe estar en estado PENDING."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Complete Flow",
+      "description": "Flujo completo de un pago",
+      "item": [
+        {
+          "name": "1. Create Payment for Flow",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('payment_id', response.data.id);",
+                  "    console.log('✅ [FLOW] Pago creado:', response.data.id);",
+                  "    console.log('💰 Monto:', response.data.amount);",
+                  "    console.log('📋 Estado: PENDING');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 200.00,\n  \"appointmentId\": \"{{appointment_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments",
+              "host": ["{{base_url}}"],
+              "path": ["payments"]
+            },
+            "description": "PASO 1: Crear pago pendiente"
+          }
+        },
+        {
+          "name": "2. Process Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('✅ [FLOW] Pago procesado');",
+                  "    console.log('📋 Estado: COMPLETED');",
+                  "    console.log('💳 Método:', response.data.method);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"CREDIT_CARD\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/process",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{payment_id}}", "process"]
+            },
+            "description": "PASO 2: Procesar el pago"
+          }
+        },
+        {
+          "name": "3. Check Statistics After Process",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('📊 [FLOW] Estadísticas actualizadas');",
+                  "    console.log('💰 Ingresos totales:', response.data.totalRevenue);",
+                  "    console.log('✅ Completados:', response.data.completedPayments);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "statistics"]
+            },
+            "description": "PASO 3: Verificar estadísticas"
+          }
+        },
+        {
+          "name": "4. Refund Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('↩️ [FLOW] Pago reembolsado');",
+                  "    console.log('📋 Estado: REFUNDED');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Demostración de flujo completo\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/refund",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{payment_id}}", "refund"]
+            },
+            "description": "PASO 4: Reembolsar el pago"
+          }
+        },
+        {
+          "name": "5. Final Statistics Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('📊 [FLOW] Estadísticas finales');",
+                  "    console.log('↩️ Reembolsados:', response.data.refundedPayments);",
+                  "    console.log('✅ Flujo completo terminado');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "statistics"]
+            },
+            "description": "PASO 5: Verificar estadísticas finales"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Testing",
+      "description": "Tests de validación de errores",
+      "item": [
+        {
+          "name": "Create - Missing Amount",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Missing amount', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - Monto requerido');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointmentId\": \"{{appointment_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments",
+              "host": ["{{base_url}}"],
+              "path": ["payments"]
+            },
+            "description": "Test sin monto"
+          }
+        },
+        {
+          "name": "Create - Invalid Amount (Zero)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Invalid amount', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - Monto debe ser mayor a 0');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 0,\n  \"appointmentId\": \"{{appointment_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments",
+              "host": ["{{base_url}}"],
+              "path": ["payments"]
+            },
+            "description": "Test con monto 0"
+          }
+        },
+        {
+          "name": "Create - Invalid Amount (Negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Negative amount', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - Monto negativo');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": -50,\n  \"appointmentId\": \"{{appointment_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments",
+              "host": ["{{base_url}}"],
+              "path": ["payments"]
+            },
+            "description": "Test con monto negativo"
+          }
+        },
+        {
+          "name": "Process - Invalid Method",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Invalid method', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - Método de pago inválido');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"BITCOIN\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{payment_id}}/process",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{payment_id}}", "process"]
+            },
+            "description": "Test con método de pago inválido"
+          }
+        },
+        {
+          "name": "Get - Invalid UUID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Invalid UUID', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - UUID inválido');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/invalid-uuid",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "invalid-uuid"]
+            },
+            "description": "Test de UUID inválido"
+          }
+        },
+        {
+          "name": "Get - Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 404 - Not found', function () {",
+                  "    pm.expect(pm.response.code).to.eql(404);",
+                  "});",
+                  "console.log('✅ Error esperado - No encontrado');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/123e4567-e89b-12d3-a456-426614174000",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "123e4567-e89b-12d3-a456-426614174000"]
+            },
+            "description": "Test de pago no existente"
+          }
+        },
+        {
+          "name": "Unauthorized Access",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 401 - Unauthorized', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});",
+                  "console.log('✅ Error esperado - Sin autenticación');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/payments",
+              "host": ["{{base_url}}"],
+              "path": ["payments"]
+            },
+            "description": "Test de acceso sin token"
+          }
+        },
+        {
+          "name": "Invalid Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 401 - Invalid token', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});",
+                  "console.log('✅ Error esperado - Token inválido');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid.token.here",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments",
+              "host": ["{{base_url}}"],
+              "path": ["payments"]
+            },
+            "description": "Test de token inválido"
+          }
+        },
+        {
+          "name": "Invalid Status Filter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 400 - Invalid status', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "console.log('✅ Error esperado - Estado inválido');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments?status=INVALID_STATUS",
+              "host": ["{{base_url}}"],
+              "path": ["payments"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "INVALID_STATUS"
+                }
+              ]
+            },
+            "description": "Test de filtro de estado inválido"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Script global que se ejecuta antes de cada request",
+          "console.log('🚀 Request:', pm.request.method, pm.request.url.toString());",
+          "",
+          "// Verificar token para requests autenticados",
+          "const authHeader = pm.request.headers.get('Authorization');",
+          "if (authHeader && authHeader.includes('{{jwt_token}}')) {",
+          "    const token = pm.collectionVariables.get('jwt_token');",
+          "    if (!token) {",
+          "        console.log('⚠️ Token no encontrado - ejecuta primero un request de Login');",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}
