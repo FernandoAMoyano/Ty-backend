@@ -15,6 +15,7 @@ import { ServicesContainer } from './modules/services/ServicesContainer';
 import { AppointmentContainer } from './modules/appointments/AppointmentContainer';
 import { NotificationContainer } from './modules/notifications/NotificationContainer';
 import { PaymentContainer } from './modules/payments/PaymentContainer';
+import { HolidayContainer } from './modules/holidays/HolidayContainer';
 import { setupSwagger } from './shared/middleware/swagger';
 
 import dotenv from 'dotenv';
@@ -27,6 +28,7 @@ class App {
   private appointmentContainer: AppointmentContainer;
   private notificationContainer: NotificationContainer;
   private paymentContainer: PaymentContainer;
+  private holidayContainer: HolidayContainer;
 
   constructor() {
     this.app = express();
@@ -44,6 +46,10 @@ class App {
       this.authContainer.authMiddleware,
     );
     this.paymentContainer = PaymentContainer.getInstance(
+      prisma,
+      this.authContainer.authMiddleware,
+    );
+    this.holidayContainer = HolidayContainer.getInstance(
       prisma,
       this.authContainer.authMiddleware,
     );
@@ -87,6 +93,7 @@ class App {
     this.app.use('/api/v1/appointments', this.appointmentContainer.appointmentRoutes.getRouter());
     this.app.use('/api/v1/notifications', this.notificationContainer.notificationRoutes.getRouter());
     this.app.use('/api/v1/payments', this.paymentContainer.paymentRoutes.getRouter());
+    this.app.use('/api/v1/holidays', this.holidayContainer.holidayRoutes.getRouter());
 
     this.app.use((req, res) => {
       res.status(404).json({
