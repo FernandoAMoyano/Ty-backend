@@ -150,7 +150,7 @@ describe('Holidays Complete Flow E2E Tests', () => {
 
     expect(checkHolidayResponse.status).toBe(200);
     expect(checkHolidayResponse.body.data.isHoliday).toBe(true);
-    expect(checkHolidayResponse.body.data.holiday.name).toBe('E2E_TEST Navidad');
+    expect(checkHolidayResponse.body.data.holidayName).toBe('E2E_TEST Navidad');
 
     // 2.5 Verificar que una fecha normal no es feriado
     const checkNonHolidayResponse = await request(app).get('/api/v1/holidays/check/2099-12-26');
@@ -231,7 +231,7 @@ describe('Holidays Complete Flow E2E Tests', () => {
     const listExceptionsResponse = await request(app).get('/api/v1/holidays/exceptions');
 
     expect(listExceptionsResponse.status).toBe(200);
-    expect(listExceptionsResponse.body.data.data.length).toBeGreaterThanOrEqual(2);
+    expect(listExceptionsResponse.body.data.exceptions.length).toBeGreaterThanOrEqual(2);
 
     // 4.2 Obtener excepción por ID
     const getExceptionByIdResponse = await request(app).get(
