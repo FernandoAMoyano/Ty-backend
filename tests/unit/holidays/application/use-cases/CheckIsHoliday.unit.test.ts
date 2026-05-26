@@ -33,25 +33,25 @@ describe('CheckIsHoliday Use Case', () => {
     checkIsHoliday = new CheckIsHoliday(mockHolidayRepository);
   });
 
-  // Debería retornar true y el feriado cuando la fecha es feriado
-  it('should return true and holiday when date is a holiday', async () => {
+  // Debería retornar true y el nombre del feriado cuando la fecha es feriado
+  it('should return true and holiday name when date is a holiday', async () => {
     mockHolidayRepository.findByDate.mockResolvedValue(mockHoliday);
 
     const result = await checkIsHoliday.execute('2025-12-25');
 
     expect(result.isHoliday).toBe(true);
-    expect(result.holiday).toBeDefined();
-    expect(result.holiday?.name).toBe('Navidad');
+    expect(result.holidayName).toBeDefined();
+    expect(result.holidayName).toBe('Navidad');
   });
 
-  // Debería retornar false y null cuando la fecha no es feriado
-  it('should return false and null when date is not a holiday', async () => {
+  // Debería retornar false y sin holidayName cuando la fecha no es feriado
+  it('should return false and no holiday name when date is not a holiday', async () => {
     mockHolidayRepository.findByDate.mockResolvedValue(null);
 
     const result = await checkIsHoliday.execute('2025-12-26');
 
     expect(result.isHoliday).toBe(false);
-    expect(result.holiday).toBeNull();
+    expect(result.holidayName).toBeUndefined();
   });
 
   // Debería llamar al repositorio con la fecha correcta

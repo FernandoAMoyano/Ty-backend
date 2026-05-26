@@ -57,7 +57,7 @@ describe('GetHolidays Use Case', () => {
 
     const result = await getHolidays.execute({});
 
-    expect(result.data).toHaveLength(2);
+    expect(result.holidays).toHaveLength(2);
     expect(result.total).toBe(2);
     expect(result.page).toBe(1);
   });
