@@ -163,7 +163,7 @@ describe('Holidays Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('holidays');
       expect(response.body.data).toHaveProperty('total');
       expect(response.body.data).toHaveProperty('page');
     });
@@ -173,7 +173,7 @@ describe('Holidays Integration Tests', () => {
       const response = await request(app).get('/api/v1/holidays?year=2099');
 
       expect(response.status).toBe(200);
-      expect(response.body.data.data.length).toBeGreaterThanOrEqual(1);
+      expect(response.body.data.holidays.length).toBeGreaterThanOrEqual(1);
     });
 
     // Debería filtrar por nombre
@@ -267,7 +267,7 @@ describe('Holidays Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.data.isHoliday).toBe(true);
-      expect(response.body.data.holiday).toBeDefined();
+      expect(response.body.data.holidayName).toBeDefined();
     });
 
     // Debería retornar false para una fecha que no es feriado
@@ -276,7 +276,7 @@ describe('Holidays Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.data.isHoliday).toBe(false);
-      expect(response.body.data.holiday).toBeNull();
+      expect(response.body.data.holidayName).toBeUndefined();
     });
 
     // Debería validar formato de fecha
@@ -410,7 +410,7 @@ describe('Holidays Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('data');
+      expect(response.body.data).toHaveProperty('exceptions');
     });
   });
 
