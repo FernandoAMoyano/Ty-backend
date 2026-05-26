@@ -70,12 +70,19 @@ describe('DeleteHoliday Use Case', () => {
 
     await deleteHoliday.execute('123e4567-e89b-12d3-a456-426614174000');
 
+    // Verificar que ambos métodos fueron llamados con el ID correcto
     expect(mockScheduleExceptionRepository.deleteByHolidayId).toHaveBeenCalledWith(
       '123e4567-e89b-12d3-a456-426614174000',
     );
-    expect(mockScheduleExceptionRepository.deleteByHolidayId).toHaveBeenCalledBefore(
-      mockHolidayRepository.delete as jest.Mock,
+    expect(mockHolidayRepository.delete).toHaveBeenCalledWith(
+      '123e4567-e89b-12d3-a456-426614174000',
     );
+
+    // Verificar orden de llamadas usando el orden de invocación
+    const deleteExceptionsCallOrder =
+      mockScheduleExceptionRepository.deleteByHolidayId.mock.invocationCallOrder[0];
+    const deleteHolidayCallOrder = mockHolidayRepository.delete.mock.invocationCallOrder[0];
+    expect(deleteExceptionsCallOrder).toBeLessThan(deleteHolidayCallOrder);
   });
 
   // Debería lanzar error si el feriado no existe
