@@ -1,17 +1,17 @@
-import { ChangeUserPassword } from '../../../src/modules/auth/application/uses-cases/ChangeUserPassword';
-import { UpdateUserProfile } from '../../../src/modules/auth/application/uses-cases/UpdateUserProfile';
+import { ChangeUserPassword } from '../../../src/modules/auth/application/use-cases/ChangeUserPassword';
+import { UpdateUserProfile } from '../../../src/modules/auth/application/use-cases/UpdateUserProfile';
 import { AuthService } from '../../../src/modules/auth/application/services/AuthService';
-import { GetUserProfile } from '../../../src/modules/auth/application/uses-cases/GetUserProfile';
-import { RefreshToken } from '../../../src/modules/auth/application/uses-cases/RefreshToken';
-import { RegisterUser } from '../../../src/modules/auth/application/uses-cases/RegisterUser';
-import { LoginUser } from '../../../src/modules/auth/application/uses-cases/LoginUser';
-import { LoginDto } from '../../../src/modules/auth/application/dto/Request/LoginDto';
-import { LoginResponseDto } from '../../../src/modules/auth/application/dto/Response/LoginResponseDto';
+import { GetUserProfile } from '../../../src/modules/auth/application/use-cases/GetUserProfile';
+import { RefreshToken } from '../../../src/modules/auth/application/use-cases/RefreshToken';
+import { RegisterUser } from '../../../src/modules/auth/application/use-cases/RegisterUser';
+import { LoginUser } from '../../../src/modules/auth/application/use-cases/LoginUser';
+import { LoginDto } from '../../../src/modules/auth/application/dto/request/LoginDto';
+import { LoginResponseDto } from '../../../src/modules/auth/application/dto/response/LoginResponseDto';
 import { generateUuid } from '../../../src/shared/utils/uuid';
-import { RegisterDto } from '../../../src/modules/auth/application/dto/Request/RegisterDto';
-import { UserDto } from '../../../src/modules/auth/application/dto/Response/UserDto';
-import { UpdateProfileDto } from '../../../src/modules/auth/application/dto/Request/UpdateProfileDto';
-import { ChangePasswordDto } from '../../../src/modules/auth/application/dto/Request/ChangePasswordDto';
+import { RegisterDto } from '../../../src/modules/auth/application/dto/request/RegisterDto';
+import { UserDto } from '../../../src/modules/auth/application/dto/response/UserDto';
+import { UpdateProfileDto } from '../../../src/modules/auth/application/dto/request/UpdateProfileDto';
+import { ChangePasswordDto } from '../../../src/modules/auth/application/dto/request/ChangePasswordDto';
 describe('AuthService Unit Tests', () => {
   let authService: AuthService;
 

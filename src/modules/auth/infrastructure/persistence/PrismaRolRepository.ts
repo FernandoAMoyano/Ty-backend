@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { Role } from '../../domain/entities/Role';
-import { RoleRepository } from '../../domain/repositories/Rol';
+import { RoleRepository } from '../../domain/repositories/RoleRepository';
 import { RoleName } from '@prisma/client';
 
 /**

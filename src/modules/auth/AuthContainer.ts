@@ -2,15 +2,15 @@ import { PrismaClient } from '@prisma/client';
 import { AuthController } from './presentation/controllers/AuthController';
 import { AuthMiddleware } from './presentation/middleware/AuthMiddleware';
 import { AuthRoutes } from './presentation/routes/AuthRoutes';
-import { LoginUser } from './application/uses-cases/LoginUser';
-import { RegisterUser } from './application/uses-cases/RegisterUser';
-import { RefreshToken } from './application/uses-cases/RefreshToken';
-import { GetUserProfile } from './application/uses-cases/GetUserProfile';
-import { UpdateUserProfile } from './application/uses-cases/UpdateUserProfile';
-import { ChangeUserPassword } from './application/uses-cases/ChangeUserPassword';
+import { LoginUser } from './application/use-cases/LoginUser';
+import { RegisterUser } from './application/use-cases/RegisterUser';
+import { RefreshToken } from './application/use-cases/RefreshToken';
+import { GetUserProfile } from './application/use-cases/GetUserProfile';
+import { UpdateUserProfile } from './application/use-cases/UpdateUserProfile';
+import { ChangeUserPassword } from './application/use-cases/ChangeUserPassword';
 import { PrismaUserRepository } from './infrastructure/persistence/PrismaUserRepository';
 import { PrismaRoleRepository } from './infrastructure/persistence/PrismaRolRepository';
-import { RoleRepository } from './domain/repositories/Rol';
+import { RoleRepository } from './domain/repositories/RoleRepository';
 import { UserRepository } from './domain/repositories/User';
 import { BcryptHashService } from './infrastructure/services/BcryptHashService';
 import { JwtTokenService } from './infrastructure/services/JwtTokenService';
@@ -41,7 +41,7 @@ export class AuthContainer {
    * @param prisma - Cliente Prisma para acceso a base de datos
    * @description Configura la cadena completa de dependencias siguiendo arquitectura hexagonal
    */
-  constructor(private prisma: PrismaClient) {
+  private constructor(private prisma: PrismaClient) {
     this.setupDependencies();
   }
 
