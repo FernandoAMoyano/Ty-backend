@@ -1,15 +1,15 @@
-import { ChangePasswordDto } from '../dto/Request/ChangePasswordDto';
-import { LoginDto } from '../dto/Request/LoginDto';
-import { RegisterDto } from '../dto/Request/RegisterDto';
-import { UpdateProfileDto } from '../dto/Request/UpdateProfileDto';
-import { LoginResponseDto } from '../dto/Response/LoginResponseDto';
-import { UserDto } from '../dto/Response/UserDto';
-import { ChangeUserPassword } from '../uses-cases/ChangeUserPassword';
-import { GetUserProfile } from '../uses-cases/GetUserProfile';
-import { LoginUser } from '../uses-cases/LoginUser';
-import { RefreshToken } from '../uses-cases/RefreshToken';
-import { RegisterUser } from '../uses-cases/RegisterUser';
-import { UpdateUserProfile } from '../uses-cases/UpdateUserProfile';
+import { ChangePasswordDto } from '../dto/request/ChangePasswordDto';
+import { LoginDto } from '../dto/request/LoginDto';
+import { RegisterDto } from '../dto/request/RegisterDto';
+import { UpdateProfileDto } from '../dto/request/UpdateProfileDto';
+import { LoginResponseDto } from '../dto/response/LoginResponseDto';
+import { UserDto } from '../dto/response/UserDto';
+import { ChangeUserPassword } from '../use-cases/ChangeUserPassword';
+import { GetUserProfile } from '../use-cases/GetUserProfile';
+import { LoginUser } from '../use-cases/LoginUser';
+import { RefreshToken } from '../use-cases/RefreshToken';
+import { RegisterUser } from '../use-cases/RegisterUser';
+import { UpdateUserProfile } from '../use-cases/UpdateUserProfile';
 
 export class AuthService {
   constructor(
