@@ -1,21 +1,23 @@
 import { Request, Response } from 'express';
 
-import { LoginUser } from '../../application/uses-cases/LoginUser';
-import { RegisterUser } from '../../application/uses-cases/RegisterUser';
-import { RefreshToken } from '../../application/uses-cases/RefreshToken';
-import { GetUserProfile } from '../../application/uses-cases/GetUserProfile';
-import { UpdateUserProfile } from '../../application/uses-cases/UpdateUserProfile';
-import { ChangeUserPassword } from '../../application/uses-cases/ChangeUserPassword';
+import { LoginUser } from '../../application/use-cases/LoginUser';
+import { RegisterUser } from '../../application/use-cases/RegisterUser';
+import { RefreshToken } from '../../application/use-cases/RefreshToken';
+import { GetUserProfile } from '../../application/use-cases/GetUserProfile';
+import { UpdateUserProfile } from '../../application/use-cases/UpdateUserProfile';
+import { ChangeUserPassword } from '../../application/use-cases/ChangeUserPassword';
 import { AuthenticatedRequest } from '../middleware/AuthMiddleware';
-import { RegisterDto } from '../../application/dto/Request/RegisterDto';
-import { LoginDto } from '../../application/dto/Request/LoginDto';
-import { UpdateProfileDto } from '../../application/dto/Request/UpdateProfileDto';
-import { ChangePasswordDto } from '../../application/dto/Request/ChangePasswordDto';
+import { RegisterDto } from '../../application/dto/request/RegisterDto';
+import { LoginDto } from '../../application/dto/request/LoginDto';
+import { UpdateProfileDto } from '../../application/dto/request/UpdateProfileDto';
+import { ChangePasswordDto } from '../../application/dto/request/ChangePasswordDto';
+import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
 
 /**
  * Controlador de autenticación que maneja peticiones HTTP
- * relacionadas con usuarios, Coordina las operaciones de
- * login, registro, renovación de tokens y gestión de perfiles
+ * relacionadas con usuarios. Coordina las operaciones de
+ * login, registro, renovación de tokens y gestión de perfiles.
+ * Los errores burbujean al errorHandler global via .catch(next) en AuthRoutes.
  */
 export class AuthController {
   constructor(
@@ -32,25 +34,21 @@ export class AuthController {
    * @route POST /auth/login
    * @param req - Request de Express con LoginDto en el body
    * @param res - Response de Express
-   * @returns Promise<Response | void>
+   * @returns Promise<Response>
    * @description Valida credenciales y retorna tokens de acceso y renovación
    * @responseStatus 200 - Login exitoso con tokens
-   * @throws ValidationError si las credenciales son inválidas
-   * @throws UnauthorizedError si el usuario no existe o la contraseña es incorrecta
+   * @throws ValidationError si el formato del email o password es inválido
+   * @throws UnauthorizedError si las credenciales son incorrectas o el usuario está inactivo
    */
-  async login(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
-    try {
-      const loginDto: LoginDto = req.body;
-      const result = await this.loginUser.execute(loginDto);
+  async login(req: Request, res: Response): Promise<Response> {
+    const loginDto: LoginDto = req.body;
+    const result = await this.loginUser.execute(loginDto);
 
-      return res.status(200).json({
-        success: true,
-        data: result,
-        message: 'Login successful',
-      });
-    } catch (error) {
-      throw error;
-    }
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Login successful',
+    });
   }
 
   /**
@@ -58,25 +56,22 @@ export class AuthController {
    * @route POST /auth/register
    * @param req - Request de Express con RegisterDto en el body
    * @param res - Response de Express
-   * @returns Promise<Response | void>
+   * @returns Promise<Response>
    * @description Crea una nueva cuenta de usuario con rol asignado
    * @responseStatus 201 - Usuario registrado exitosamente
-   * @throws ValidationError si los datos no son válidos
+   * @throws ValidationError si los datos de entrada no son válidos
    * @throws ConflictError si el email ya está registrado
+   * @throws NotFoundError si el rol especificado no existe
    */
-  async register(req: Request, res: Response): Promise<Response | void> {
-    try {
-      const registerDto: RegisterDto = req.body;
-      const result = await this.registerUser.execute(registerDto);
+  async register(req: Request, res: Response): Promise<Response> {
+    const registerDto: RegisterDto = req.body;
+    const result = await this.registerUser.execute(registerDto);
 
-      return res.status(201).json({
-        success: true,
-        data: result,
-        message: 'User registered successfully',
-      });
-    } catch (error) {
-      throw error;
-    }
+    return res.status(201).json({
+      success: true,
+      data: result,
+      message: 'User registered successfully',
+    });
   }
 
   /**
@@ -84,68 +79,46 @@ export class AuthController {
    * @route POST /auth/refresh-token
    * @param req - Request de Express con refreshToken en el body
    * @param res - Response de Express
-   * @returns Promise<Response | void>
+   * @returns Promise<Response>
    * @description Genera nuevos tokens cuando el token de acceso expira
    * @responseStatus 200 - Tokens renovados exitosamente
    * @throws ValidationError si no se proporciona refresh token
-   * @throws UnauthorizedError si el refresh token es inválido
+   * @throws UnauthorizedError si el refresh token es inválido o expirado
    */
-  async refreshToken(req: Request, res: Response): Promise<Response | void> {
-    try {
-      const { refreshToken } = req.body;
+  async refreshToken(req: Request, res: Response): Promise<Response> {
+    const { refreshToken } = req.body;
+    const result = await this.refreshTokenUseCase.execute(refreshToken);
 
-      if (!refreshToken) {
-        return res.status(400).json({
-          success: false,
-          message: 'Refresh token is required',
-        });
-      }
-
-      const result = await this.refreshTokenUseCase.execute(refreshToken);
-
-      return res.status(200).json({
-        success: true,
-        data: result,
-        message: 'Token refreshed successfully',
-      });
-    } catch (error) {
-      throw error;
-    }
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Token refreshed successfully',
+    });
   }
 
   /**
    * Obtiene el perfil del usuario autenticado
    * @route GET /auth/profile
-   * @param req - Request de Express autenticado con user en req.user
+   * @param req - Request de Express autenticado con userId en req.user
    * @param res - Response de Express
-   * @returns Promise<Response | void>
+   * @returns Promise<Response>
    * @description Retorna información completa del perfil del usuario
    * @responseStatus 200 - Perfil obtenido exitosamente
-   * @throws UnauthorizedError si no hay autenticación
+   * @throws UnauthorizedError si el request no está autenticado
    * @throws NotFoundError si el usuario no existe
    */
-  async getProfile(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
-    try {
-      // Validación explícita del userId
-      const userId = req.user?.userId || req.params.userId;
-
-      if (!userId) {
-        return res.status(400).json({
-          success: false,
-          message: 'User ID is required',
-        });
-      }
-
-      const result = await this.getUserProfile.execute(userId);
-
-      return res.status(200).json({
-        success: true,
-        data: result,
-        message: 'Profile retrieved successfully',
-      });
-    } catch (error) {
-      throw error;
+  async getProfile(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId) {
+      throw new UnauthorizedError('Authentication required');
     }
+
+    const result = await this.getUserProfile.execute(req.user.userId);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Profile retrieved successfully',
+    });
   }
 
   /**
@@ -153,35 +126,26 @@ export class AuthController {
    * @route PUT /auth/profile
    * @param req - Request de Express con UpdateProfileDto en el body
    * @param res - Response de Express
-   * @returns Promise<Response | void>
-   * @description Modifica datos del perfil como nombre, email, etc.
+   * @returns Promise<Response>
+   * @description Modifica datos del perfil como nombre, teléfono o foto de perfil
    * @responseStatus 200 - Perfil actualizado exitosamente
-   * @throws UnauthorizedError si no hay autenticación
-   * @throws ValidationError si los datos no son válidos
-   * @throws ConflictError si el nuevo email ya está en uso
+   * @throws UnauthorizedError si el request no está autenticado
+   * @throws ValidationError si los datos de actualización no son válidos
+   * @throws NotFoundError si el usuario no existe
    */
-  async updateProfile(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
-    try {
-      const userId = req.user?.userId || req.params.userId;
-
-      if (!userId) {
-        return res.status(400).json({
-          success: false,
-          message: 'User ID is required',
-        });
-      }
-
-      const updateDto: UpdateProfileDto = req.body;
-      const result = await this.updateUserProfile.execute(userId, updateDto);
-
-      return res.status(200).json({
-        success: true,
-        data: result,
-        message: 'Profile updated successfully',
-      });
-    } catch (error) {
-      throw error;
+  async updateProfile(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId) {
+      throw new UnauthorizedError('Authentication required');
     }
+
+    const updateDto: UpdateProfileDto = req.body;
+    const result = await this.updateUserProfile.execute(req.user.userId, updateDto);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: 'Profile updated successfully',
+    });
   }
 
   /**
@@ -189,32 +153,24 @@ export class AuthController {
    * @route PUT /auth/change-password
    * @param req - Request de Express con ChangePasswordDto en el body
    * @param res - Response de Express
-   * @returns Promise<Response | void>
-   * @description Actualiza la contraseña verificando la contraseña actual
+   * @returns Promise<Response>
+   * @description Actualiza la contraseña verificando la contraseña actual antes del cambio
    * @responseStatus 200 - Contraseña cambiada exitosamente
-   * @throws UnauthorizedError si no hay autenticación
-   * @throws ValidationError si la contraseña actual es incorrecta
+   * @throws UnauthorizedError si el request no está autenticado o la contraseña actual es incorrecta
+   * @throws ValidationError si la nueva contraseña no cumple los requisitos de seguridad
+   * @throws NotFoundError si el usuario no existe
    */
-  async changePassword(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
-    try {
-      const userId = req.user?.userId;
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Authentication required',
-        });
-      }
-
-      const changePasswordDto: ChangePasswordDto = req.body;
-      await this.changeUserPassword.execute(userId, changePasswordDto);
-
-      return res.status(200).json({
-        success: true,
-        message: 'Password changed successfully',
-      });
-    } catch (error) {
-      throw error;
+  async changePassword(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId) {
+      throw new UnauthorizedError('Authentication required');
     }
+
+    const changePasswordDto: ChangePasswordDto = req.body;
+    await this.changeUserPassword.execute(req.user.userId, changePasswordDto);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password changed successfully',
+    });
   }
 }
