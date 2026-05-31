@@ -1,4 +1,4 @@
-import { RoleDto } from '../Response/RolDto';
+import { RoleDto } from './RoleDto';
 
 /**
  * DTO para datos completos de usuario en respuestas
