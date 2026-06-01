@@ -2,8 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { AuthController } from '../controllers/AuthController';
 import { AuthMiddleware } from '../middleware/AuthMiddleware';
 import { AuthValidations } from '../validations/AuthValidations';
-import { validationResult } from 'express-validator';
-import { ValidationError } from '../../../../shared/exceptions/ValidationError';
+import { ValidationMiddleware } from '../../../../shared/middleware/ValidationMiddleware';
 
 /**
  * Configurador de rutas para el módulo de autenticación
@@ -36,7 +35,7 @@ export class AuthRoutes {
     this.router.post(
       '/login',
       AuthValidations.login,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.authController.login(req, res).catch(next);
       },
@@ -46,7 +45,7 @@ export class AuthRoutes {
     this.router.post(
       '/register',
       AuthValidations.register,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.authController.register(req, res).catch(next);
       },
@@ -56,7 +55,7 @@ export class AuthRoutes {
     this.router.post(
       '/refresh-token',
       AuthValidations.refreshToken,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.authController.refreshToken(req, res).catch(next);
       },
@@ -76,7 +75,7 @@ export class AuthRoutes {
       '/profile',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       AuthValidations.updateProfile,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.authController.updateProfile(req, res).catch(next);
       },
@@ -87,36 +86,12 @@ export class AuthRoutes {
       '/change-password',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       AuthValidations.changePassword,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.authController.changePassword(req, res).catch(next);
       },
     );
   }
-
-  /**
-   * Middleware para manejar errores de validación de express-validator
-   * @description Convierte los errores de express-validator a ValidationError tipado
-   */
-  private handleValidationErrors = (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): void => {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      const errorMessages = errors.array().map((error) => {
-        const errorAny = error as any;
-        const field = errorAny.path || errorAny.param || errorAny.location || 'field';
-        return `${field}: ${error.msg}`;
-      });
-
-      throw new ValidationError(`Validation failed: ${errorMessages.join(', ')}`);
-    }
-
-    next();
-  };
 
   /**
    * Obtiene el router configurado con todas las rutas de autenticación

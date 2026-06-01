@@ -2,8 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { PaymentController } from '../controllers/PaymentController';
 import { AuthMiddleware } from '../../../auth/presentation/middleware/AuthMiddleware';
 import { PaymentValidations } from '../validations/PaymentValidations';
-import { validationResult } from 'express-validator';
-import { ValidationError } from '../../../../shared/exceptions/ValidationError';
+import { ValidationMiddleware } from '../../../../../shared/middleware/ValidationMiddleware';
 
 /**
  * Configurador de rutas para el módulo de pagos
@@ -44,7 +43,7 @@ export class PaymentRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN']),
       PaymentValidations.getPayments,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.paymentController.getAll(req, res).catch(next);
       },
@@ -56,7 +55,7 @@ export class PaymentRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN', 'STYLIST']),
       PaymentValidations.createPayment,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.paymentController.create(req, res).catch(next);
       },
@@ -72,7 +71,7 @@ export class PaymentRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN']),
       PaymentValidations.getStatistics,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.paymentController.getStatistics(req, res).catch(next);
       },
@@ -83,7 +82,7 @@ export class PaymentRoutes {
       '/appointment/:appointmentId',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       PaymentValidations.paymentsByAppointment,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.paymentController.getByAppointment(req, res).catch(next);
       },
@@ -98,7 +97,7 @@ export class PaymentRoutes {
       '/:id',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       PaymentValidations.paymentById,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.paymentController.getById(req, res).catch(next);
       },
@@ -110,7 +109,7 @@ export class PaymentRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN']),
       PaymentValidations.updatePayment,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.paymentController.update(req, res).catch(next);
       },
@@ -122,7 +121,7 @@ export class PaymentRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN', 'STYLIST']),
       PaymentValidations.processPayment,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.paymentController.process(req, res).catch(next);
       },
@@ -134,7 +133,7 @@ export class PaymentRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN']),
       PaymentValidations.refundPayment,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.paymentController.refund(req, res).catch(next);
       },
@@ -146,35 +145,12 @@ export class PaymentRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN', 'STYLIST']),
       PaymentValidations.paymentById,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.paymentController.cancel(req, res).catch(next);
       },
     );
   }
-
-  /**
-   * Middleware para manejar errores de validación
-   */
-  private handleValidationErrors = (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): void => {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      const errorMessages = errors.array().map((error) => {
-        const errorAny = error as any;
-        const field = errorAny.path || errorAny.param || errorAny.location || 'field';
-        return `${field}: ${error.msg}`;
-      });
-
-      throw new ValidationError(`Validation failed: ${errorMessages.join(', ')}`);
-    }
-
-    next();
-  };
 
   /**
    * Obtiene el router configurado
