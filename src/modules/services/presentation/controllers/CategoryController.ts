@@ -1,18 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CategoryService } from '../../application/services/CategoryService';
 import { CreateCategoryDto } from '../../application/dto/request/CreateCategoryDto';
-import { UpdateCategoryDto } from '../../application/dto/request/UpdateCategoryDto ';
-import 'express';
-
-declare module 'express-serve-static-core' {
-  interface Request {
-    user?: {
-      userId: string;
-      roleId: string;
-      email: string;
-    };
-  }
-}
+import { UpdateCategoryDto } from '../../application/dto/request/UpdateCategoryDto';
 
 /**
  * Controlador para la gestión de categorías de servicios
