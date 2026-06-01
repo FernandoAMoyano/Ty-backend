@@ -54,7 +54,7 @@ export class ServicesContainer {
   private _stylistServiceController: StylistServiceController;
   private _servicesRoutes: ServicesRoutes;
 
-  constructor(
+  private constructor(
     private prisma: PrismaClient,
     private authMiddleware: AuthMiddleware,
   ) {
