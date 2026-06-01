@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { PaymentController } from '../controllers/PaymentController';
 import { AuthMiddleware } from '../../../auth/presentation/middleware/AuthMiddleware';
 import { PaymentValidations } from '../validations/PaymentValidations';
-import { ValidationMiddleware } from '../../../../../shared/middleware/ValidationMiddleware';
+import { ValidationMiddleware } from '../../../../shared/middleware/ValidationMiddleware';
 
 /**
  * Configurador de rutas para el módulo de pagos

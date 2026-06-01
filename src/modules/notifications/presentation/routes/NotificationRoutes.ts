@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { NotificationController } from '../controllers/NotificationController';
 import { AuthMiddleware } from '../../../auth/presentation/middleware/AuthMiddleware';
 import { NotificationValidations } from '../validations/NotificationValidations';
-import { ValidationMiddleware } from '../../../../../shared/middleware/ValidationMiddleware';
+import { ValidationMiddleware } from '../../../../shared/middleware/ValidationMiddleware';
 
 /**
  * Configurador de rutas para el módulo de notificaciones

@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { AppointmentController } from '../controllers/AppointmentController';
 import { AuthMiddleware } from '../../../auth/presentation/middleware/AuthMiddleware';
 import { AppointmentValidations } from '../validations/AppointmentValidations';
-import { ValidationMiddleware } from '../../../../../shared/middleware/ValidationMiddleware';
+import { ValidationMiddleware } from '../../../../shared/middleware/ValidationMiddleware';
 
 /**
  * Configurador de rutas para el módulo de citas
