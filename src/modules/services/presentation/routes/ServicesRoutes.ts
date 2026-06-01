@@ -281,3 +281,12 @@ export class ServicesRoutes {
       this.stylistServiceController.removeServiceFromStylist,
     );
   }
+
+  /**
+   * Obtiene el router configurado con todas las rutas
+   * @returns Router de Express con todas las rutas del módulo de servicios configuradas
+   */
+  getRouter(): Router {
+    return this.router;
+  }
+}
