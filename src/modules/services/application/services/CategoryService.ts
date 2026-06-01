@@ -5,7 +5,7 @@ import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
 import { CreateCategoryDto } from '../dto/request/CreateCategoryDto';
 import { CategoryDto } from '../dto/response/CategoryDto';
-import { UpdateCategoryDto } from '../dto/request/UpdateCategoryDto ';
+import { UpdateCategoryDto } from '../dto/request/UpdateCategoryDto';
 
 export class CategoryService {
   constructor(private categoryRepository: CategoryRepository) {}

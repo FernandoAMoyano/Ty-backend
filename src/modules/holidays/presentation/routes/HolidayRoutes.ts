@@ -2,8 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { HolidayController } from '../controllers/HolidayController';
 import { HolidayValidations } from '../validations/HolidayValidations';
 import { AuthMiddleware } from '../../../auth/presentation/middleware/AuthMiddleware';
-import { validationResult } from 'express-validator';
-import { ValidationError } from '../../../../shared/exceptions/ValidationError';
+import { ValidationMiddleware } from '../../../../shared/middleware/ValidationMiddleware';
 
 /**
  * Configurador de rutas para el módulo de feriados
@@ -51,7 +50,7 @@ export class HolidayRoutes {
     this.router.get(
       '/exceptions/upcoming',
       HolidayValidations.getUpcomingExceptions,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.getUpcomingExceptions(req, res, next);
       },
@@ -61,7 +60,7 @@ export class HolidayRoutes {
     this.router.get(
       '/exceptions',
       HolidayValidations.getAllExceptions,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.getAllExceptions(req, res, next);
       },
@@ -73,7 +72,7 @@ export class HolidayRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN']),
       HolidayValidations.createException,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.createException(req, res, next);
       },
@@ -83,7 +82,7 @@ export class HolidayRoutes {
     this.router.get(
       '/exceptions/:id',
       HolidayValidations.getExceptionById,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.getExceptionById(req, res, next);
       },
@@ -95,7 +94,7 @@ export class HolidayRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN']),
       HolidayValidations.updateException,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.updateException(req, res, next);
       },
@@ -107,7 +106,7 @@ export class HolidayRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN']),
       HolidayValidations.deleteException,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.deleteException(req, res, next);
       },
@@ -121,7 +120,7 @@ export class HolidayRoutes {
     this.router.get(
       '/upcoming',
       HolidayValidations.getUpcoming,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.getUpcoming(req, res, next);
       },
@@ -131,7 +130,7 @@ export class HolidayRoutes {
     this.router.get(
       '/check/:date',
       HolidayValidations.checkDate,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.checkDate(req, res, next);
       },
@@ -141,7 +140,7 @@ export class HolidayRoutes {
     this.router.get(
       '/year/:year',
       HolidayValidations.getByYear,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.getByYear(req, res, next);
       },
@@ -155,7 +154,7 @@ export class HolidayRoutes {
     this.router.get(
       '/',
       HolidayValidations.getAll,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.getAll(req, res, next);
       },
@@ -167,7 +166,7 @@ export class HolidayRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN']),
       HolidayValidations.create,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.create(req, res, next);
       },
@@ -181,7 +180,7 @@ export class HolidayRoutes {
     this.router.get(
       '/:holidayId/exceptions',
       HolidayValidations.getExceptionsByHoliday,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.getExceptionsByHoliday(req, res, next);
       },
@@ -191,7 +190,7 @@ export class HolidayRoutes {
     this.router.get(
       '/:id',
       HolidayValidations.getById,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.getById(req, res, next);
       },
@@ -203,7 +202,7 @@ export class HolidayRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN']),
       HolidayValidations.update,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.update(req, res, next);
       },
@@ -215,35 +214,12 @@ export class HolidayRoutes {
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN']),
       HolidayValidations.delete,
-      this.handleValidationErrors,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.controller.delete(req, res, next);
       },
     );
   }
-
-  /**
-   * Middleware para manejar errores de validación
-   */
-  private handleValidationErrors = (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): void => {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      const errorMessages = errors.array().map((error) => {
-        const errorAny = error as any;
-        const field = errorAny.path || errorAny.param || errorAny.location || 'field';
-        return `${field}: ${error.msg}`;
-      });
-
-      throw new ValidationError(`Validation failed: ${errorMessages.join(', ')}`);
-    }
-
-    next();
-  };
 
   /**
    * Obtiene el router configurado
