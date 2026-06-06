@@ -1,12 +1,18 @@
-import { CategoryService } from '../../../src/modules/services/application/services/CategoryService';
+import { CreateCategory } from '../../../src/modules/services/application/use-cases/CreateCategory';
+import { UpdateCategory } from '../../../src/modules/services/application/use-cases/UpdateCategory';
+import { GetCategoryById } from '../../../src/modules/services/application/use-cases/GetCategoryById';
+import { GetAllCategories } from '../../../src/modules/services/application/use-cases/GetAllCategories';
+import { GetActiveCategories } from '../../../src/modules/services/application/use-cases/GetActiveCategories';
+import { ActivateCategory } from '../../../src/modules/services/application/use-cases/ActivateCategory';
+import { DeactivateCategory } from '../../../src/modules/services/application/use-cases/DeactivateCategory';
+import { DeleteCategory } from '../../../src/modules/services/application/use-cases/DeleteCategory';
 import { CategoryRepository } from '../../../src/modules/services/domain/repositories/CategoryRepository';
 import { Category } from '../../../src/modules/services/domain/entities/Category';
 import { ValidationError } from '../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../src/shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../src/shared/exceptions/ConflictError';
 
-describe('CategoryService', () => {
-  let categoryService: CategoryService;
+describe('Category Use Cases', () => {
   let mockCategoryRepository: jest.Mocked<CategoryRepository>;
 
   beforeEach(() => {
@@ -21,23 +27,26 @@ describe('CategoryService', () => {
       existsById: jest.fn(),
       existsByName: jest.fn(),
     };
-
-    categoryService = new CategoryService(mockCategoryRepository);
   });
 
-  describe('createCategory', () => {
+  describe('CreateCategory', () => {
+    let createCategory: CreateCategory;
+
+    beforeEach(() => {
+      createCategory = new CreateCategory(mockCategoryRepository);
+    });
+
     const validCreateDto = {
       name: 'Hair Services',
       description: 'Professional hair styling services',
     };
 
-    // Debería crear categoría exitosamente
     it('should create category successfully', async () => {
       const mockCategory = Category.create(validCreateDto.name, validCreateDto.description);
       mockCategoryRepository.existsByName.mockResolvedValue(false);
       mockCategoryRepository.save.mockResolvedValue(mockCategory);
 
-      const result = await categoryService.createCategory(validCreateDto);
+      const result = await createCategory.execute(validCreateDto);
 
       expect(mockCategoryRepository.existsByName).toHaveBeenCalledWith(validCreateDto.name);
       expect(mockCategoryRepository.save).toHaveBeenCalled();
@@ -45,28 +54,29 @@ describe('CategoryService', () => {
       expect(result.description).toBe(validCreateDto.description);
     });
 
-    // Debería lanzar ValidationError para nombre vacío
     it('should throw ValidationError for empty name', async () => {
       const invalidDto = { ...validCreateDto, name: '' };
-
-      await expect(categoryService.createCategory(invalidDto)).rejects.toThrow(ValidationError);
+      await expect(createCategory.execute(invalidDto)).rejects.toThrow(ValidationError);
     });
 
-    // Debería lanzar ConflictError si el nombre ya existe
     it('should throw ConflictError if name already exists', async () => {
       mockCategoryRepository.existsByName.mockResolvedValue(true);
-
-      await expect(categoryService.createCategory(validCreateDto)).rejects.toThrow(ConflictError);
+      await expect(createCategory.execute(validCreateDto)).rejects.toThrow(ConflictError);
     });
   });
 
-  describe('updateCategory', () => {
+  describe('UpdateCategory', () => {
+    let updateCategory: UpdateCategory;
+
+    beforeEach(() => {
+      updateCategory = new UpdateCategory(mockCategoryRepository);
+    });
+
     const validUpdateDto = {
       name: 'Updated Hair Services',
       description: 'Updated description',
     };
 
-    // Debería actualizar categoría exitosamente
     it('should update category successfully', async () => {
       const existingCategory = Category.create('Hair Services', 'Original description');
       const updatedCategory = Category.create(validUpdateDto.name!, validUpdateDto.description);
@@ -75,84 +85,92 @@ describe('CategoryService', () => {
       mockCategoryRepository.existsByName.mockResolvedValue(false);
       mockCategoryRepository.update.mockResolvedValue(updatedCategory);
 
-      const result = await categoryService.updateCategory('test-id', validUpdateDto);
+      const result = await updateCategory.execute('test-id', validUpdateDto);
 
       expect(mockCategoryRepository.findById).toHaveBeenCalledWith('test-id');
       expect(mockCategoryRepository.update).toHaveBeenCalled();
       expect(result.name).toBe(validUpdateDto.name);
     });
 
-    // Debería lanzar NotFoundError si la categoría no se encuentra
     it('should throw NotFoundError if category not found', async () => {
       mockCategoryRepository.findById.mockResolvedValue(null);
-
-      await expect(
-        categoryService.updateCategory('non-existent-id', validUpdateDto),
-      ).rejects.toThrow(NotFoundError);
+      await expect(updateCategory.execute('non-existent-id', validUpdateDto)).rejects.toThrow(NotFoundError);
     });
 
-    // Debería lanzar ConflictError si el nuevo nombre ya existe
     it('should throw ConflictError if new name already exists', async () => {
       const existingCategory = Category.create('Hair Services');
       mockCategoryRepository.findById.mockResolvedValue(existingCategory);
       mockCategoryRepository.existsByName.mockResolvedValue(true);
-
-      await expect(categoryService.updateCategory('test-id', validUpdateDto)).rejects.toThrow(
-        ConflictError,
-      );
+      await expect(updateCategory.execute('test-id', validUpdateDto)).rejects.toThrow(ConflictError);
     });
   });
 
-  describe('getCategoryById', () => {
-    // Debería devolver categoría cuando se encuentra
+  describe('GetCategoryById', () => {
+    let getCategoryById: GetCategoryById;
+
+    beforeEach(() => {
+      getCategoryById = new GetCategoryById(mockCategoryRepository);
+    });
+
     it('should return category when found', async () => {
       const mockCategory = Category.create('Hair Services');
       mockCategoryRepository.findById.mockResolvedValue(mockCategory);
 
-      const result = await categoryService.getCategoryById('test-id');
+      const result = await getCategoryById.execute('test-id');
 
       expect(mockCategoryRepository.findById).toHaveBeenCalledWith('test-id');
       expect(result.id).toBe(mockCategory.id);
     });
 
-    // Debería lanzar NotFoundError cuando la categoría no se encuentra
     it('should throw NotFoundError when category not found', async () => {
       mockCategoryRepository.findById.mockResolvedValue(null);
-
-      await expect(categoryService.getCategoryById('non-existent-id')).rejects.toThrow(
-        NotFoundError,
-      );
+      await expect(getCategoryById.execute('non-existent-id')).rejects.toThrow(NotFoundError);
     });
   });
 
-  describe('getAllCategories', () => {
-    // Debería devolver todas las categorías
+  describe('GetAllCategories', () => {
+    let getAllCategories: GetAllCategories;
+
+    beforeEach(() => {
+      getAllCategories = new GetAllCategories(mockCategoryRepository);
+    });
+
     it('should return all categories', async () => {
       const mockCategories = [Category.create('Hair Services'), Category.create('Nail Services')];
       mockCategoryRepository.findAll.mockResolvedValue(mockCategories);
 
-      const result = await categoryService.getAllCategories();
+      const result = await getAllCategories.execute();
 
       expect(mockCategoryRepository.findAll).toHaveBeenCalled();
       expect(result).toHaveLength(2);
     });
   });
 
-  describe('getActiveCategories', () => {
-    // Debería devolver solo las categorías activas
+  describe('GetActiveCategories', () => {
+    let getActiveCategories: GetActiveCategories;
+
+    beforeEach(() => {
+      getActiveCategories = new GetActiveCategories(mockCategoryRepository);
+    });
+
     it('should return only active categories', async () => {
       const mockCategories = [Category.create('Hair Services'), Category.create('Nail Services')];
       mockCategoryRepository.findActive.mockResolvedValue(mockCategories);
 
-      const result = await categoryService.getActiveCategories();
+      const result = await getActiveCategories.execute();
 
       expect(mockCategoryRepository.findActive).toHaveBeenCalled();
       expect(result).toHaveLength(2);
     });
   });
 
-  describe('activateCategory', () => {
-    // Debería activar categoría exitosamente
+  describe('ActivateCategory', () => {
+    let activateCategory: ActivateCategory;
+
+    beforeEach(() => {
+      activateCategory = new ActivateCategory(mockCategoryRepository);
+    });
+
     it('should activate category successfully', async () => {
       const category = Category.create('Hair Services');
       category.deactivate();
@@ -160,32 +178,33 @@ describe('CategoryService', () => {
       mockCategoryRepository.findById.mockResolvedValue(category);
       mockCategoryRepository.update.mockResolvedValue(category);
 
-      const result = await categoryService.activateCategory('test-id');
+      const result = await activateCategory.execute('test-id');
 
       expect(mockCategoryRepository.findById).toHaveBeenCalledWith('test-id');
       expect(mockCategoryRepository.update).toHaveBeenCalled();
       expect(result.isActive).toBe(true);
     });
 
-    //Debería lanzar NotFoundError si no se encuentra la categoría
     it('should throw NotFoundError if category not found', async () => {
       mockCategoryRepository.findById.mockResolvedValue(null);
-
-      await expect(categoryService.activateCategory('non-existent-id')).rejects.toThrow(
-        NotFoundError,
-      );
+      await expect(activateCategory.execute('non-existent-id')).rejects.toThrow(NotFoundError);
     });
   });
 
-  describe('deactivateCategory', () => {
-    // Debería desactivar categoría exitosamente
+  describe('DeactivateCategory', () => {
+    let deactivateCategory: DeactivateCategory;
+
+    beforeEach(() => {
+      deactivateCategory = new DeactivateCategory(mockCategoryRepository);
+    });
+
     it('should deactivate category successfully', async () => {
       const category = Category.create('Hair Services');
 
       mockCategoryRepository.findById.mockResolvedValue(category);
       mockCategoryRepository.update.mockResolvedValue(category);
 
-      const result = await categoryService.deactivateCategory('test-id');
+      const result = await deactivateCategory.execute('test-id');
 
       expect(mockCategoryRepository.findById).toHaveBeenCalledWith('test-id');
       expect(mockCategoryRepository.update).toHaveBeenCalled();
@@ -193,25 +212,26 @@ describe('CategoryService', () => {
     });
   });
 
-  describe('deleteCategory', () => {
-    // Debería eliminar categoría exitosamente
+  describe('DeleteCategory', () => {
+    let deleteCategory: DeleteCategory;
+
+    beforeEach(() => {
+      deleteCategory = new DeleteCategory(mockCategoryRepository);
+    });
+
     it('should delete category successfully', async () => {
       mockCategoryRepository.existsById.mockResolvedValue(true);
       mockCategoryRepository.delete.mockResolvedValue();
 
-      await categoryService.deleteCategory('test-id');
+      await deleteCategory.execute('test-id');
 
       expect(mockCategoryRepository.existsById).toHaveBeenCalledWith('test-id');
       expect(mockCategoryRepository.delete).toHaveBeenCalledWith('test-id');
     });
 
-    //Debería lanzar NotFoundError si no se encuentra la categoría
     it('should throw NotFoundError if category not found', async () => {
       mockCategoryRepository.existsById.mockResolvedValue(false);
-
-      await expect(categoryService.deleteCategory('non-existent-id')).rejects.toThrow(
-        NotFoundError,
-      );
+      await expect(deleteCategory.execute('non-existent-id')).rejects.toThrow(NotFoundError);
     });
   });
 });
