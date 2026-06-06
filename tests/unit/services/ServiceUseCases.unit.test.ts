@@ -1,4 +1,9 @@
-import { ServiceManagementService } from '../../../src/modules/services/application/services/ServiceManagementService';
+import { CreateService } from '../../../src/modules/services/application/use-cases/CreateService';
+import { UpdateService } from '../../../src/modules/services/application/use-cases/UpdateService';
+import { GetServiceById } from '../../../src/modules/services/application/use-cases/GetServiceById';
+import { GetServicesByCategory } from '../../../src/modules/services/application/use-cases/GetServicesByCategory';
+import { ActivateService } from '../../../src/modules/services/application/use-cases/ActivateService';
+import { DeleteService } from '../../../src/modules/services/application/use-cases/DeleteService';
 import { ServiceRepository } from '../../../src/modules/services/domain/repositories/ServiceRepository';
 import { CategoryRepository } from '../../../src/modules/services/domain/repositories/CategoryRepository';
 import { Service } from '../../../src/modules/services/domain/entities/Service';
@@ -7,8 +12,7 @@ import { ValidationError } from '../../../src/shared/exceptions/ValidationError'
 import { NotFoundError } from '../../../src/shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../src/shared/exceptions/ConflictError';
 
-describe('ServiceManagementService', () => {
-  let serviceManagementService: ServiceManagementService;
+describe('Service Use Cases', () => {
   let mockServiceRepository: jest.Mocked<ServiceRepository>;
   let mockCategoryRepository: jest.Mocked<CategoryRepository>;
 
@@ -38,14 +42,15 @@ describe('ServiceManagementService', () => {
       existsById: jest.fn(),
       existsByName: jest.fn(),
     };
-
-    serviceManagementService = new ServiceManagementService(
-      mockServiceRepository,
-      mockCategoryRepository,
-    );
   });
 
-  describe('createService', () => {
+  describe('CreateService', () => {
+    let createService: CreateService;
+
+    beforeEach(() => {
+      createService = new CreateService(mockServiceRepository, mockCategoryRepository);
+    });
+
     const validCreateDto = {
       categoryId: 'category-id',
       name: 'Hair Cut',
@@ -55,7 +60,6 @@ describe('ServiceManagementService', () => {
       price: 2500,
     };
 
-    // Debería crear servicio exitosamente
     it('should create service successfully', async () => {
       const mockCategory = Category.create('Hair Services');
       const mockService = Service.create(
@@ -71,7 +75,7 @@ describe('ServiceManagementService', () => {
       mockServiceRepository.existsByName.mockResolvedValue(false);
       mockServiceRepository.save.mockResolvedValue(mockService);
 
-      const result = await serviceManagementService.createService(validCreateDto);
+      const result = await createService.execute(validCreateDto);
 
       expect(mockCategoryRepository.findById).toHaveBeenCalledWith(validCreateDto.categoryId);
       expect(mockServiceRepository.existsByName).toHaveBeenCalledWith(validCreateDto.name);
@@ -79,41 +83,34 @@ describe('ServiceManagementService', () => {
       expect(result.name).toBe(validCreateDto.name);
     });
 
-    // Debería lanzar NotFoundError si la categoría no se encuentra
     it('should throw NotFoundError if category not found', async () => {
       mockCategoryRepository.findById.mockResolvedValue(null);
-
-      await expect(serviceManagementService.createService(validCreateDto)).rejects.toThrow(
-        NotFoundError,
-      );
+      await expect(createService.execute(validCreateDto)).rejects.toThrow(NotFoundError);
     });
 
-    // Debería lanzar ConflictError si el nombre del servicio ya existe
     it('should throw ConflictError if service name already exists', async () => {
       const mockCategory = Category.create('Hair Services');
       mockCategoryRepository.findById.mockResolvedValue(mockCategory);
       mockServiceRepository.existsByName.mockResolvedValue(true);
-
-      await expect(serviceManagementService.createService(validCreateDto)).rejects.toThrow(
-        ConflictError,
-      );
+      await expect(createService.execute(validCreateDto)).rejects.toThrow(ConflictError);
     });
 
-    // Debería lanzar ValidationError para variación de duración inválida
     it('should throw ValidationError for invalid duration variation', async () => {
-      const invalidDto = { ...validCreateDto, durationVariation: 60 }; // > duration
+      const invalidDto = { ...validCreateDto, durationVariation: 60 };
       const mockCategory = Category.create('Hair Services');
       mockCategoryRepository.findById.mockResolvedValue(mockCategory);
       mockServiceRepository.existsByName.mockResolvedValue(false);
-
-      await expect(serviceManagementService.createService(invalidDto)).rejects.toThrow(
-        ValidationError,
-      );
+      await expect(createService.execute(invalidDto)).rejects.toThrow(ValidationError);
     });
   });
 
-  describe('getServiceById', () => {
-    // Debería devolver servicio con categoría cuando se encuentra
+  describe('GetServiceById', () => {
+    let getServiceById: GetServiceById;
+
+    beforeEach(() => {
+      getServiceById = new GetServiceById(mockServiceRepository, mockCategoryRepository);
+    });
+
     it('should return service with category when found', async () => {
       const mockCategory = Category.create('Hair Services');
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
@@ -121,7 +118,7 @@ describe('ServiceManagementService', () => {
       mockServiceRepository.findById.mockResolvedValue(mockService);
       mockCategoryRepository.findById.mockResolvedValue(mockCategory);
 
-      const result = await serviceManagementService.getServiceById('service-id');
+      const result = await getServiceById.execute('service-id');
 
       expect(mockServiceRepository.findById).toHaveBeenCalledWith('service-id');
       expect(mockCategoryRepository.findById).toHaveBeenCalledWith('category-id');
@@ -129,18 +126,19 @@ describe('ServiceManagementService', () => {
       expect(result.category).toBeDefined();
     });
 
-    // Debería lanzar NotFoundError cuando el servicio no se encuentra
     it('should throw NotFoundError when service not found', async () => {
       mockServiceRepository.findById.mockResolvedValue(null);
-
-      await expect(serviceManagementService.getServiceById('non-existent-id')).rejects.toThrow(
-        NotFoundError,
-      );
+      await expect(getServiceById.execute('non-existent-id')).rejects.toThrow(NotFoundError);
     });
   });
 
-  describe('getServicesByCategory', () => {
-    // Debería devolver servicios para categoría existente
+  describe('GetServicesByCategory', () => {
+    let getServicesByCategory: GetServicesByCategory;
+
+    beforeEach(() => {
+      getServicesByCategory = new GetServicesByCategory(mockServiceRepository, mockCategoryRepository);
+    });
+
     it('should return services for existing category', async () => {
       const mockCategory = Category.create('Hair Services');
       const mockServices = [
@@ -151,25 +149,26 @@ describe('ServiceManagementService', () => {
       mockCategoryRepository.findById.mockResolvedValue(mockCategory);
       mockServiceRepository.findByCategory.mockResolvedValue(mockServices);
 
-      const result = await serviceManagementService.getServicesByCategory('category-id');
+      const result = await getServicesByCategory.execute('category-id');
 
       expect(mockCategoryRepository.findById).toHaveBeenCalledWith('category-id');
       expect(mockServiceRepository.findByCategory).toHaveBeenCalledWith('category-id');
       expect(result).toHaveLength(2);
     });
 
-    //Debería lanzar NotFoundError si no se encuentra la categoría
     it('should throw NotFoundError if category not found', async () => {
       mockCategoryRepository.findById.mockResolvedValue(null);
-
-      await expect(
-        serviceManagementService.getServicesByCategory('non-existent-id'),
-      ).rejects.toThrow(NotFoundError);
+      await expect(getServicesByCategory.execute('non-existent-id')).rejects.toThrow(NotFoundError);
     });
   });
 
-  describe('activateService', () => {
-    // Debería activar servicio exitosamente
+  describe('ActivateService', () => {
+    let activateService: ActivateService;
+
+    beforeEach(() => {
+      activateService = new ActivateService(mockServiceRepository, mockCategoryRepository);
+    });
+
     it('should activate service successfully', async () => {
       const mockCategory = Category.create('Hair Services');
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
@@ -179,31 +178,49 @@ describe('ServiceManagementService', () => {
       mockServiceRepository.update.mockResolvedValue(mockService);
       mockCategoryRepository.findById.mockResolvedValue(mockCategory);
 
-      const result = await serviceManagementService.activateService('service-id');
+      const result = await activateService.execute('service-id');
 
       expect(result.isActive).toBe(true);
     });
   });
 
-  describe('deleteService', () => {
-    // Debería eliminar servicio exitosamente
+  describe('DeleteService', () => {
+    let deleteService: DeleteService;
+
+    beforeEach(() => {
+      deleteService = new DeleteService(mockServiceRepository);
+    });
+
     it('should delete service successfully', async () => {
       mockServiceRepository.existsById.mockResolvedValue(true);
       mockServiceRepository.delete.mockResolvedValue();
 
-      await serviceManagementService.deleteService('service-id');
+      await deleteService.execute('service-id');
 
       expect(mockServiceRepository.existsById).toHaveBeenCalledWith('service-id');
       expect(mockServiceRepository.delete).toHaveBeenCalledWith('service-id');
     });
 
-    // Debería lanzar NotFoundError si el servicio no se encuentra
     it('should throw NotFoundError if service not found', async () => {
       mockServiceRepository.existsById.mockResolvedValue(false);
+      await expect(deleteService.execute('non-existent-id')).rejects.toThrow(NotFoundError);
+    });
+  });
 
-      await expect(serviceManagementService.deleteService('non-existent-id')).rejects.toThrow(
-        NotFoundError,
-      );
+  describe('UpdateService', () => {
+    let updateService: UpdateService;
+
+    beforeEach(() => {
+      updateService = new UpdateService(mockServiceRepository, mockCategoryRepository);
+    });
+
+    it('should throw NotFoundError if service not found', async () => {
+      mockServiceRepository.findById.mockResolvedValue(null);
+      await expect(updateService.execute('non-existent-id', { name: 'New Name' })).rejects.toThrow(NotFoundError);
+    });
+
+    it('should throw ValidationError if no fields provided', async () => {
+      await expect(updateService.execute('service-id', {})).rejects.toThrow(ValidationError);
     });
   });
 });
