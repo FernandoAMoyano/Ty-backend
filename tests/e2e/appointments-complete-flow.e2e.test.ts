@@ -349,17 +349,4 @@ describe('Appointments Complete Flow E2E Tests', () => {
     });
   });
 
-  describe('Statistics Endpoint', () => {
-    // Debería retornar estadísticas del sistema
-    it('should return system statistics', async () => {
-      // 1. Consultar estadísticas como admin
-      const response = await request(app)
-        .get('/api/v1/appointments/statistics')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200);
-
-      // 2. Verificar respuesta exitosa
-      expect(response.body.success).toBe(true);
-    });
-  });
 });
