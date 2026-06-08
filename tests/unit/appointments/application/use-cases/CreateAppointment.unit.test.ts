@@ -111,7 +111,7 @@ describe('CreateAppointment Use Case', () => {
   };
 
   const createMockAppointmentStatus = (
-    name: string = 'Pendiente',
+    name: string = 'PENDING',
     id: string = validPendingStatusId,
   ): AppointmentStatus => {
     return new AppointmentStatus(id, name, `Status: ${name}`);
@@ -196,7 +196,7 @@ describe('CreateAppointment Use Case', () => {
     const service = createMockService(validServiceId1, 60);
     const schedule = createMockSchedule('MONDAY');
 
-    mockAppointmentStatusRepository.findAll.mockResolvedValue([pendingStatus]);
+    mockAppointmentStatusRepository.findByName.mockResolvedValue(pendingStatus);
     mockClientRepository.findById.mockResolvedValue(client);
     mockClientRepository.findByUserId.mockResolvedValue(null); // No necesario si findById encuentra
     mockStylistRepository.findById.mockResolvedValue(stylist);
@@ -444,7 +444,7 @@ describe('CreateAppointment Use Case', () => {
       const client = createMockClient(validClientId);
       const stylist = createMockStylist(validStylistId);
       const service = createMockService(validServiceId1);
-      const pendingStatus = createMockAppointmentStatus('Pendiente');
+      const pendingStatus = createMockAppointmentStatus('PENDING');
       const schedule = createMockSchedule('MONDAY');
       const appointment = createMockAppointment();
 
@@ -453,7 +453,7 @@ describe('CreateAppointment Use Case', () => {
       mockClientRepository.findByUserId.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(stylist);
       mockServiceRepository.findById.mockResolvedValue(service);
-      mockAppointmentStatusRepository.findAll.mockResolvedValue([pendingStatus]);
+      mockAppointmentStatusRepository.findByName.mockResolvedValue(pendingStatus);
       mockScheduleRepository.findAll.mockResolvedValue([schedule]);
       mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([]);
       mockAppointmentRepository.save.mockResolvedValue(appointment);
@@ -497,13 +497,13 @@ describe('CreateAppointment Use Case', () => {
       const client = createMockClient(validClientId);
       const stylist = createMockStylist(validStylistId);
       const service = createMockService(validServiceId1);
-      const pendingStatus = createMockAppointmentStatus('Pendiente');
+      const pendingStatus = createMockAppointmentStatus('PENDING');
       const schedule = createMockSchedule('MONDAY');
 
       mockClientRepository.findById.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(stylist);
       mockServiceRepository.findById.mockResolvedValue(service);
-      mockAppointmentStatusRepository.findAll.mockResolvedValue([pendingStatus]);
+      mockAppointmentStatusRepository.findByName.mockResolvedValue(pendingStatus);
       mockScheduleRepository.findAll.mockResolvedValue([schedule]);
       mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([
         conflictingAppointment,
@@ -526,7 +526,7 @@ describe('CreateAppointment Use Case', () => {
       expect(mockClientRepository.findById).toHaveBeenCalledWith(validClientId);
       expect(mockStylistRepository.findById).toHaveBeenCalledWith(validStylistId);
       expect(mockServiceRepository.findById).toHaveBeenCalledWith(validServiceId1);
-      expect(mockAppointmentStatusRepository.findAll).toHaveBeenCalled();
+      expect(mockAppointmentStatusRepository.findByName).toHaveBeenCalledWith('PENDING');
       expect(mockScheduleRepository.findAll).toHaveBeenCalled();
       expect(mockAppointmentRepository.save).toHaveBeenCalled();
     });
