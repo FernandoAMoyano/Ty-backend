@@ -125,7 +125,7 @@ export class Holiday {
    */
   updateName(name: string): void {
     if (!name || name.trim().length === 0) {
-      throw new Error('El nombre del feriado no puede estar vacío');
+      throw new Error('Holiday name cannot be empty');
     }
     this._name = name.trim();
     this._updatedAt = new Date();
@@ -177,7 +177,7 @@ export class Holiday {
     description?: string | null,
   ): Holiday {
     if (!name || name.trim().length === 0) {
-      throw new Error('El nombre del feriado no puede estar vacío');
+      throw new Error('Holiday name cannot be empty');
     }
 
     return new Holiday({

@@ -186,7 +186,7 @@ export class ScheduleException {
   private validateTimeFormat(time: string): void {
     const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timeRegex.test(time)) {
-      throw new Error(`Formato de hora inválido: ${time}. Use HH:MM`);
+      throw new Error(`Invalid time format: ${time}. Use HH:MM`);
     }
   }
 
@@ -202,7 +202,7 @@ export class ScheduleException {
     const endMinutes = endHour * 60 + endMin;
 
     if (endMinutes <= startMinutes) {
-      throw new Error('La hora de fin debe ser posterior a la hora de inicio');
+      throw new Error('End time must be after start time');
     }
   }
 
