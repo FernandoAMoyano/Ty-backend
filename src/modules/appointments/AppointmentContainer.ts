@@ -69,7 +69,7 @@ export class AppointmentContainer {
    * @param authMiddleware - Middleware de autenticación del módulo auth
    * @description Configura la cadena completa de dependencias siguiendo arquitectura hexagonal
    */
-  constructor(
+  private constructor(
     private prisma: PrismaClient,
     private authMiddleware: AuthMiddleware,
   ) {
