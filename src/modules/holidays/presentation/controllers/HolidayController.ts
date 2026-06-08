@@ -71,7 +71,7 @@ export class HolidayController {
       const { id } = req.params;
       const holiday = await this.getHolidayById.execute(id);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Holiday retrieved successfully',
         data: holiday,
@@ -99,7 +99,7 @@ export class HolidayController {
 
       const result = await this.getHolidays.execute(filters);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Holidays retrieved successfully',
         data: result,
@@ -118,7 +118,7 @@ export class HolidayController {
       const year = Number(req.params.year);
       const holidays = await this.getHolidaysByYear.execute(year);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Holidays by year retrieved successfully',
         data: holidays,
@@ -137,7 +137,7 @@ export class HolidayController {
       const limit = req.query.limit ? Number(req.query.limit) : 5;
       const holidays = await this.getUpcomingHolidays.execute(limit);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Upcoming holidays retrieved successfully',
         data: holidays,
@@ -156,7 +156,7 @@ export class HolidayController {
       const { date } = req.params;
       const result = await this.checkIsHoliday.execute(date);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Date checked successfully',
         data: result,
@@ -175,7 +175,7 @@ export class HolidayController {
       const { id } = req.params;
       const holiday = await this.updateHoliday.execute(id, req.body);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Holiday updated successfully',
         data: holiday,
@@ -194,7 +194,7 @@ export class HolidayController {
       const { id } = req.params;
       await this.deleteHoliday.execute(id);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Holiday deleted successfully',
       });
@@ -234,7 +234,7 @@ export class HolidayController {
       const { id } = req.params;
       const exception = await this.getScheduleExceptionById.execute(id);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Schedule exception retrieved successfully',
         data: exception,
@@ -261,7 +261,7 @@ export class HolidayController {
 
       const result = await this.getScheduleExceptions.execute(filters);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Schedule exceptions retrieved successfully',
         data: result,
@@ -284,7 +284,7 @@ export class HolidayController {
       const { holidayId } = req.params;
       const exceptions = await this.getScheduleExceptionsByHoliday.execute(holidayId);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Schedule exceptions by holiday retrieved successfully',
         data: exceptions,
@@ -307,7 +307,7 @@ export class HolidayController {
       const limit = req.query.limit ? Number(req.query.limit) : 5;
       const exceptions = await this.getUpcomingScheduleExceptions.execute(limit);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Upcoming schedule exceptions retrieved successfully',
         data: exceptions,
@@ -326,7 +326,7 @@ export class HolidayController {
       const { id } = req.params;
       const exception = await this.updateScheduleException.execute(id, req.body);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Schedule exception updated successfully',
         data: exception,
@@ -345,7 +345,7 @@ export class HolidayController {
       const { id } = req.params;
       await this.deleteScheduleException.execute(id);
 
-      res.json({
+      res.status(200).json({
         success: true,
         message: 'Schedule exception deleted successfully',
       });

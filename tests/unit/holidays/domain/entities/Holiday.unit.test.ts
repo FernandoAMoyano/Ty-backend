@@ -147,14 +147,14 @@ describe('Holiday Entity', () => {
     it('should throw error if name is empty', () => {
       const holiday = new Holiday(validHolidayProps);
 
-      expect(() => holiday.updateName('')).toThrow('El nombre del feriado no puede estar vacío');
+      expect(() => holiday.updateName('')).toThrow('Holiday name cannot be empty');
     });
 
     // Debería lanzar error si el nombre es solo espacios
     it('should throw error if name is only whitespace', () => {
       const holiday = new Holiday(validHolidayProps);
 
-      expect(() => holiday.updateName('   ')).toThrow('El nombre del feriado no puede estar vacío');
+      expect(() => holiday.updateName('   ')).toThrow('Holiday name cannot be empty');
     });
   });
 
@@ -285,7 +285,7 @@ describe('Holiday Entity', () => {
           '',
           new Date('2025-01-01'),
         ),
-      ).toThrow('El nombre del feriado no puede estar vacío');
+      ).toThrow('Holiday name cannot be empty');
     });
 
     // Debería lanzar error si el nombre es solo espacios
@@ -296,7 +296,7 @@ describe('Holiday Entity', () => {
           '   ',
           new Date('2025-01-01'),
         ),
-      ).toThrow('El nombre del feriado no puede estar vacío');
+      ).toThrow('Holiday name cannot be empty');
     });
   });
 });

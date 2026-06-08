@@ -69,7 +69,7 @@ describe('CreateHoliday Use Case', () => {
     mockHolidayRepository.existsByDate.mockResolvedValue(true);
 
     await expect(createHoliday.execute(dto)).rejects.toThrow(
-      'Ya existe un feriado en la fecha especificada',
+      'A holiday already exists on the specified date',
     );
     expect(mockHolidayRepository.save).not.toHaveBeenCalled();
   });

@@ -178,7 +178,7 @@ describe('ScheduleException Entity', () => {
       const exception = new ScheduleException(validExceptionProps);
 
       expect(() => exception.updateTimes('25:00', '14:00')).toThrow(
-        'Formato de hora inválido: 25:00. Use HH:MM',
+        'Invalid time format: 25:00. Use HH:MM',
       );
     });
 
@@ -187,7 +187,7 @@ describe('ScheduleException Entity', () => {
       const exception = new ScheduleException(validExceptionProps);
 
       expect(() => exception.updateTimes('14:00', '09:00')).toThrow(
-        'La hora de fin debe ser posterior a la hora de inicio',
+        'End time must be after start time',
       );
     });
 
@@ -196,7 +196,7 @@ describe('ScheduleException Entity', () => {
       const exception = new ScheduleException(validExceptionProps);
 
       expect(() => exception.updateTimes('10:00', '10:00')).toThrow(
-        'La hora de fin debe ser posterior a la hora de inicio',
+        'End time must be after start time',
       );
     });
 
@@ -371,7 +371,7 @@ describe('ScheduleException Entity', () => {
           'invalid',
           '14:00',
         ),
-      ).toThrow('Formato de hora inválido');
+      ).toThrow('Invalid time format');
     });
 
     // Debería lanzar error si la hora de fin es anterior a la de inicio
@@ -383,7 +383,7 @@ describe('ScheduleException Entity', () => {
           '14:00',
           '09:00',
         ),
-      ).toThrow('La hora de fin debe ser posterior a la hora de inicio');
+      ).toThrow('End time must be after start time');
     });
   });
 });

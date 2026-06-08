@@ -110,7 +110,7 @@ describe('CreateScheduleException Use Case', () => {
     mockScheduleExceptionRepository.existsByDate.mockResolvedValue(true);
 
     await expect(createScheduleException.execute(dto)).rejects.toThrow(
-      'Ya existe una excepción de horario en la fecha especificada',
+      'A schedule exception already exists on the specified date',
     );
     expect(mockScheduleExceptionRepository.save).not.toHaveBeenCalled();
   });
@@ -128,7 +128,7 @@ describe('CreateScheduleException Use Case', () => {
     mockHolidayRepository.findById.mockResolvedValue(null);
 
     await expect(createScheduleException.execute(dto)).rejects.toThrow(
-      'El feriado especificado no existe',
+      'Holiday not found: non-existent-id',
     );
     expect(mockScheduleExceptionRepository.save).not.toHaveBeenCalled();
   });
