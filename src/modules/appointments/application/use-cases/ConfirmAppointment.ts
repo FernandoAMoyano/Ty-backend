@@ -129,12 +129,12 @@ export class ConfirmAppointment {
 
     // 2. Verificar que la cita no esté cancelada
     const currentStatus = await this.appointmentStatusRepository.findById(appointment.statusId);
-    if (currentStatus?.name === AppointmentStatusEnum.CANCELLED || currentStatus?.name === 'CANCELLED') {
+    if (currentStatus?.name === AppointmentStatusEnum.CANCELLED) {
       throw new BusinessRuleError('Cannot confirm a cancelled appointment');
     }
 
     // 3. Verificar que la cita no esté completada
-    if (currentStatus?.name === AppointmentStatusEnum.COMPLETED || currentStatus?.name === 'COMPLETED') {
+    if (currentStatus?.name === AppointmentStatusEnum.COMPLETED) {
       throw new BusinessRuleError('Cannot confirm a completed appointment');
     }
 
@@ -202,24 +202,12 @@ export class ConfirmAppointment {
    * @throws NotFoundError si no existe el estado
    */
   private async getConfirmedStatus() {
-    // Intentar con diferentes variaciones del nombre del estado
-    let confirmedStatus = await this.appointmentStatusRepository.findByName(AppointmentStatusEnum.CONFIRMED);
-    
+    const confirmedStatus = await this.appointmentStatusRepository.findByName(
+      AppointmentStatusEnum.CONFIRMED,
+    );
+
     if (!confirmedStatus) {
-      // Intentar con nombres alternativos comunes
-      confirmedStatus = await this.appointmentStatusRepository.findByName('CONFIRMED');
-    }
-    
-    if (!confirmedStatus) {
-      confirmedStatus = await this.appointmentStatusRepository.findByName('Confirmada');
-    }
-    
-    if (!confirmedStatus) {
-      confirmedStatus = await this.appointmentStatusRepository.findByName('Confirmado');
-    }
-    
-    if (!confirmedStatus) {
-      throw new NotFoundError('AppointmentStatus', 'CONFIRMED (tried multiple variations)');
+      throw new NotFoundError('AppointmentStatus', AppointmentStatusEnum.CONFIRMED);
     }
 
     return confirmedStatus;
@@ -242,81 +230,11 @@ export class ConfirmAppointment {
       throw new NotFoundError('AppointmentStatus', 'current or new status');
     }
 
-    // Verificar transiciones válidas manualmente para mayor compatibilidad
-    const validTransitions = this.getValidTransitions(currentStatus.name);
-    if (!validTransitions.includes(newStatus.name)) {
+    if (!currentStatus.canTransitionTo(newStatus.name)) {
       throw new BusinessRuleError(
-        `Cannot transition from ${currentStatus.name} to ${newStatus.name}. Valid transitions: ${validTransitions.join(', ')}`
+        `Cannot transition from ${currentStatus.name} to ${newStatus.name}`,
       );
     }
-  }
-
-  /**
-   * Obtiene las transiciones válidas para un estado dado
-   * @param currentStatusName - Nombre del estado actual
-   * @returns Array de nombres de estados válidos para transición
-   */
-  private getValidTransitions(currentStatusName: string): string[] {
-    // Mapeo de estados base a sus transiciones permitidas
-    const baseTransitions: Record<string, string[]> = {
-      // Estados PENDING y sus variaciones pueden transicionar a CONFIRMED o CANCELLED
-      'PENDING': ['CONFIRMED', 'CANCELLED'],
-      'Pendiente': ['CONFIRMED', 'CANCELLED'],
-      'Pending': ['CONFIRMED', 'CANCELLED'],
-      
-      // Estados CONFIRMED y sus variaciones
-      'CONFIRMED': ['IN_PROGRESS', 'CANCELLED', 'NO_SHOW'],
-      'Confirmada': ['IN_PROGRESS', 'CANCELLED', 'NO_SHOW'],
-      'Confirmado': ['IN_PROGRESS', 'CANCELLED', 'NO_SHOW'],
-      'Confirmed': ['IN_PROGRESS', 'CANCELLED', 'NO_SHOW'],
-      
-      // Estados IN_PROGRESS y sus variaciones
-      'IN_PROGRESS': ['COMPLETED', 'CANCELLED'],
-      'En Progreso': ['COMPLETED', 'CANCELLED'],
-      'In Progress': ['COMPLETED', 'CANCELLED'],
-      
-      // Estados terminales (no permiten transiciones)
-      'COMPLETED': [],
-      'Completada': [],
-      'Completado': [],
-      'Completed': [],
-      'CANCELLED': [],
-      'Cancelada': [],
-      'Cancelado': [],
-      'Cancelled': [],
-      'NO_SHOW': [],
-      'No Se Presento': [],
-      'No Show': [],
-    };
-
-    const allowedTransitions = baseTransitions[currentStatusName] || [];
-    
-    // Expandir las transiciones base para incluir todas las variaciones
-    const expandedTransitions: string[] = [];
-    
-    allowedTransitions.forEach(baseStatus => {
-      switch(baseStatus) {
-        case 'CONFIRMED':
-          expandedTransitions.push('CONFIRMED', 'Confirmada', 'Confirmado', 'Confirmed');
-          break;
-        case 'CANCELLED':
-          expandedTransitions.push('CANCELLED', 'Cancelada', 'Cancelado', 'Cancelled');
-          break;
-        case 'IN_PROGRESS':
-          expandedTransitions.push('IN_PROGRESS', 'En Progreso', 'In Progress');
-          break;
-        case 'COMPLETED':
-          expandedTransitions.push('COMPLETED', 'Completada', 'Completado', 'Completed');
-          break;
-        case 'NO_SHOW':
-          expandedTransitions.push('NO_SHOW', 'No Se Presento', 'No Show');
-          break;
-        default:
-          expandedTransitions.push(baseStatus);
-      }
-    });
-
-    return [...new Set(expandedTransitions)]; // Eliminar duplicados
   }
 
   /**
@@ -327,28 +245,10 @@ export class ConfirmAppointment {
    */
   private addConfirmationNotes(
     appointment: Appointment,
-    confirmDto: ConfirmAppointmentDto,
-    requesterId: string,
+    _confirmDto: ConfirmAppointmentDto,
+    _requesterId: string,
   ): void {
-    // En una implementación real, esto podría ser un campo separado
-    // o una tabla de historial de confirmaciones
-    
-    const confirmationInfo = {
-      notes: confirmDto.notes,
-      confirmedBy: confirmDto.confirmedBy || requesterId,
-      confirmedAt: new Date().toISOString(),
-      requesterId: requesterId,
-      notifyClient: confirmDto.notifyClient !== false
-    };
-
-    // Actualizar fecha de modificación para reflejar el cambio
     appointment.updatedAt = new Date();
-    
-    // Log de la información de confirmación para auditoría
-    console.log('Appointment confirmed:', {
-      appointmentId: appointment.id,
-      confirmationInfo
-    });
   }
 
   /**

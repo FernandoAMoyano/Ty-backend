@@ -206,17 +206,15 @@ export class CreateAppointment {
   }
 
   /**
-   * Obtiene el estado \"pendiente\" por defecto para nuevas citas
+   * Obtiene el estado "PENDING" por defecto para nuevas citas
    * @returns Promise con el estado pendiente
    * @throws NotFoundError si no se encuentra el estado
    */
   private async getPendingStatus() {
-    // Buscar estado por nombre \"Pendiente\"
-    const statuses = await this.appointmentStatusRepository.findAll();
-    const pendingStatus = statuses.find(status => status.name === 'Pendiente');
-    
+    const pendingStatus = await this.appointmentStatusRepository.findByName('PENDING');
+
     if (!pendingStatus) {
-      throw new NotFoundError('AppointmentStatus', 'Pendiente');
+      throw new NotFoundError('AppointmentStatus', 'PENDING');
     }
 
     return pendingStatus;

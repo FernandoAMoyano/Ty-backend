@@ -9,6 +9,7 @@ import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
+import { AppointmentStatusEnum } from '../../domain/entities/AppointmentStatus';
 
 /**
  * Caso de uso para actualizar una cita existente
@@ -49,10 +50,7 @@ export class UpdateAppointment {
     // 4. Validar reglas de negocio para actualización
     await this.validateUpdateRules(appointment, updateDto);
 
-    // 5. Crear una copia para comparación
-    const originalAppointment = { ...appointment };
-
-    // 6. Aplicar cambios paso a paso con validaciones
+    // 5. Aplicar cambios paso a paso con validaciones
     if (updateDto.dateTime) {
       await this.updateDateTime(appointment, updateDto.dateTime);
     }
@@ -72,13 +70,10 @@ export class UpdateAppointment {
     // 7. Validar conflictos después de todos los cambios
     await this.validateNoConflicts(appointment, appointmentId);
 
-    // 8. Registrar información de auditoría
-    this.addUpdateAuditInfo(appointment, updateDto, requesterId, originalAppointment);
-
-    // 9. Guardar los cambios
+    // 8. Guardar los cambios
     const updatedAppointment = await this.appointmentRepository.update(appointment);
 
-    // 10. Mapear a DTO de respuesta
+    // 9. Mapear a DTO de respuesta
     return this.mapToAppointmentDto(updatedAppointment);
   }
 
@@ -230,8 +225,13 @@ export class UpdateAppointment {
   ): Promise<void> {
     // 1. Verificar que la cita no esté en un estado terminal
     const currentStatus = await this.appointmentStatusRepository.findById(appointment.statusId);
-    
-    if (currentStatus && ['COMPLETED', 'CANCELLED', 'NO_SHOW', 'Completada', 'Cancelada', 'No Se Presento'].includes(currentStatus.name)) {
+    const terminalStatuses = [
+      AppointmentStatusEnum.COMPLETED,
+      AppointmentStatusEnum.CANCELLED,
+      AppointmentStatusEnum.NO_SHOW,
+    ];
+
+    if (currentStatus && terminalStatuses.includes(currentStatus.name as AppointmentStatusEnum)) {
       throw new BusinessRuleError('Cannot update appointments in terminal status');
     }
 
@@ -328,72 +328,6 @@ export class UpdateAppointment {
         'Please choose a different time or stylist.'
       );
     }
-  }
-
-  /**
-   * Agrega información de auditoría a la cita
-   */
-  private addUpdateAuditInfo(
-    appointment: Appointment,
-    updateDto: UpdateAppointmentDto,
-    requesterId: string,
-    originalAppointment: any,
-  ): void {
-    // Información de auditoría para logging
-    const updateInfo = {
-      updatedBy: requesterId,
-      updatedAt: new Date().toISOString(),
-      changes: this.calculateChanges(originalAppointment, appointment),
-      notes: updateDto.notes,
-      reason: updateDto.reason,
-      notifyClient: updateDto.notifyClient !== false
-    };
-
-    // Log de la información de actualización para auditoría
-    console.log('Appointment updated:', {
-      appointmentId: appointment.id,
-      updateInfo
-    });
-
-    // Actualizar fecha de modificación
-    appointment.updatedAt = new Date();
-  }
-
-  /**
-   * Calcula los cambios realizados para auditoría
-   */
-  private calculateChanges(original: any, updated: Appointment): Record<string, any> {
-    const changes: Record<string, any> = {};
-
-    if (original.dateTime.getTime() !== updated.dateTime.getTime()) {
-      changes.dateTime = {
-        from: original.dateTime.toISOString(),
-        to: updated.dateTime.toISOString()
-      };
-    }
-
-    if (original.duration !== updated.duration) {
-      changes.duration = {
-        from: original.duration,
-        to: updated.duration
-      };
-    }
-
-    if (original.stylistId !== updated.stylistId) {
-      changes.stylistId = {
-        from: original.stylistId,
-        to: updated.stylistId
-      };
-    }
-
-    if (JSON.stringify(original.serviceIds) !== JSON.stringify(updated.serviceIds)) {
-      changes.serviceIds = {
-        from: original.serviceIds,
-        to: updated.serviceIds
-      };
-    }
-
-    return changes;
   }
 
   /**
