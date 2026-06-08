@@ -126,7 +126,7 @@ describe('Holidays Integration Tests', () => {
           date: '2099-12-25',
         });
 
-      expect(response.status).toBe(500); // O 409 si se implementa ConflictError
+      expect(response.status).toBe(409);
       expect(response.body.success).toBe(false);
     });
 
