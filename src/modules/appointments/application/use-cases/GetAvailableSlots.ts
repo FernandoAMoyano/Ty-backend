@@ -305,10 +305,10 @@ export class GetAvailableSlots {
       if (slotStart < appointmentEnd && slotEnd > appointmentStart) {
         return {
           hasConflict: true,
-          reason: `Conflicto con cita existente (${appointmentStart.toLocaleTimeString('es-ES', {
+          reason: `Conflict with existing appointment at ${appointmentStart.toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
-          })})`,
+          })}`,
         };
       }
     }

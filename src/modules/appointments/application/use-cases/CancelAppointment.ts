@@ -243,35 +243,10 @@ export class CancelAppointment {
    */
   private addCancellationReason(
     appointment: Appointment,
-    cancelDto: CancelAppointmentDto,
-    requesterId: string,
+    _cancelDto: CancelAppointmentDto,
+    _requesterId: string,
   ): void {
-    // En la implementación real, esto podría ser un campo separado
-    // Por ahora, lo agregamos como metadata que puede ser almacenada
-    // en un campo JSON o en una tabla relacionada
-
-    const cancellationInfo = {
-      reason: cancelDto.reason,
-      cancelledBy: cancelDto.cancelledBy || 'user',
-      cancelledAt: new Date().toISOString(),
-      requesterId: requesterId,
-      notifyClient: cancelDto.notifyClient !== false,
-    };
-
-    // Agregar la información de cancelación a la entidad
-    // En una implementación real, podrías:
-    // 1. Tener un campo 'cancellationMetadata' en la entidad Appointment
-    // 2. Crear una entidad separada CancellationHistory
-    // 3. Usar un sistema de eventos para registrar la cancelación
-
-    // Por ahora, actualizamos la fecha de actualización para reflejar el cambio
     appointment.updatedAt = new Date();
-
-    // Log de la información de cancelación para auditoría
-    console.log('Appointment cancelled:', {
-      appointmentId: appointment.id,
-      cancellationInfo,
-    });
   }
 
   /**
