@@ -1,9 +1,11 @@
-import { v4 as uuidv4 } from 'uuid';
+import { generateUuid } from '../../../../shared/utils/uuid';
 import { ScheduleException } from '../../domain/entities/ScheduleException';
 import { IScheduleExceptionRepository } from '../../domain/repositories/IScheduleExceptionRepository';
 import { IHolidayRepository } from '../../domain/repositories/IHolidayRepository';
 import { CreateScheduleExceptionDto } from '../dto/request/CreateScheduleExceptionDto';
 import { ScheduleExceptionResponseDto, ScheduleExceptionResponseMapper } from '../dto/response/ScheduleExceptionResponseDto';
+import { ConflictError } from '../../../../shared/exceptions/ConflictError';
+import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 
 /**
  * Caso de uso: Crear excepción de horario
@@ -28,20 +30,20 @@ export class CreateScheduleException {
     // Verificar si ya existe una excepción en esa fecha
     const existingException = await this.scheduleExceptionRepository.existsByDate(exceptionDate);
     if (existingException) {
-      throw new Error('Ya existe una excepción de horario en la fecha especificada');
+      throw new ConflictError('A schedule exception already exists on the specified date');
     }
 
     // Si se proporciona holidayId, verificar que exista
     if (dto.holidayId) {
       const holiday = await this.holidayRepository.findById(dto.holidayId);
       if (!holiday) {
-        throw new Error('El feriado especificado no existe');
+        throw new NotFoundError('Holiday', dto.holidayId);
       }
     }
 
     // Crear la entidad
     const exception = ScheduleException.create(
-      uuidv4(),
+      generateUuid(),
       exceptionDate,
       dto.startTimeException,
       dto.endTimeException,

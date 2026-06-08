@@ -1,8 +1,9 @@
-import { v4 as uuidv4 } from 'uuid';
+import { generateUuid } from '../../../../shared/utils/uuid';
 import { Holiday } from '../../domain/entities/Holiday';
 import { IHolidayRepository } from '../../domain/repositories/IHolidayRepository';
 import { CreateHolidayDto } from '../dto/request/CreateHolidayDto';
 import { HolidayResponseDto, HolidayResponseMapper } from '../dto/response/HolidayResponseDto';
+import { ConflictError } from '../../../../shared/exceptions/ConflictError';
 
 /**
  * Caso de uso: Crear feriado
@@ -23,12 +24,12 @@ export class CreateHoliday {
     // Verificar si ya existe un feriado en esa fecha
     const existingHoliday = await this.holidayRepository.existsByDate(date);
     if (existingHoliday) {
-      throw new Error('Ya existe un feriado en la fecha especificada');
+      throw new ConflictError('A holiday already exists on the specified date');
     }
 
     // Crear la entidad
     const holiday = Holiday.create(
-      uuidv4(),
+      generateUuid(),
       dto.name,
       date,
       dto.description,
