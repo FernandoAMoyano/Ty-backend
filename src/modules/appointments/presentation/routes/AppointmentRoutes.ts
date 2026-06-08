@@ -30,9 +30,7 @@ export class AppointmentRoutes {
    * - POST /appointments/:id/cancel - Cancelar cita (requiere autenticación)
    * - GET /appointments/client/:clientId - Obtener citas de cliente (requiere autenticación)
    * - GET /appointments/stylist/:stylistId - Obtener citas de estilista (requiere autenticación)
-   * - GET /appointments/date-range - Obtener citas por rango de fechas (requiere autenticación)
    * - GET /appointments/available-slots - Obtener slots disponibles (público)
-   * - GET /appointments/statistics - Obtener estadísticas (requiere autenticación)
    */
   private setupRoutes(): void {
     // Ruta pública para consultar disponibilidad
@@ -53,24 +51,6 @@ export class AppointmentRoutes {
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.appointmentController.createAppointment(req, res).catch(next);
-      },
-    );
-
-    this.router.get(
-      '/statistics',
-      this.authMiddleware.authenticate.bind(this.authMiddleware),
-      (req: Request, res: Response, next: NextFunction) => {
-        this.appointmentController.getAppointmentStatistics(req, res).catch(next);
-      },
-    );
-
-    this.router.get(
-      '/date-range',
-      this.authMiddleware.authenticate.bind(this.authMiddleware),
-      AppointmentValidations.appointmentsByDateRange,
-      ValidationMiddleware.handleValidationErrors,
-      (req: Request, res: Response, next: NextFunction) => {
-        this.appointmentController.getAppointmentsByDateRange(req, res).catch(next);
       },
     );
 
