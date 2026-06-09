@@ -29,17 +29,14 @@ export class GetUnreadCount {
       NotificationStatusEnum.READ,
     );
 
-    // 3. Contar notificaciones no leídas
-    let unreadCount = 0;
-
-    if (readStatus) {
-      // Obtener todas las notificaciones del usuario y contar las que no están en READ
-      const allNotifications = await this.notificationRepository.findByUserId(userId);
-      unreadCount = allNotifications.filter(n => n.statusId !== readStatus.id).length;
-    } else {
+    if (!readStatus) {
       // Si no existe el estado READ, todas las notificaciones son "no leídas"
-      unreadCount = await this.notificationRepository.countByUserId(userId);
+      return { unreadCount: await this.notificationRepository.countByUserId(userId) };
     }
+
+    // 3. Obtener notificaciones y contar las no leídas en memoria
+    const allNotifications = await this.notificationRepository.findByUserId(userId);
+    const unreadCount = allNotifications.filter((n) => n.statusId !== readStatus.id).length;
 
     return { unreadCount };
   }

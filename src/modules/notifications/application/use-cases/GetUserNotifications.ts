@@ -36,17 +36,16 @@ export class GetUserNotifications {
     let notifications: Notification[];
 
     if (filters?.unreadOnly) {
-      // Obtener el estado READ para excluirlo
       const readStatus = await this.notificationStatusRepository.findByName(
         NotificationStatusEnum.READ,
       );
-      
+
+      const allUserNotifications = await this.notificationRepository.findByUserId(userId);
+
       if (readStatus) {
-        // Obtener todas las notificaciones y filtrar las no leídas
-        const allNotifications = await this.notificationRepository.findByUserId(userId);
-        notifications = allNotifications.filter(n => n.statusId !== readStatus.id);
+        notifications = allUserNotifications.filter((n) => n.statusId !== readStatus.id);
       } else {
-        notifications = await this.notificationRepository.findByUserId(userId);
+        notifications = allUserNotifications;
       }
     } else if (filters?.type) {
       notifications = await this.notificationRepository.findByUserIdAndType(userId, filters.type);
