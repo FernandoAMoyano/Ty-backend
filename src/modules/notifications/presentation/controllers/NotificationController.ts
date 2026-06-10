@@ -6,38 +6,36 @@ import { MarkNotificationAsRead } from '../../application/use-cases/MarkNotifica
 import { GetUnreadCount } from '../../application/use-cases/GetUnreadCount';
 import { NotificationTypeEnum } from '../../domain/entities/Notification';
 import { AuthenticatedRequest } from '../../../auth/presentation/middleware/AuthMiddleware';
+import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
 
 /**
  * Controlador para el módulo de notificaciones
  * @description Maneja las peticiones HTTP relacionadas con notificaciones
+ * Los errores burbujean al errorHandler global via .catch(next) en NotificationRoutes
  */
 export class NotificationController {
   constructor(
-    private createNotificationUseCase: CreateNotification,
-    private getUserNotificationsUseCase: GetUserNotifications,
-    private getNotificationByIdUseCase: GetNotificationById,
-    private markNotificationAsReadUseCase: MarkNotificationAsRead,
-    private getUnreadCountUseCase: GetUnreadCount,
-  ) {
-    // Bind de métodos para mantener el contexto
-    this.create = this.create.bind(this);
-    this.getMyNotifications = this.getMyNotifications.bind(this);
-    this.getById = this.getById.bind(this);
-    this.markAsRead = this.markAsRead.bind(this);
-    this.markSingleAsRead = this.markSingleAsRead.bind(this);
-    this.markAllAsRead = this.markAllAsRead.bind(this);
-    this.getUnreadCountHandler = this.getUnreadCountHandler.bind(this);
-  }
+    private _createNotification: CreateNotification,
+    private _getUserNotifications: GetUserNotifications,
+    private _getNotificationById: GetNotificationById,
+    private _markNotificationAsRead: MarkNotificationAsRead,
+    private _getUnreadCount: GetUnreadCount,
+  ) {}
 
   /**
    * Crea una nueva notificación
-   * @description POST /notifications
-   * @access Admin only
+   * @route POST /notifications
+   * @param req - Request autenticado con datos de la notificación en el body
+   * @param res - Response de Express
+   * @returns Promise con la notificación creada
+   * @responseStatus 201 - Notificación creada exitosamente
+   * @throws ValidationError si los datos no son válidos
+   * @throws NotFoundError si el estado inicial no existe
    */
-  async create(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+  async create(req: AuthenticatedRequest, res: Response): Promise<Response> {
     const { type, message, userId } = req.body;
 
-    const notification = await this.createNotificationUseCase.execute({
+    const notification = await this._createNotification.execute({
       type: type as NotificationTypeEnum,
       message,
       userId,
@@ -52,27 +50,25 @@ export class NotificationController {
 
   /**
    * Obtiene las notificaciones del usuario autenticado
-   * @description GET /notifications
-   * @access Authenticated user
+   * @route GET /notifications
+   * @param req - Request autenticado con filtros opcionales en query params
+   * @param res - Response de Express
+   * @returns Promise con la lista paginada de notificaciones
+   * @responseStatus 200 - Notificaciones obtenidas exitosamente
+   * @throws UnauthorizedError si no hay autenticación
+   * @throws ValidationError si los filtros no son válidos
    */
-  async getMyNotifications(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'User ID not found in request',
-        code: 'UNAUTHORIZED',
-      });
+  async getMyNotifications(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId) {
+      throw new UnauthorizedError('Authentication required');
     }
 
-    // Extraer filtros de query params
     const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
     const unreadOnly = req.query.unreadOnly === 'true';
     const type = req.query.type as NotificationTypeEnum | undefined;
 
-    const result = await this.getUserNotificationsUseCase.execute(userId, {
+    const result = await this._getUserNotifications.execute(req.user.userId, {
       page,
       limit,
       unreadOnly,
@@ -88,22 +84,22 @@ export class NotificationController {
 
   /**
    * Obtiene una notificación por su ID
-   * @description GET /notifications/:id
-   * @access Owner only
+   * @route GET /notifications/:id
+   * @param req - Request autenticado con ID de notificación en params
+   * @param res - Response de Express
+   * @returns Promise con los datos de la notificación
+   * @responseStatus 200 - Notificación obtenida exitosamente
+   * @throws UnauthorizedError si no hay autenticación
+   * @throws NotFoundError si la notificación no existe
+   * @throws BusinessRuleError si el usuario no tiene permiso
    */
-  async getById(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
-    const { id } = req.params;
-    const requesterId = req.user?.userId;
-
-    if (!requesterId) {
-      return res.status(401).json({
-        success: false,
-        message: 'User ID not found in request',
-        code: 'UNAUTHORIZED',
-      });
+  async getById(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId) {
+      throw new UnauthorizedError('Authentication required');
     }
 
-    const notification = await this.getNotificationByIdUseCase.execute(id, requesterId);
+    const { id } = req.params;
+    const notification = await this._getNotificationById.execute(id, req.user.userId);
 
     return res.status(200).json({
       success: true,
@@ -114,25 +110,25 @@ export class NotificationController {
 
   /**
    * Marca una o múltiples notificaciones como leídas
-   * @description POST /notifications/mark-read
-   * @access Owner only
+   * @route POST /notifications/mark-read
+   * @param req - Request autenticado con IDs de notificaciones en el body
+   * @param res - Response de Express
+   * @returns Promise con el conteo de notificaciones actualizadas
+   * @responseStatus 200 - Notificaciones marcadas como leídas exitosamente
+   * @throws UnauthorizedError si no hay autenticación
+   * @throws NotFoundError si alguna notificación no existe
+   * @throws BusinessRuleError si el usuario no tiene permiso
    */
-  async markAsRead(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
-    const requesterId = req.user?.userId;
-
-    if (!requesterId) {
-      return res.status(401).json({
-        success: false,
-        message: 'User ID not found in request',
-        code: 'UNAUTHORIZED',
-      });
+  async markAsRead(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId) {
+      throw new UnauthorizedError('Authentication required');
     }
 
     const { notificationId, notificationIds } = req.body;
 
-    const result = await this.markNotificationAsReadUseCase.execute(
+    const result = await this._markNotificationAsRead.execute(
       { notificationId, notificationIds },
-      requesterId,
+      req.user.userId,
     );
 
     return res.status(200).json({
@@ -144,22 +140,22 @@ export class NotificationController {
 
   /**
    * Marca una notificación específica como leída por ID
-   * @description PATCH /notifications/:id/read
-   * @access Owner only
+   * @route PATCH /notifications/:id/read
+   * @param req - Request autenticado con ID de notificación en params
+   * @param res - Response de Express
+   * @returns Promise con los datos de la notificación actualizada
+   * @responseStatus 200 - Notificación marcada como leída exitosamente
+   * @throws UnauthorizedError si no hay autenticación
+   * @throws NotFoundError si la notificación no existe
+   * @throws BusinessRuleError si el usuario no tiene permiso
    */
-  async markSingleAsRead(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
-    const { id } = req.params;
-    const requesterId = req.user?.userId;
-
-    if (!requesterId) {
-      return res.status(401).json({
-        success: false,
-        message: 'User ID not found in request',
-        code: 'UNAUTHORIZED',
-      });
+  async markSingleAsRead(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId) {
+      throw new UnauthorizedError('Authentication required');
     }
 
-    const notification = await this.markNotificationAsReadUseCase.executeSingle(id, requesterId);
+    const { id } = req.params;
+    const notification = await this._markNotificationAsRead.executeSingle(id, req.user.userId);
 
     return res.status(200).json({
       success: true,
@@ -170,24 +166,20 @@ export class NotificationController {
 
   /**
    * Marca todas las notificaciones del usuario como leídas
-   * @description POST /notifications/mark-all-read
-   * @access Owner only
+   * @route POST /notifications/mark-all-read
+   * @param req - Request autenticado
+   * @param res - Response de Express
+   * @returns Promise con el conteo de notificaciones actualizadas
+   * @responseStatus 200 - Todas las notificaciones marcadas como leídas
+   * @throws UnauthorizedError si no hay autenticación
    */
-  async markAllAsRead(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
-    const requesterId = req.user?.userId;
-
-    if (!requesterId) {
-      return res.status(401).json({
-        success: false,
-        message: 'User ID not found in request',
-        code: 'UNAUTHORIZED',
-      });
+  async markAllAsRead(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId) {
+      throw new UnauthorizedError('Authentication required');
     }
 
-    // Obtener todas las notificaciones del usuario
-    const notifications = await this.getUserNotificationsUseCase.execute(requesterId, { limit: 1000 });
-    
-    const notificationIds = notifications.notifications.map(n => n.id);
+    const notifications = await this._getUserNotifications.execute(req.user.userId, { limit: 1000 });
+    const notificationIds = notifications.notifications.map((n) => n.id);
 
     if (notificationIds.length === 0) {
       return res.status(200).json({
@@ -197,9 +189,9 @@ export class NotificationController {
       });
     }
 
-    const result = await this.markNotificationAsReadUseCase.execute(
+    const result = await this._markNotificationAsRead.execute(
       { notificationIds },
-      requesterId,
+      req.user.userId,
     );
 
     return res.status(200).json({
@@ -211,21 +203,19 @@ export class NotificationController {
 
   /**
    * Obtiene el conteo de notificaciones no leídas del usuario
-   * @description GET /notifications/unread-count
-   * @access Owner only
+   * @route GET /notifications/unread-count
+   * @param req - Request autenticado
+   * @param res - Response de Express
+   * @returns Promise con el conteo de notificaciones no leídas
+   * @responseStatus 200 - Conteo obtenido exitosamente
+   * @throws UnauthorizedError si no hay autenticación
    */
-  async getUnreadCountHandler(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'User ID not found in request',
-        code: 'UNAUTHORIZED',
-      });
+  async getUnreadCountHandler(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId) {
+      throw new UnauthorizedError('Authentication required');
     }
 
-    const result = await this.getUnreadCountUseCase.execute(userId);
+    const result = await this._getUnreadCount.execute(req.user.userId);
 
     return res.status(200).json({
       success: true,
