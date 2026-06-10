@@ -47,7 +47,7 @@ describe('CreatePayment Use Case', () => {
       appointmentId: '123e4567-e89b-12d3-a456-426614174001',
     };
 
-    await expect(createPayment.execute(dto)).rejects.toThrow('El monto debe ser mayor a 0');
+    await expect(createPayment.execute(dto)).rejects.toThrow('Amount must be greater than 0');
     expect(mockPaymentRepository.save).not.toHaveBeenCalled();
   });
 
@@ -58,7 +58,7 @@ describe('CreatePayment Use Case', () => {
       appointmentId: '123e4567-e89b-12d3-a456-426614174001',
     };
 
-    await expect(createPayment.execute(dto)).rejects.toThrow('El monto debe ser mayor a 0');
+    await expect(createPayment.execute(dto)).rejects.toThrow('Amount must be greater than 0');
     expect(mockPaymentRepository.save).not.toHaveBeenCalled();
   });
 

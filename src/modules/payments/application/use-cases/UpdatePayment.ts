@@ -28,13 +28,12 @@ export class UpdatePayment {
     }
 
     if (!payment.isPending) {
-      throw new BusinessRuleError('Solo se pueden actualizar pagos pendientes');
+      throw new BusinessRuleError('Only pending payments can be updated');
     }
 
-    // Actualizar monto si se proporciona
     if (dto.amount !== undefined) {
       if (dto.amount <= 0) {
-        throw new BusinessRuleError('El monto debe ser mayor a 0');
+        throw new BusinessRuleError('Amount must be greater than 0');
       }
       payment.updateAmount(dto.amount);
     }

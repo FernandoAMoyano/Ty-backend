@@ -27,7 +27,7 @@ export class ProcessPayment {
     }
 
     if (!payment.isPending) {
-      throw new BusinessRuleError('Solo se pueden procesar pagos pendientes');
+      throw new BusinessRuleError('Only pending payments can be processed');
     }
 
     // Marcar como completado

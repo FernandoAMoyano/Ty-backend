@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../src/app';
 import { loginAsAdmin, loginTestUser } from '../setup/helpers';
-import { testPrisma } from '../setup/database';
+import { createTestAppointment } from '../setup/appointments-helpers';
 
 // Tests E2E para el flujo completo del módulo de Pagos
 describe('Payments Complete Flow E2E Tests', () => {
@@ -25,20 +25,9 @@ describe('Payments Complete Flow E2E Tests', () => {
     });
     stylistToken = stylistResponse.body.data.token;
 
-    // Obtener una cita existente para los tests
-    const appointment = await testPrisma.appointment.findFirst({
-      where: {
-        status: {
-          name: 'Confirmada',
-        },
-      },
-    });
-
-    if (appointment) {
-      testAppointmentId = appointment.id;
-    } else {
-      throw new Error('No se encontró una cita para los tests E2E de pagos');
-    }
+    // Crear una cita de prueba para los tests E2E
+    const appointment = await createTestAppointment();
+    testAppointmentId = appointment.id;
   });
 
   /**

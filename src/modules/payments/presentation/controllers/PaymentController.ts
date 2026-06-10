@@ -14,40 +14,34 @@ import { AuthenticatedRequest } from '../../../auth/presentation/middleware/Auth
 /**
  * Controlador para el módulo de pagos
  * @description Maneja las peticiones HTTP relacionadas con pagos
+ * Los errores burbujean al errorHandler global via .catch(next) en PaymentRoutes
  */
 export class PaymentController {
   constructor(
-    private createPaymentUseCase: CreatePayment,
-    private getPaymentByIdUseCase: GetPaymentById,
-    private getPaymentsByAppointmentUseCase: GetPaymentsByAppointment,
-    private getPaymentsUseCase: GetPayments,
-    private processPaymentUseCase: ProcessPayment,
-    private refundPaymentUseCase: RefundPayment,
-    private cancelPaymentUseCase: CancelPayment,
-    private getPaymentStatisticsUseCase: GetPaymentStatistics,
-    private updatePaymentUseCase: UpdatePayment,
-  ) {
-    // Bind de métodos para mantener el contexto
-    this.create = this.create.bind(this);
-    this.getById = this.getById.bind(this);
-    this.getByAppointment = this.getByAppointment.bind(this);
-    this.getAll = this.getAll.bind(this);
-    this.process = this.process.bind(this);
-    this.refund = this.refund.bind(this);
-    this.cancel = this.cancel.bind(this);
-    this.getStatistics = this.getStatistics.bind(this);
-    this.update = this.update.bind(this);
-  }
+    private _createPayment: CreatePayment,
+    private _getPaymentById: GetPaymentById,
+    private _getPaymentsByAppointment: GetPaymentsByAppointment,
+    private _getPayments: GetPayments,
+    private _processPayment: ProcessPayment,
+    private _refundPayment: RefundPayment,
+    private _cancelPayment: CancelPayment,
+    private _getPaymentStatistics: GetPaymentStatistics,
+    private _updatePayment: UpdatePayment,
+  ) {}
 
   /**
    * Crea un nuevo pago
-   * @description POST /payments
-   * @access Admin, Stylist
+   * @route POST /payments
+   * @param req - Request autenticado con datos del pago en el body
+   * @param res - Response de Express
+   * @returns Promise con el pago creado
+   * @responseStatus 201 - Pago creado exitosamente
+   * @throws ValidationError si el monto no es válido
    */
-  async create(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+  async create(req: AuthenticatedRequest, res: Response): Promise<Response> {
     const { amount, appointmentId } = req.body;
 
-    const payment = await this.createPaymentUseCase.execute({
+    const payment = await this._createPayment.execute({
       amount,
       appointmentId,
     });
@@ -55,53 +49,63 @@ export class PaymentController {
     return res.status(201).json({
       success: true,
       data: payment,
-      message: 'Pago creado exitosamente',
+      message: 'Payment created successfully',
     });
   }
 
   /**
    * Obtiene un pago por ID
-   * @description GET /payments/:id
-   * @access Admin, Stylist, Owner
+   * @route GET /payments/:id
+   * @param req - Request con ID del pago en params
+   * @param res - Response de Express
+   * @returns Promise con el pago encontrado
+   * @responseStatus 200 - Pago obtenido exitosamente
+   * @throws NotFoundError si el pago no existe
    */
-  async getById(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+  async getById(req: AuthenticatedRequest, res: Response): Promise<Response> {
     const { id } = req.params;
 
-    const payment = await this.getPaymentByIdUseCase.execute(id);
+    const payment = await this._getPaymentById.execute(id);
 
     return res.status(200).json({
       success: true,
       data: payment,
-      message: 'Pago obtenido exitosamente',
+      message: 'Payment retrieved successfully',
     });
   }
 
   /**
    * Obtiene los pagos de una cita
-   * @description GET /payments/appointment/:appointmentId
-   * @access Admin, Stylist, Owner
+   * @route GET /payments/appointment/:appointmentId
+   * @param req - Request con ID de la cita en params
+   * @param res - Response de Express
+   * @returns Promise con la lista de pagos de la cita
+   * @responseStatus 200 - Pagos obtenidos exitosamente
    */
-  async getByAppointment(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+  async getByAppointment(req: AuthenticatedRequest, res: Response): Promise<Response> {
     const { appointmentId } = req.params;
 
-    const payments = await this.getPaymentsByAppointmentUseCase.execute(appointmentId);
+    const payments = await this._getPaymentsByAppointment.execute(appointmentId);
 
     return res.status(200).json({
       success: true,
       data: payments,
-      message: 'Pagos de la cita obtenidos exitosamente',
+      message: 'Appointment payments retrieved successfully',
     });
   }
 
   /**
-   * Obtiene todos los pagos con filtros
-   * @description GET /payments
-   * @access Admin
+   * Obtiene todos los pagos con filtros opcionales
+   * @route GET /payments
+   * @param req - Request con filtros en query params
+   * @param res - Response de Express
+   * @returns Promise con la lista paginada de pagos
+   * @responseStatus 200 - Pagos obtenidos exitosamente
    */
-  async getAll(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+  async getAll(req: AuthenticatedRequest, res: Response): Promise<Response> {
     const { page, limit, status, appointmentId, startDate, endDate } = req.query;
 
-    const result = await this.getPaymentsUseCase.execute({
+    const result = await this._getPayments.execute({
       page: page ? parseInt(page as string, 10) : undefined,
       limit: limit ? parseInt(limit as string, 10) : undefined,
       status: status as PaymentStatusEnum | undefined,
@@ -113,20 +117,25 @@ export class PaymentController {
     return res.status(200).json({
       success: true,
       data: result,
-      message: 'Pagos obtenidos exitosamente',
+      message: 'Payments retrieved successfully',
     });
   }
 
   /**
    * Procesa (completa) un pago
-   * @description POST /payments/:id/process
-   * @access Admin, Stylist
+   * @route POST /payments/:id/process
+   * @param req - Request con ID del pago y método de pago en el body
+   * @param res - Response de Express
+   * @returns Promise con el pago procesado
+   * @responseStatus 200 - Pago procesado exitosamente
+   * @throws NotFoundError si el pago no existe
+   * @throws BusinessRuleError si el pago no puede ser procesado
    */
-  async process(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+  async process(req: AuthenticatedRequest, res: Response): Promise<Response> {
     const { id } = req.params;
     const { method } = req.body;
 
-    const payment = await this.processPaymentUseCase.execute({
+    const payment = await this._processPayment.execute({
       paymentId: id,
       method: method as PaymentMethodEnum,
     });
@@ -134,20 +143,25 @@ export class PaymentController {
     return res.status(200).json({
       success: true,
       data: payment,
-      message: 'Pago procesado exitosamente',
+      message: 'Payment processed successfully',
     });
   }
 
   /**
-   * Reembolsa un pago
-   * @description POST /payments/:id/refund
-   * @access Admin
+   * Reembolsa un pago completado
+   * @route POST /payments/:id/refund
+   * @param req - Request con ID del pago y razón del reembolso en el body
+   * @param res - Response de Express
+   * @returns Promise con el pago reembolsado
+   * @responseStatus 200 - Pago reembolsado exitosamente
+   * @throws NotFoundError si el pago no existe
+   * @throws BusinessRuleError si el pago no puede ser reembolsado
    */
-  async refund(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+  async refund(req: AuthenticatedRequest, res: Response): Promise<Response> {
     const { id } = req.params;
     const { reason } = req.body;
 
-    const payment = await this.refundPaymentUseCase.execute({
+    const payment = await this._refundPayment.execute({
       paymentId: id,
       reason,
     });
@@ -155,62 +169,77 @@ export class PaymentController {
     return res.status(200).json({
       success: true,
       data: payment,
-      message: 'Pago reembolsado exitosamente',
+      message: 'Payment refunded successfully',
     });
   }
 
   /**
-   * Cancela un pago
-   * @description POST /payments/:id/cancel
-   * @access Admin, Stylist
+   * Cancela un pago pendiente
+   * @route POST /payments/:id/cancel
+   * @param req - Request con ID del pago en params
+   * @param res - Response de Express
+   * @returns Promise con el pago cancelado
+   * @responseStatus 200 - Pago cancelado exitosamente
+   * @throws NotFoundError si el pago no existe
+   * @throws BusinessRuleError si el pago no puede ser cancelado
    */
-  async cancel(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+  async cancel(req: AuthenticatedRequest, res: Response): Promise<Response> {
     const { id } = req.params;
 
-    const payment = await this.cancelPaymentUseCase.execute(id);
+    const payment = await this._cancelPayment.execute(id);
 
     return res.status(200).json({
       success: true,
       data: payment,
-      message: 'Pago cancelado exitosamente',
+      message: 'Payment cancelled successfully',
     });
   }
 
   /**
-   * Obtiene estadísticas de pagos
-   * @description GET /payments/statistics
-   * @access Admin
+   * Obtiene estadísticas de pagos en un período
+   * @route GET /payments/statistics
+   * @param req - Request con fechas de inicio y fin en query params
+   * @param res - Response de Express
+   * @returns Promise con las estadísticas de pagos
+   * @responseStatus 200 - Estadísticas obtenidas exitosamente
    */
-  async getStatistics(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+  async getStatistics(req: AuthenticatedRequest, res: Response): Promise<Response> {
     const { startDate, endDate } = req.query;
 
-    const start = startDate ? new Date(startDate as string) : new Date(new Date().setMonth(new Date().getMonth() - 1));
+    const start = startDate
+      ? new Date(startDate as string)
+      : new Date(new Date().setMonth(new Date().getMonth() - 1));
     const end = endDate ? new Date(endDate as string) : new Date();
 
-    const statistics = await this.getPaymentStatisticsUseCase.execute(start, end);
+    const statistics = await this._getPaymentStatistics.execute(start, end);
 
     return res.status(200).json({
       success: true,
       data: statistics,
-      message: 'Estadísticas obtenidas exitosamente',
+      message: 'Payment statistics retrieved successfully',
     });
   }
 
   /**
-   * Actualiza un pago
-   * @description PUT /payments/:id
-   * @access Admin
+   * Actualiza un pago pendiente
+   * @route PUT /payments/:id
+   * @param req - Request con ID del pago y datos a actualizar en el body
+   * @param res - Response de Express
+   * @returns Promise con el pago actualizado
+   * @responseStatus 200 - Pago actualizado exitosamente
+   * @throws NotFoundError si el pago no existe
+   * @throws BusinessRuleError si el pago no puede ser actualizado
    */
-  async update(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+  async update(req: AuthenticatedRequest, res: Response): Promise<Response> {
     const { id } = req.params;
     const { amount } = req.body;
 
-    const payment = await this.updatePaymentUseCase.execute(id, { amount });
+    const payment = await this._updatePayment.execute(id, { amount });
 
     return res.status(200).json({
       success: true,
       data: payment,
-      message: 'Pago actualizado exitosamente',
+      message: 'Payment updated successfully',
     });
   }
 }
