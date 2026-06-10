@@ -127,7 +127,7 @@ export class Payment {
    */
   markAsCompleted(method: PaymentMethodEnum): void {
     if (this._status !== PaymentStatusEnum.PENDING) {
-      throw new Error('Solo se pueden completar pagos pendientes');
+      throw new Error('Only pending payments can be completed');
     }
     this._status = PaymentStatusEnum.COMPLETED;
     this._method = method;
@@ -140,7 +140,7 @@ export class Payment {
    */
   markAsFailed(): void {
     if (this._status !== PaymentStatusEnum.PENDING) {
-      throw new Error('Solo se pueden marcar como fallidos pagos pendientes');
+      throw new Error('Only pending payments can be marked as failed');
     }
     this._status = PaymentStatusEnum.FAILED;
     this._updatedAt = new Date();
@@ -151,7 +151,7 @@ export class Payment {
    */
   refund(): void {
     if (this._status !== PaymentStatusEnum.COMPLETED) {
-      throw new Error('Solo se pueden reembolsar pagos completados');
+      throw new Error('Only completed payments can be refunded');
     }
     this._status = PaymentStatusEnum.REFUNDED;
     this._updatedAt = new Date();
@@ -163,10 +163,10 @@ export class Payment {
    */
   updateAmount(amount: number): void {
     if (this._status !== PaymentStatusEnum.PENDING) {
-      throw new Error('Solo se puede actualizar el monto de pagos pendientes');
+      throw new Error('Only pending payments can be updated');
     }
     if (amount <= 0) {
-      throw new Error('El monto debe ser mayor a 0');
+      throw new Error('Amount must be greater than 0');
     }
     this._amount = amount;
     this._updatedAt = new Date();
@@ -197,7 +197,7 @@ export class Payment {
     appointmentId: string,
   ): Payment {
     if (amount <= 0) {
-      throw new Error('El monto debe ser mayor a 0');
+      throw new Error('Amount must be greater than 0');
     }
 
     return new Payment({
