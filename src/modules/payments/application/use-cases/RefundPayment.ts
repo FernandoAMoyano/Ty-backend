@@ -27,7 +27,7 @@ export class RefundPayment {
     }
 
     if (!payment.isCompleted) {
-      throw new BusinessRuleError('Solo se pueden reembolsar pagos completados');
+      throw new BusinessRuleError('Only completed payments can be refunded');
     }
 
     // Marcar como reembolsado

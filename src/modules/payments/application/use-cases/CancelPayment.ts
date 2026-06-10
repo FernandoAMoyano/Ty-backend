@@ -26,7 +26,7 @@ export class CancelPayment {
     }
 
     if (!payment.isPending) {
-      throw new BusinessRuleError('Solo se pueden cancelar pagos pendientes');
+      throw new BusinessRuleError('Only pending payments can be cancelled');
     }
 
     // Marcar como fallido
