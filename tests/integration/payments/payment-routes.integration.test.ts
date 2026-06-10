@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../../src/app';
 import { loginAsAdmin, loginTestUser } from '../../setup/helpers';
-import { testPrisma } from '../../setup/database';
+import { createTestAppointment } from '../../setup/appointments-helpers';
 
 // Tests de integración para el módulo de Pagos
 describe('Payments Integration Tests', () => {
@@ -26,20 +26,9 @@ describe('Payments Integration Tests', () => {
     });
     stylistToken = stylistResponse.body.data.token;
 
-    // Obtener una cita existente para los tests
-    const appointment = await testPrisma.appointment.findFirst({
-      where: {
-        status: {
-          name: 'Confirmada',
-        },
-      },
-    });
-
-    if (appointment) {
-      testAppointmentId = appointment.id;
-    } else {
-      throw new Error('No se encontró una cita para los tests');
-    }
+    // Crear una cita de prueba para los tests
+    const appointment = await createTestAppointment();
+    testAppointmentId = appointment.id;
   });
 
   // POST /api/v1/payments - Crear pago (Admin, Stylist)
