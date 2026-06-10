@@ -122,7 +122,7 @@ describe('Payment Entity', () => {
       });
 
       expect(() => payment.markAsCompleted(PaymentMethodEnum.CASH)).toThrow(
-        'Solo se pueden completar pagos pendientes',
+        'Only pending payments can be completed',
       );
     });
 
@@ -163,7 +163,7 @@ describe('Payment Entity', () => {
       });
 
       expect(() => payment.markAsFailed()).toThrow(
-        'Solo se pueden marcar como fallidos pagos pendientes',
+        'Only pending payments can be marked as failed',
       );
     });
   });
@@ -188,7 +188,7 @@ describe('Payment Entity', () => {
     it('should throw error if payment is not completed', () => {
       const payment = new Payment(validPaymentProps);
 
-      expect(() => payment.refund()).toThrow('Solo se pueden reembolsar pagos completados');
+      expect(() => payment.refund()).toThrow('Only completed payments can be refunded');
     });
 
     // Debería lanzar error si el pago ya fue reembolsado
@@ -198,7 +198,7 @@ describe('Payment Entity', () => {
         status: PaymentStatusEnum.REFUNDED,
       });
 
-      expect(() => payment.refund()).toThrow('Solo se pueden reembolsar pagos completados');
+      expect(() => payment.refund()).toThrow('Only completed payments can be refunded');
     });
   });
 
@@ -223,7 +223,7 @@ describe('Payment Entity', () => {
       });
 
       expect(() => payment.updateAmount(200)).toThrow(
-        'Solo se puede actualizar el monto de pagos pendientes',
+        'Only pending payments can be updated',
       );
     });
 
@@ -231,14 +231,14 @@ describe('Payment Entity', () => {
     it('should throw error if amount is 0', () => {
       const payment = new Payment(validPaymentProps);
 
-      expect(() => payment.updateAmount(0)).toThrow('El monto debe ser mayor a 0');
+      expect(() => payment.updateAmount(0)).toThrow('Amount must be greater than 0');
     });
 
     // Debería lanzar error si el monto es negativo
     it('should throw error if amount is negative', () => {
       const payment = new Payment(validPaymentProps);
 
-      expect(() => payment.updateAmount(-50)).toThrow('El monto debe ser mayor a 0');
+      expect(() => payment.updateAmount(-50)).toThrow('Amount must be greater than 0');
     });
   });
 
@@ -288,7 +288,7 @@ describe('Payment Entity', () => {
           0,
           '123e4567-e89b-12d3-a456-426614174001',
         ),
-      ).toThrow('El monto debe ser mayor a 0');
+      ).toThrow('Amount must be greater than 0');
     });
 
     // Debería lanzar error si el monto es negativo
@@ -299,7 +299,7 @@ describe('Payment Entity', () => {
           -100,
           '123e4567-e89b-12d3-a456-426614174001',
         ),
-      ).toThrow('El monto debe ser mayor a 0');
+      ).toThrow('Amount must be greater than 0');
     });
   });
 
