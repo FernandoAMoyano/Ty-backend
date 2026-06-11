@@ -1,5 +1,5 @@
-import { AppointmentRepository } from '../../domain/repositories/AppointmentRepository';
-import { ScheduleRepository } from '../../domain/repositories/ScheduleRepository';
+import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
+import { IScheduleRepository } from '../../domain/repositories/IScheduleRepository';
 import { GetAvailableSlotsDto } from '../dto/request/GetAvailableSlotsDto';
 import { DayAvailabilityDto, AvailableSlotDto } from '../dto/response/AvailableSlotDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
@@ -12,8 +12,8 @@ import { DayOfWeekEnum } from '../../domain/entities/Schedule';
  */
 export class GetAvailableSlots {
   constructor(
-    private appointmentRepository: AppointmentRepository,
-    private scheduleRepository: ScheduleRepository,
+    private appointmentRepository: IAppointmentRepository,
+    private scheduleRepository: IScheduleRepository,
   ) {}
 
   /**

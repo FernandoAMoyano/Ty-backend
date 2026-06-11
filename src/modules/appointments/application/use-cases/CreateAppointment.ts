@@ -1,10 +1,10 @@
 import { Appointment } from '../../domain/entities/Appointment';
-import { AppointmentRepository } from '../../domain/repositories/AppointmentRepository';
-import { AppointmentStatusRepository } from '../../domain/repositories/AppointmentStatusRepository';
-import { ScheduleRepository } from '../../domain/repositories/ScheduleRepository';
-import { ServiceRepository } from '../../../services/domain/repositories/ServiceRepository';
-import { StylistRepository } from '../../../services/domain/repositories/StylistRepository';
-import { ClientRepository } from '../../../auth/domain/repositories/Client';
+import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
+import { IAppointmentStatusRepository } from '../../domain/repositories/IAppointmentStatusRepository';
+import { IScheduleRepository } from '../../domain/repositories/IScheduleRepository';
+import { IServiceRepository } from '../../../services/domain/repositories/IServiceRepository';
+import { IStylistRepository } from '../../../services/domain/repositories/IStylistRepository';
+import { IClientRepository } from '../../../auth/domain/repositories/IClientRepository';
 import { CreateAppointmentDto } from '../dto/request/CreateAppointmentDto';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
@@ -17,12 +17,12 @@ import { ConflictError } from '../../../../shared/exceptions/ConflictError';
  */
 export class CreateAppointment {
   constructor(
-    private appointmentRepository: AppointmentRepository,
-    private appointmentStatusRepository: AppointmentStatusRepository,
-    private scheduleRepository: ScheduleRepository,
-    private serviceRepository: ServiceRepository,
-    private stylistRepository: StylistRepository,
-    private clientRepository: ClientRepository,
+    private appointmentRepository: IAppointmentRepository,
+    private appointmentStatusRepository: IAppointmentStatusRepository,
+    private scheduleRepository: IScheduleRepository,
+    private serviceRepository: IServiceRepository,
+    private stylistRepository: IStylistRepository,
+    private clientRepository: IClientRepository,
   ) {}
 
   /**

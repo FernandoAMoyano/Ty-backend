@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { Appointment } from '../../domain/entities/Appointment';
-import { AppointmentRepository } from '../../domain/repositories/AppointmentRepository';
+import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
 
 /**
  * Implementación de AppointmentRepository usando Prisma ORM
  * Proporciona persistencia de datos de citas en base de datos relacional
  */
-export class PrismaAppointmentRepository implements AppointmentRepository {
+export class PrismaAppointmentRepository implements IAppointmentRepository {
   /**
    * Constructor que inyecta el cliente Prisma
    * @param prisma - Cliente Prisma para acceso a base de datos

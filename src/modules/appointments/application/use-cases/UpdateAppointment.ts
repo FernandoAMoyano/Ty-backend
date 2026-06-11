@@ -1,8 +1,8 @@
 import { Appointment } from '../../domain/entities/Appointment';
-import { AppointmentRepository } from '../../domain/repositories/AppointmentRepository';
-import { AppointmentStatusRepository } from '../../domain/repositories/AppointmentStatusRepository';
-import { ServiceRepository } from '../../../services/domain/repositories/ServiceRepository';
-import { StylistRepository } from '../../../services/domain/repositories/StylistRepository';
+import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
+import { IAppointmentStatusRepository } from '../../domain/repositories/IAppointmentStatusRepository';
+import { IServiceRepository } from '../../../services/domain/repositories/IServiceRepository';
+import { IStylistRepository } from '../../../services/domain/repositories/IStylistRepository';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { UpdateAppointmentDto } from '../dto/request/UpdateAppointmentDto';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
@@ -17,10 +17,10 @@ import { AppointmentStatusEnum } from '../../domain/entities/AppointmentStatus';
  */
 export class UpdateAppointment {
   constructor(
-    private appointmentRepository: AppointmentRepository,
-    private appointmentStatusRepository: AppointmentStatusRepository,
-    private serviceRepository: ServiceRepository,
-    private stylistRepository: StylistRepository,
+    private appointmentRepository: IAppointmentRepository,
+    private appointmentStatusRepository: IAppointmentStatusRepository,
+    private serviceRepository: IServiceRepository,
+    private stylistRepository: IStylistRepository,
   ) {}
 
   /**
