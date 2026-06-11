@@ -1,8 +1,8 @@
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { isValidPhone } from '../../../../shared/utils/validation';
-import { RoleRepository } from '../../domain/repositories/RoleRepository';
-import { UserRepository } from '../../domain/repositories/User';
+import { IUserRepository } from '../../domain/repositories/IUserRepository';
+import { IRoleRepository } from '../../domain/repositories/IRoleRepository';
 import { UpdateProfileDto } from '../dto/request/UpdateProfileDto';
 import { UserDto } from '../dto/response/UserDto';
 
@@ -12,8 +12,8 @@ import { UserDto } from '../dto/response/UserDto';
  */
 export class UpdateUserProfile {
   constructor(
-    private userRepository: UserRepository,
-    private roleRepository: RoleRepository,
+    private userRepository: IUserRepository,
+    private roleRepository: IRoleRepository,
   ) {}
 
   /**

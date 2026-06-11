@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { Client } from '../../domain/entities/Client';
-import { ClientRepository } from '../../domain/repositories/Client';
+import { IClientRepository } from '../../domain/repositories/IClientRepository';
 
 /**
  * Implementación de ClientRepository usando Prisma ORM
  * Proporciona persistencia de datos de clientes en base de datos relacional
  */
-export class PrismaClientRepository implements ClientRepository {
+export class PrismaClientRepository implements IClientRepository {
   /**
    * Constructor que inyecta el cliente Prisma
    * @param prisma - Cliente Prisma para acceso a base de datos

@@ -2,8 +2,8 @@ import { JwtService, JwtPayload } from '../services/JwtService';
 import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { LoginResponseDto } from '../dto/response/LoginResponseDto';
-import { UserRepository } from '../../domain/repositories/User';
-import { RoleRepository } from '../../domain/repositories/RoleRepository';
+import { IUserRepository } from '../../domain/repositories/IUserRepository';
+import { IRoleRepository } from '../../domain/repositories/IRoleRepository';
 
 /**
  * Caso de uso para renovar tokens de acceso usando un refresh token
@@ -11,8 +11,8 @@ import { RoleRepository } from '../../domain/repositories/RoleRepository';
  */
 export class RefreshToken {
   constructor(
-    private userRepository: UserRepository,
-    private roleRepository: RoleRepository,
+    private userRepository: IUserRepository,
+    private roleRepository: IRoleRepository,
     private jwtService: JwtService,
   ) {}
 

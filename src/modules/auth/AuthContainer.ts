@@ -10,8 +10,8 @@ import { UpdateUserProfile } from './application/use-cases/UpdateUserProfile';
 import { ChangeUserPassword } from './application/use-cases/ChangeUserPassword';
 import { PrismaUserRepository } from './infrastructure/persistence/PrismaUserRepository';
 import { PrismaRoleRepository } from './infrastructure/persistence/PrismaRolRepository';
-import { RoleRepository } from './domain/repositories/RoleRepository';
-import { UserRepository } from './domain/repositories/User';
+import { IUserRepository } from './domain/repositories/IUserRepository';
+import { IRoleRepository } from './domain/repositories/IRoleRepository';
 import { BcryptHashService } from './infrastructure/services/BcryptHashService';
 import { JwtTokenService } from './infrastructure/services/JwtTokenService';
 import { JwtService } from './application/services/JwtService';
@@ -65,8 +65,8 @@ export class AuthContainer {
    */
   private setupDependencies(): void {
     // Repositories
-    const userRepository: UserRepository = new PrismaUserRepository(this.prisma);
-    const roleRepository: RoleRepository = new PrismaRoleRepository(this.prisma);
+    const userRepository: IUserRepository = new PrismaUserRepository(this.prisma);
+    const roleRepository: IRoleRepository = new PrismaRoleRepository(this.prisma);
 
     // Services
     const hashService: HashService = new BcryptHashService();

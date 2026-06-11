@@ -1,4 +1,4 @@
-import { UserRepository } from '../../domain/repositories/User';
+import { IUserRepository } from '../../domain/repositories/IUserRepository';
 import { HashService } from '../services/HashService';
 import { JwtPayload, JwtService } from '../services/JwtService';
 import { LoginDto } from '../dto/request/LoginDto';
@@ -14,7 +14,7 @@ import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedErr
  */
 export class LoginUser {
   constructor(
-    private userRepository: UserRepository,
+    private userRepository: IUserRepository,
     private hashService: HashService,
     private jwtService: JwtService,
   ) {}

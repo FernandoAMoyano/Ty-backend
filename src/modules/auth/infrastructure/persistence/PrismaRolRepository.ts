@@ -1,13 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import { Role } from '../../domain/entities/Role';
-import { RoleRepository } from '../../domain/repositories/RoleRepository';
+import { IRoleRepository } from '../../domain/repositories/IRoleRepository';
 import { RoleName } from '@prisma/client';
 
 /**
  * Implementación de RoleRepository usando Prisma ORM
  * Proporciona persistencia de datos de roles en base de datos relacional
  */
-export class PrismaRoleRepository implements RoleRepository {
+export class PrismaRoleRepository implements IRoleRepository {
   /**
    * Constructor que inyecta el cliente Prisma
    * @param prisma - Cliente Prisma para acceso a base de datos
