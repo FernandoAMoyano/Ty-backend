@@ -1,7 +1,7 @@
 import { StylistService } from '../../domain/entities/StylistService';
-import { StylistServiceRepository } from '../../domain/repositories/StylistServiceRepository';
-import { ServiceRepository } from '../../domain/repositories/ServiceRepository';
-import { StylistRepository } from '../../domain/repositories/StylistRepository';
+import { IStylistServiceRepository } from '../../domain/repositories/IStylistServiceRepository';
+import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
+import { IStylistRepository } from '../../domain/repositories/IStylistRepository';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { UpdateStylistServiceDto } from '../dto/request/UpdateStylistServiceDto';
@@ -13,9 +13,9 @@ import { StylistServiceDto } from '../dto/response/StylistServiceDto';
  */
 export class UpdateStylistService {
   constructor(
-    private stylistServiceRepository: StylistServiceRepository,
-    private serviceRepository: ServiceRepository,
-    private stylistRepository: StylistRepository,
+    private stylistServiceRepository: IStylistServiceRepository,
+    private serviceRepository: IServiceRepository,
+    private stylistRepository: IStylistRepository,
   ) {}
 
   /**
@@ -27,7 +27,11 @@ export class UpdateStylistService {
    * @throws NotFoundError si la asignación o el servicio no existen
    * @throws ValidationError si los datos son inválidos
    */
-  async execute(stylistId: string, serviceId: string, updateDto: UpdateStylistServiceDto): Promise<StylistServiceDto> {
+  async execute(
+    stylistId: string,
+    serviceId: string,
+    updateDto: UpdateStylistServiceDto,
+  ): Promise<StylistServiceDto> {
     if (updateDto.customPrice !== undefined && updateDto.customPrice < 0) {
       throw new ValidationError('Custom price cannot be negative');
     }
@@ -36,7 +40,10 @@ export class UpdateStylistService {
       throw new ValidationError('At least one field must be provided for update');
     }
 
-    const stylistService = await this.stylistServiceRepository.findByStylistAndService(stylistId, serviceId);
+    const stylistService = await this.stylistServiceRepository.findByStylistAndService(
+      stylistId,
+      serviceId,
+    );
     if (!stylistService) {
       throw new NotFoundError('Stylist service assignment', `${stylistId}-${serviceId}`);
     }
@@ -60,7 +67,13 @@ export class UpdateStylistService {
 
     const updatedAssignment = await this.stylistServiceRepository.update(stylistService);
 
-    return this.mapToDto(updatedAssignment, service.name, service.description, service.duration, service.price);
+    return this.mapToDto(
+      updatedAssignment,
+      service.name,
+      service.description,
+      service.duration,
+      service.price,
+    );
   }
 
   /**
@@ -72,7 +85,13 @@ export class UpdateStylistService {
    * @param basePrice - Precio base del servicio
    * @returns Objeto DTO con los datos completos de la asignación
    */
-  private mapToDto(stylistService: StylistService, serviceName: string, serviceDescription: string, baseDuration: number, basePrice: number): StylistServiceDto {
+  private mapToDto(
+    stylistService: StylistService,
+    serviceName: string,
+    serviceDescription: string,
+    baseDuration: number,
+    basePrice: number,
+  ): StylistServiceDto {
     return {
       stylistId: stylistService.stylistId,
       serviceId: stylistService.serviceId,

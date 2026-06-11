@@ -1,4 +1,4 @@
-import { CategoryRepository } from '../../domain/repositories/CategoryRepository';
+import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
@@ -11,7 +11,7 @@ import { Category } from '../../domain/entities/Category';
  * Valida los datos de entrada, verifica unicidad del nombre y actualiza la entidad
  */
 export class UpdateCategory {
-  constructor(private categoryRepository: CategoryRepository) {}
+  constructor(private categoryRepository: ICategoryRepository) {}
 
   /**
    * Ejecuta la actualización de una categoría existente

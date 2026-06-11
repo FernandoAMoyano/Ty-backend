@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { Category } from '../../domain/entities/Category';
-import { CategoryRepository } from '../../domain/repositories/CategoryRepository';
+import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
 
 /**
  * Implementación de CategoryRepository usando Prisma ORM
@@ -12,7 +12,7 @@ import { CategoryRepository } from '../../domain/repositories/CategoryRepository
  * @param id - ID único de la categoría a buscar
  * @returns Promise que resuelve con la categoría encontrada o null si no existe
  */
-export class PrismaCategoryRepository implements CategoryRepository {
+export class PrismaCategoryRepository implements ICategoryRepository {
   constructor(private prisma: PrismaClient) {}
 
   async findById(id: string): Promise<Category | null> {

@@ -1,6 +1,6 @@
 import { Service } from '../../domain/entities/Service';
-import { ServiceRepository } from '../../domain/repositories/ServiceRepository';
-import { CategoryRepository } from '../../domain/repositories/CategoryRepository';
+import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
+import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
@@ -13,8 +13,8 @@ import { ServiceDto } from '../dto/response/ServiceDto';
  */
 export class UpdateService {
   constructor(
-    private serviceRepository: ServiceRepository,
-    private categoryRepository: CategoryRepository,
+    private serviceRepository: IServiceRepository,
+    private categoryRepository: ICategoryRepository,
   ) {}
 
   /**
@@ -35,7 +35,10 @@ export class UpdateService {
       throw new ValidationError('Service name is too long (max 150 characters)');
     }
 
-    if (updateDto.description !== undefined && (!updateDto.description || updateDto.description.trim().length === 0)) {
+    if (
+      updateDto.description !== undefined &&
+      (!updateDto.description || updateDto.description.trim().length === 0)
+    ) {
       throw new ValidationError('Service description cannot be empty');
     }
 
@@ -99,7 +102,13 @@ export class UpdateService {
       service.updateCategory(updateDto.categoryId);
     }
 
-    if (updateDto.name || updateDto.description || updateDto.duration !== undefined || updateDto.durationVariation !== undefined || updateDto.price !== undefined) {
+    if (
+      updateDto.name ||
+      updateDto.description ||
+      updateDto.duration !== undefined ||
+      updateDto.durationVariation !== undefined ||
+      updateDto.price !== undefined
+    ) {
       service.updateDetails(
         updateDto.name ?? service.name,
         updateDto.description ?? service.description,

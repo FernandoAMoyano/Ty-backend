@@ -1,8 +1,8 @@
 import { StylistService } from '../../domain/entities/StylistService';
-import { StylistServiceRepository } from '../../domain/repositories/StylistServiceRepository';
-import { ServiceRepository } from '../../domain/repositories/ServiceRepository';
-import { StylistRepository } from '../../domain/repositories/StylistRepository';
-import { UserRepository } from '../../../auth/domain/repositories/User';
+import { IStylistServiceRepository } from '../../domain/repositories/IStylistServiceRepository';
+import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
+import { IStylistRepository } from '../../domain/repositories/IStylistRepository';
+import { IUserRepository } from '../../../auth/domain/repositories/IUserRepository';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
@@ -14,10 +14,10 @@ import { StylistServiceDto } from '../dto/response/StylistServiceDto';
  */
 export class AssignServiceToStylist {
   constructor(
-    private stylistServiceRepository: StylistServiceRepository,
-    private serviceRepository: ServiceRepository,
-    private userRepository: UserRepository,
-    private stylistRepository: StylistRepository,
+    private stylistServiceRepository: IStylistServiceRepository,
+    private serviceRepository: IServiceRepository,
+    private userRepository: IUserRepository,
+    private stylistRepository: IStylistRepository,
   ) {}
 
   /**
@@ -65,10 +65,20 @@ export class AssignServiceToStylist {
       throw new ConflictError('Service is already assigned to this stylist');
     }
 
-    const stylistService = StylistService.create(stylistId, assignDto.serviceId, assignDto.customPrice);
+    const stylistService = StylistService.create(
+      stylistId,
+      assignDto.serviceId,
+      assignDto.customPrice,
+    );
     const savedAssignment = await this.stylistServiceRepository.save(stylistService);
 
-    return this.mapToDto(savedAssignment, service.name, service.description, service.duration, service.price);
+    return this.mapToDto(
+      savedAssignment,
+      service.name,
+      service.description,
+      service.duration,
+      service.price,
+    );
   }
 
   /**
@@ -80,7 +90,13 @@ export class AssignServiceToStylist {
    * @param basePrice - Precio base del servicio
    * @returns Objeto DTO con los datos completos de la asignación
    */
-  private mapToDto(stylistService: StylistService, serviceName: string, serviceDescription: string, baseDuration: number, basePrice: number): StylistServiceDto {
+  private mapToDto(
+    stylistService: StylistService,
+    serviceName: string,
+    serviceDescription: string,
+    baseDuration: number,
+    basePrice: number,
+  ): StylistServiceDto {
     return {
       stylistId: stylistService.stylistId,
       serviceId: stylistService.serviceId,

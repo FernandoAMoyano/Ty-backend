@@ -35,10 +35,10 @@ import { GetServiceWithStylists } from './application/use-cases/GetServiceWithSt
 import { GetAvailableServicesForClient } from './application/use-cases/GetAvailableServicesForClient';
 
 // Repositorios de dominio (interfaces)
-import { CategoryRepository } from './domain/repositories/CategoryRepository';
-import { ServiceRepository } from './domain/repositories/ServiceRepository';
-import { StylistServiceRepository } from './domain/repositories/StylistServiceRepository';
-import { StylistRepository } from './domain/repositories/StylistRepository';
+import { ICategoryRepository } from './domain/repositories/ICategoryRepository';
+import { IServiceRepository } from './domain/repositories/IServiceRepository';
+import { IStylistServiceRepository } from './domain/repositories/IStylistServiceRepository';
+import { IStylistRepository } from './domain/repositories/IStylistRepository';
 
 // Repositorios de infraestructura (implementaciones)
 import { PrismaCategoryRepository } from './infrastructure/persistence/PrismaCategoryRepository';
@@ -47,7 +47,7 @@ import { PrismaStylistServiceRepository } from './infrastructure/persistence/Pri
 import { PrismaStylistRepository } from './infrastructure/persistence/PrismaStylistRepository';
 
 // Importar userRepository desde el módulo de autenticación
-import { UserRepository } from '../auth/domain/repositories/User';
+import { IUserRepository } from '../auth/domain/repositories/IUserRepository';
 import { PrismaUserRepository } from '../auth/infrastructure/persistence/PrismaUserRepository';
 
 // Capa de presentación
@@ -130,11 +130,11 @@ export class ServicesContainer {
    */
   private setupDependencies(): void {
     // 1. Repositorios
-    const categoryRepository: CategoryRepository = new PrismaCategoryRepository(this.prisma);
-    const serviceRepository: ServiceRepository = new PrismaServiceRepository(this.prisma);
-    const stylistServiceRepository: StylistServiceRepository = new PrismaStylistServiceRepository(this.prisma);
-    const stylistRepository: StylistRepository = new PrismaStylistRepository(this.prisma);
-    const userRepository: UserRepository = new PrismaUserRepository(this.prisma);
+    const categoryRepository: ICategoryRepository = new PrismaCategoryRepository(this.prisma);
+    const serviceRepository: IServiceRepository = new PrismaServiceRepository(this.prisma);
+    const stylistServiceRepository: IStylistServiceRepository = new PrismaStylistServiceRepository(this.prisma);
+    const stylistRepository: IStylistRepository = new PrismaStylistRepository(this.prisma);
+    const userRepository: IUserRepository = new PrismaUserRepository(this.prisma);
 
     // 2. Use cases — Categorías
     this._createCategory = new CreateCategory(categoryRepository);

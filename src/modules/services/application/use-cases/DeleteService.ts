@@ -1,11 +1,11 @@
-import { ServiceRepository } from '../../domain/repositories/ServiceRepository';
+import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 
 /**
  * Caso de uso para eliminar permanentemente un servicio del sistema
  */
 export class DeleteService {
-  constructor(private serviceRepository: ServiceRepository) {}
+  constructor(private serviceRepository: IServiceRepository) {}
 
   /**
    * Ejecuta la eliminación de un servicio

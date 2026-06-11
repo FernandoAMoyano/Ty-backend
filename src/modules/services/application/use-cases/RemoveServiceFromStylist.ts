@@ -1,11 +1,11 @@
-import { StylistServiceRepository } from '../../domain/repositories/StylistServiceRepository';
+import { IStylistServiceRepository } from '../../domain/repositories/IStylistServiceRepository';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 
 /**
  * Caso de uso para remover la asignación de un servicio de un estilista
  */
 export class RemoveServiceFromStylist {
-  constructor(private stylistServiceRepository: StylistServiceRepository) {}
+  constructor(private stylistServiceRepository: IStylistServiceRepository) {}
 
   /**
    * Ejecuta la eliminación de la asignación estilista-servicio

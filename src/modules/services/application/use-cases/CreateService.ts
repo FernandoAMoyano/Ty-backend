@@ -1,6 +1,6 @@
 import { Service } from '../../domain/entities/Service';
-import { ServiceRepository } from '../../domain/repositories/ServiceRepository';
-import { CategoryRepository } from '../../domain/repositories/CategoryRepository';
+import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
+import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
@@ -13,8 +13,8 @@ import { ServiceDto } from '../dto/response/ServiceDto';
  */
 export class CreateService {
   constructor(
-    private serviceRepository: ServiceRepository,
-    private categoryRepository: CategoryRepository,
+    private serviceRepository: IServiceRepository,
+    private categoryRepository: ICategoryRepository,
   ) {}
 
   /**

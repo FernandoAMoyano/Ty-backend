@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { StylistRepository } from '../../domain/repositories/StylistRepository';
+import { IStylistRepository } from '../../domain/repositories/IStylistRepository';
 import { Stylist } from '../../domain/entities/Stylist';
 
 /**
@@ -12,7 +12,7 @@ import { Stylist } from '../../domain/entities/Stylist';
  * @param id - ID único del estilista a buscar
  * @returns Promise que resuelve con el estilista encontrado o null si no existe
  */
-export class PrismaStylistRepository implements StylistRepository {
+export class PrismaStylistRepository implements IStylistRepository {
   constructor(private prisma: PrismaClient) {}
 
   async findById(id: string): Promise<Stylist | null> {
