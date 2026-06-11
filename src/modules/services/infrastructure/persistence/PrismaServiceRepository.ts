@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { Service } from '../../domain/entities/Service';
-import { ServiceRepository } from '../../domain/repositories/ServiceRepository';
+import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
 
 /**
  * Implementación de ServiceRepository usando Prisma ORM
@@ -12,7 +12,7 @@ import { ServiceRepository } from '../../domain/repositories/ServiceRepository';
  * @param id - ID único del servicio a buscar
  * @returns Promise que resuelve con el servicio encontrado o null si no existe
  */
-export class PrismaServiceRepository implements ServiceRepository {
+export class PrismaServiceRepository implements IServiceRepository {
   constructor(private prisma: PrismaClient) {}
 
   async findById(id: string): Promise<Service | null> {

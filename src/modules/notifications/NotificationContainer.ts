@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 
 // Repositories
-import { NotificationRepository } from './domain/repositories/NotificationRepository';
-import { NotificationStatusRepository } from './domain/repositories/NotificationStatusRepository';
+import { INotificationRepository } from './domain/repositories/INotificationRepository';
+import { INotificationStatusRepository } from './domain/repositories/INotificationStatusRepository';
 import { PrismaNotificationRepository } from './infrastructure/persistence/PrismaNotificationRepository';
 import { PrismaNotificationStatusRepository } from './infrastructure/persistence/PrismaNotificationStatusRepository';
 
@@ -28,8 +28,8 @@ export class NotificationContainer {
   private static instance: NotificationContainer;
 
   // Repositorios
-  private _notificationRepository: NotificationRepository;
-  private _notificationStatusRepository: NotificationStatusRepository;
+  private _notificationRepository: INotificationRepository;
+  private _notificationStatusRepository: INotificationStatusRepository;
 
   // Use Cases
   private _createNotification: CreateNotification;
@@ -190,7 +190,7 @@ export class NotificationContainer {
    * Obtiene el repositorio de notificaciones
    * @returns Instancia del repositorio de notificaciones
    */
-  get notificationRepository(): NotificationRepository {
+  get notificationRepository(): INotificationRepository {
     return this._notificationRepository;
   }
 
@@ -198,7 +198,7 @@ export class NotificationContainer {
    * Obtiene el repositorio de estados de notificación
    * @returns Instancia del repositorio de estados
    */
-  get notificationStatusRepository(): NotificationStatusRepository {
+  get notificationStatusRepository(): INotificationStatusRepository {
     return this._notificationStatusRepository;
   }
 }

@@ -1,4 +1,4 @@
-import { CategoryRepository } from '../../domain/repositories/CategoryRepository';
+import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
 import { CategoryDto } from '../dto/response/CategoryDto';
 import { Category } from '../../domain/entities/Category';
 
@@ -6,7 +6,7 @@ import { Category } from '../../domain/entities/Category';
  * Caso de uso para obtener solo las categorías activas del sistema
  */
 export class GetActiveCategories {
-  constructor(private categoryRepository: CategoryRepository) {}
+  constructor(private categoryRepository: ICategoryRepository) {}
 
   /**
    * Ejecuta la obtención de categorías activas

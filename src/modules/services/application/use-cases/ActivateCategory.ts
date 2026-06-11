@@ -1,4 +1,4 @@
-import { CategoryRepository } from '../../domain/repositories/CategoryRepository';
+import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { CategoryDto } from '../dto/response/CategoryDto';
 import { Category } from '../../domain/entities/Category';
@@ -7,7 +7,7 @@ import { Category } from '../../domain/entities/Category';
  * Caso de uso para activar una categoría previamente desactivada
  */
 export class ActivateCategory {
-  constructor(private categoryRepository: CategoryRepository) {}
+  constructor(private categoryRepository: ICategoryRepository) {}
 
   /**
    * Ejecuta la activación de una categoría

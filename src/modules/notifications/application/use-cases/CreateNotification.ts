@@ -1,6 +1,6 @@
 import { Notification, NotificationTypeEnum } from '../../domain/entities/Notification';
-import { NotificationRepository } from '../../domain/repositories/NotificationRepository';
-import { NotificationStatusRepository } from '../../domain/repositories/NotificationStatusRepository';
+import { INotificationRepository } from '../../domain/repositories/INotificationRepository';
+import { INotificationStatusRepository } from '../../domain/repositories/INotificationStatusRepository';
 import { NotificationStatusEnum } from '../../domain/entities/NotificationStatus';
 import { CreateNotificationDto } from '../dto/request/CreateNotificationDto';
 import { NotificationDto } from '../dto/response/NotificationDto';
@@ -13,8 +13,8 @@ import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
  */
 export class CreateNotification {
   constructor(
-    private notificationRepository: NotificationRepository,
-    private notificationStatusRepository: NotificationStatusRepository,
+    private notificationRepository: INotificationRepository,
+    private notificationStatusRepository: INotificationStatusRepository,
   ) {}
 
   /**

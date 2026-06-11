@@ -1,5 +1,5 @@
-import { NotificationRepository } from '../../domain/repositories/NotificationRepository';
-import { NotificationStatusRepository } from '../../domain/repositories/NotificationStatusRepository';
+import { INotificationRepository } from '../../domain/repositories/INotificationRepository';
+import { INotificationStatusRepository } from '../../domain/repositories/INotificationStatusRepository';
 import { NotificationStatusEnum } from '../../domain/entities/NotificationStatus';
 import { UnreadCountDto } from '../dto/response/NotificationDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
@@ -10,8 +10,8 @@ import { ValidationError } from '../../../../shared/exceptions/ValidationError';
  */
 export class GetUnreadCount {
   constructor(
-    private notificationRepository: NotificationRepository,
-    private notificationStatusRepository: NotificationStatusRepository,
+    private notificationRepository: INotificationRepository,
+    private notificationStatusRepository: INotificationStatusRepository,
   ) {}
 
   /**

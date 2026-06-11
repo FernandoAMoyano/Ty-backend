@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { Schedule, DayOfWeekEnum } from '../../domain/entities/Schedule';
-import { ScheduleRepository } from '../../domain/repositories/ScheduleRepository';
+import { IScheduleRepository } from '../../domain/repositories/IScheduleRepository';
 
 /**
  * Implementación de ScheduleRepository usando Prisma ORM
  * Proporciona persistencia de datos de horarios en base de datos relacional
  */
-export class PrismaScheduleRepository implements ScheduleRepository {
+export class PrismaScheduleRepository implements IScheduleRepository {
   /**
    * Constructor que inyecta el cliente Prisma
    * @param prisma - Cliente Prisma para acceso a base de datos

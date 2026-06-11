@@ -241,7 +241,29 @@ export async function cleanupTestAppointments(): Promise<void> {
 
     const testClientIds = testClients.map(client => client.id);
 
-    // Eliminar appointments por userId o clientId correcto
+    // Obtener IDs de appointments de prueba
+    const testAppointments = await testPrisma.appointment.findMany({
+      where: {
+        OR: [
+          { userId: { in: testUserIds } },
+          { clientId: { in: testClientIds } }
+        ]
+      },
+      select: { id: true }
+    });
+
+    const testAppointmentIds = testAppointments.map(a => a.id);
+
+    // Primero eliminar pagos que referencian esas citas
+    if (testAppointmentIds.length > 0) {
+      await testPrisma.payment.deleteMany({
+        where: {
+          appointmentId: { in: testAppointmentIds }
+        }
+      });
+    }
+
+    // Luego eliminar appointments
     await testPrisma.appointment.deleteMany({
       where: {
         OR: [

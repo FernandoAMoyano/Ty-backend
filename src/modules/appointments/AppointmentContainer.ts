@@ -4,9 +4,9 @@ import { AppointmentRoutes } from './presentation/routes/AppointmentRoutes';
 import { AuthMiddleware } from '../auth/presentation/middleware/AuthMiddleware';
 
 // Repositorios de dominio
-import { AppointmentRepository } from './domain/repositories/AppointmentRepository';
-import { AppointmentStatusRepository } from './domain/repositories/AppointmentStatusRepository';
-import { ScheduleRepository } from './domain/repositories/ScheduleRepository';
+import { IAppointmentRepository } from './domain/repositories/IAppointmentRepository';
+import { IAppointmentStatusRepository } from './domain/repositories/IAppointmentStatusRepository';
+import { IScheduleRepository } from './domain/repositories/IScheduleRepository';
 
 // Repositorios de infraestructura
 import { PrismaAppointmentRepository } from './infrastructure/persistence/PrismaAppointmentRepository';
@@ -14,9 +14,9 @@ import { PrismaAppointmentStatusRepository } from './infrastructure/persistence/
 import { PrismaScheduleRepository } from './infrastructure/persistence/PrismaScheduleRepository';
 
 // Repositorios de módulos externos
-import { ServiceRepository } from '../services/domain/repositories/ServiceRepository';
-import { StylistRepository } from '../services/domain/repositories/StylistRepository';
-import { ClientRepository } from '../auth/domain/repositories/Client';
+import { IServiceRepository } from '../services/domain/repositories/IServiceRepository';
+import { IStylistRepository } from '../services/domain/repositories/IStylistRepository';
+import { IClientRepository } from '../auth/domain/repositories/IClientRepository';
 import { PrismaServiceRepository } from '../services/infrastructure/persistence/PrismaServiceRepository';
 import { PrismaStylistRepository } from '../services/infrastructure/persistence/PrismaStylistRepository';
 import { PrismaClientRepository } from '../auth/infrastructure/persistence/PrismaClientRepository';
@@ -54,14 +54,14 @@ export class AppointmentContainer {
   private _updateAppointment: UpdateAppointment;
 
   // Repositorios - Módulo propio
-  private _appointmentRepository: AppointmentRepository;
-  private _appointmentStatusRepository: AppointmentStatusRepository;
-  private _scheduleRepository: ScheduleRepository;
+  private _appointmentRepository: IAppointmentRepository;
+  private _appointmentStatusRepository: IAppointmentStatusRepository;
+  private _scheduleRepository: IScheduleRepository;
 
   // Repositorios - Módulos externos
-  private _serviceRepository: ServiceRepository;
-  private _stylistRepository: StylistRepository;
-  private _clientRepository: ClientRepository;
+  private _serviceRepository: IServiceRepository;
+  private _stylistRepository: IStylistRepository;
+  private _clientRepository: IClientRepository;
 
   /**
    * Constructor privado que inicializa todas las dependencias del módulo
@@ -252,23 +252,23 @@ export class AppointmentContainer {
    * Obtiene el repositorio de citas configurado
    * @returns Instancia de AppointmentRepository para uso directo o testing
    */
-  get appointmentRepository(): AppointmentRepository {
+  get appointmentRepository(): IAppointmentRepository {
     return this._appointmentRepository;
   }
 
   /**
    * Obtiene el repositorio de estados de citas configurado
-   * @returns Instancia de AppointmentStatusRepository para uso directo o testing
+   * @returns Instancia de IAppointmentStatusRepository para uso directo o testing
    */
-  get appointmentStatusRepository(): AppointmentStatusRepository {
+  get appointmentStatusRepository(): IAppointmentStatusRepository {
     return this._appointmentStatusRepository;
   }
 
   /**
    * Obtiene el repositorio de horarios configurado
-   * @returns Instancia de ScheduleRepository para uso directo o testing
+   * @returns Instancia de IScheduleRepository para uso directo o testing
    */
-  get scheduleRepository(): ScheduleRepository {
+  get scheduleRepository(): IScheduleRepository {
     return this._scheduleRepository;
   }
 
@@ -276,15 +276,15 @@ export class AppointmentContainer {
    * Obtiene el repositorio de servicios configurado
    * @returns Instancia de ServiceRepository para uso directo o testing
    */
-  get serviceRepository(): ServiceRepository {
+  get serviceRepository(): IServiceRepository {
     return this._serviceRepository;
   }
 
   /**
    * Obtiene el repositorio de estilistas configurado
-   * @returns Instancia de StylistRepository para uso directo o testing
+   * @returns Instancia de IStylistRepository para uso directo o testing
    */
-  get stylistRepository(): StylistRepository {
+  get stylistRepository(): IStylistRepository {
     return this._stylistRepository;
   }
 
@@ -292,7 +292,7 @@ export class AppointmentContainer {
    * Obtiene el repositorio de clientes configurado
    * @returns Instancia de ClientRepository para uso directo o testing
    */
-  get clientRepository(): ClientRepository {
+  get clientRepository(): IClientRepository {
     return this._clientRepository;
   }
 }

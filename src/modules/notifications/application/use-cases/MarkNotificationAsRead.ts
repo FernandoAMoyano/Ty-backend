@@ -1,5 +1,5 @@
-import { NotificationRepository } from '../../domain/repositories/NotificationRepository';
-import { NotificationStatusRepository } from '../../domain/repositories/NotificationStatusRepository';
+import { INotificationRepository } from '../../domain/repositories/INotificationRepository';
+import { INotificationStatusRepository } from '../../domain/repositories/INotificationStatusRepository';
 import { NotificationStatusEnum } from '../../domain/entities/NotificationStatus';
 import { MarkAsReadDto } from '../dto/request/MarkAsReadDto';
 import { NotificationDto } from '../dto/response/NotificationDto';
@@ -13,8 +13,8 @@ import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleErr
  */
 export class MarkNotificationAsRead {
   constructor(
-    private notificationRepository: NotificationRepository,
-    private notificationStatusRepository: NotificationStatusRepository,
+    private notificationRepository: INotificationRepository,
+    private notificationStatusRepository: INotificationStatusRepository,
   ) {}
 
   /**

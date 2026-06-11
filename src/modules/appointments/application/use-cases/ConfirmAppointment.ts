@@ -1,6 +1,6 @@
 import { Appointment } from '../../domain/entities/Appointment';
-import { AppointmentRepository } from '../../domain/repositories/AppointmentRepository';
-import { AppointmentStatusRepository } from '../../domain/repositories/AppointmentStatusRepository';
+import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
+import { IAppointmentStatusRepository } from '../../domain/repositories/IAppointmentStatusRepository';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { ConfirmAppointmentDto } from '../dto/request/ConfirmAppointmentDto';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
@@ -14,8 +14,8 @@ import { AppointmentStatusEnum } from '../../domain/entities/AppointmentStatus';
  */
 export class ConfirmAppointment {
   constructor(
-    private appointmentRepository: AppointmentRepository,
-    private appointmentStatusRepository: AppointmentStatusRepository,
+    private appointmentRepository: IAppointmentRepository,
+    private appointmentStatusRepository: IAppointmentStatusRepository,
   ) {}
 
   /**

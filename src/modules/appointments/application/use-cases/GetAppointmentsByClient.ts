@@ -1,5 +1,5 @@
 import { Appointment } from '../../domain/entities/Appointment';
-import { AppointmentRepository } from '../../domain/repositories/AppointmentRepository';
+import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 
@@ -8,7 +8,7 @@ import { ValidationError } from '../../../../shared/exceptions/ValidationError';
  * Maneja la búsqueda y validación de existencia del cliente y retorna sus citas ordenadas
  */
 export class GetAppointmentsByClient {
-  constructor(private appointmentRepository: AppointmentRepository) {}
+  constructor(private appointmentRepository: IAppointmentRepository) {}
 
   /**
    * Ejecuta el caso de uso para obtener las citas de un cliente

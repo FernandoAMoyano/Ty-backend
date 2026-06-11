@@ -1,5 +1,5 @@
 import { Appointment } from '../../domain/entities/Appointment';
-import { AppointmentRepository } from '../../domain/repositories/AppointmentRepository';
+import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
@@ -9,7 +9,7 @@ import { ValidationError } from '../../../../shared/exceptions/ValidationError';
  * Maneja la búsqueda y validación de existencia de la cita
  */
 export class GetAppointmentById {
-  constructor(private appointmentRepository: AppointmentRepository) {}
+  constructor(private appointmentRepository: IAppointmentRepository) {}
 
   /**
    * Ejecuta el caso de uso para obtener una cita por ID

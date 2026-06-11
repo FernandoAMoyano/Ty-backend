@@ -1,5 +1,5 @@
 import { Category } from '../../domain/entities/Category';
-import { CategoryRepository } from '../../domain/repositories/CategoryRepository';
+import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
 import { CreateCategoryDto } from '../dto/request/CreateCategoryDto';
@@ -10,7 +10,7 @@ import { CategoryDto } from '../dto/response/CategoryDto';
  * Valida los datos de entrada, verifica unicidad del nombre y persiste la entidad
  */
 export class CreateCategory {
-  constructor(private categoryRepository: CategoryRepository) {}
+  constructor(private categoryRepository: ICategoryRepository) {}
 
   /**
    * Ejecuta la creación de una nueva categoría

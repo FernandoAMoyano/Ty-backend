@@ -3,7 +3,7 @@ import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { isValidPassword } from '../../../../shared/utils/validation';
-import { UserRepository } from '../../domain/repositories/User';
+import { IUserRepository } from '../../domain/repositories/IUserRepository';
 import { ChangePasswordDto } from '../dto/request/ChangePasswordDto';
 
 /**
@@ -12,7 +12,7 @@ import { ChangePasswordDto } from '../dto/request/ChangePasswordDto';
  */
 export class ChangeUserPassword {
   constructor(
-    private userRepository: UserRepository,
+    private userRepository: IUserRepository,
     private hashService: HashService,
   ) {}
 

@@ -4,8 +4,8 @@ import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { isValidEmail, isValidPassword, isValidPhone } from '../../../../shared/utils/validation';
 import { User } from '../../domain/entities/User';
-import { RoleRepository } from '../../domain/repositories/RoleRepository';
-import { UserRepository } from '../../domain/repositories/User';
+import { IRoleRepository } from '../../domain/repositories/IRoleRepository';
+import { IUserRepository } from '../../domain/repositories/IUserRepository';
 import { RegisterDto } from '../dto/request/RegisterDto';
 import { UserDto } from '../dto/response/UserDto';
 import { HashService } from '../services/HashService';
@@ -16,8 +16,8 @@ import { HashService } from '../services/HashService';
  */
 export class RegisterUser {
   constructor(
-    private userRepository: UserRepository,
-    private roleRepository: RoleRepository,
+    private userRepository: IUserRepository,
+    private roleRepository: IRoleRepository,
     private hashService: HashService,
   ) {}
 

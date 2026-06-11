@@ -1,11 +1,11 @@
-import { CategoryRepository } from '../../domain/repositories/CategoryRepository';
+import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 
 /**
  * Caso de uso para eliminar permanentemente una categoría del sistema
  */
 export class DeleteCategory {
-  constructor(private categoryRepository: CategoryRepository) {}
+  constructor(private categoryRepository: ICategoryRepository) {}
 
   /**
    * Ejecuta la eliminación de una categoría

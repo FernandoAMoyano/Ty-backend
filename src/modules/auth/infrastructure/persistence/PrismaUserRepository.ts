@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { User } from '../../domain/entities/User';
-import { UserRepository } from '../../domain/repositories/User';
+import { IUserRepository } from '../../domain/repositories/IUserRepository';
 
 /**
  * Implementación de UserRepository usando Prisma ORM
  * Proporciona persistencia de datos de usuarios en base de datos relacional
  */
-export class PrismaUserRepository implements UserRepository {
+export class PrismaUserRepository implements IUserRepository {
   /**
    * Constructor que inyecta el cliente Prisma
    * @param prisma - Cliente Prisma para acceso a base de datos

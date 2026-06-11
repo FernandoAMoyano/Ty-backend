@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { NotificationStatus } from '../../domain/entities/NotificationStatus';
-import { NotificationStatusRepository } from '../../domain/repositories/NotificationStatusRepository';
+import { INotificationStatusRepository } from '../../domain/repositories/INotificationStatusRepository';
 
 /**
  * Implementación del repositorio de estados de notificación usando Prisma
  * @description Maneja la persistencia de estados de notificación en PostgreSQL
  */
-export class PrismaNotificationStatusRepository implements NotificationStatusRepository {
+export class PrismaNotificationStatusRepository implements INotificationStatusRepository {
   constructor(private prisma: PrismaClient) {}
 
   /**

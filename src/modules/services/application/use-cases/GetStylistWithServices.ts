@@ -1,8 +1,8 @@
 import { StylistService } from '../../domain/entities/StylistService';
-import { StylistServiceRepository } from '../../domain/repositories/StylistServiceRepository';
-import { ServiceRepository } from '../../domain/repositories/ServiceRepository';
-import { StylistRepository } from '../../domain/repositories/StylistRepository';
-import { UserRepository } from '../../../auth/domain/repositories/User';
+import { IStylistServiceRepository } from '../../domain/repositories/IStylistServiceRepository';
+import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
+import { IStylistRepository } from '../../domain/repositories/IStylistRepository';
+import { IUserRepository } from '../../../auth/domain/repositories/IUserRepository';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { StylistServiceDto } from '../dto/response/StylistServiceDto';
 import { StylistWithServicesDto } from '../dto/response/StylistWithServicesDto';
@@ -12,10 +12,10 @@ import { StylistWithServicesDto } from '../dto/response/StylistWithServicesDto';
  */
 export class GetStylistWithServices {
   constructor(
-    private stylistServiceRepository: StylistServiceRepository,
-    private serviceRepository: ServiceRepository,
-    private stylistRepository: StylistRepository,
-    private userRepository: UserRepository,
+    private stylistServiceRepository: IStylistServiceRepository,
+    private serviceRepository: IServiceRepository,
+    private stylistRepository: IStylistRepository,
+    private userRepository: IUserRepository,
   ) {}
 
   /**
@@ -50,7 +50,9 @@ export class GetStylistWithServices {
   /**
    * Mapea asignaciones con información de servicios de forma eficiente
    */
-  private async mapAssignmentsWithServiceInfo(assignments: StylistService[]): Promise<StylistServiceDto[]> {
+  private async mapAssignmentsWithServiceInfo(
+    assignments: StylistService[],
+  ): Promise<StylistServiceDto[]> {
     const serviceIds = [...new Set(assignments.map((a) => a.serviceId))];
     const services = await Promise.all(serviceIds.map((id) => this.serviceRepository.findById(id)));
     const serviceMap = new Map(services.filter((s) => s !== null).map((s) => [s!.id, s!]));
@@ -58,14 +60,26 @@ export class GetStylistWithServices {
     return assignments.map((assignment) => {
       const service = serviceMap.get(assignment.serviceId);
       if (!service) throw new Error(`Service not found for assignment ${assignment.serviceId}`);
-      return this.mapToDto(assignment, service.name, service.description, service.duration, service.price);
+      return this.mapToDto(
+        assignment,
+        service.name,
+        service.description,
+        service.duration,
+        service.price,
+      );
     });
   }
 
   /**
    * Convierte una entidad StylistService a su representación DTO
    */
-  private mapToDto(stylistService: StylistService, serviceName: string, serviceDescription: string, baseDuration: number, basePrice: number): StylistServiceDto {
+  private mapToDto(
+    stylistService: StylistService,
+    serviceName: string,
+    serviceDescription: string,
+    baseDuration: number,
+    basePrice: number,
+  ): StylistServiceDto {
     return {
       stylistId: stylistService.stylistId,
       serviceId: stylistService.serviceId,

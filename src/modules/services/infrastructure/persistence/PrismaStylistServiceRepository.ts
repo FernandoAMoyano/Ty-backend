@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { StylistService } from '../../domain/entities/StylistService';
-import { StylistServiceRepository } from '../../domain/repositories/StylistServiceRepository';
+import { IStylistServiceRepository } from '../../domain/repositories/IStylistServiceRepository';
 
 /**
  * Implementación de StylistServiceRepository usando Prisma ORM
@@ -13,7 +13,7 @@ import { StylistServiceRepository } from '../../domain/repositories/StylistServi
  * @param serviceId - ID único del servicio
  * @returns Promise que resuelve con la asignación encontrada o null si no existe
  */
-export class PrismaStylistServiceRepository implements StylistServiceRepository {
+export class PrismaStylistServiceRepository implements IStylistServiceRepository {
   constructor(private prisma: PrismaClient) {}
 
   async findByStylistAndService(

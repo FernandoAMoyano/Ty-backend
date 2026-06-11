@@ -5,7 +5,7 @@ import { NotificationStatus } from '../entities/NotificationStatus';
  * @description Define el contrato para operaciones de persistencia de estados de notificaciones
  * siguiendo el patrón Repository de Clean Architecture
  */
-export interface NotificationStatusRepository {
+export interface INotificationStatusRepository {
   /**
    * Busca un estado de notificación por su ID único
    * @param id - ID único del estado

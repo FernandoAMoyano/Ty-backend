@@ -1,6 +1,6 @@
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
-import { RoleRepository } from '../../domain/repositories/RoleRepository';
-import { UserRepository } from '../../domain/repositories/User';
+import { IUserRepository } from '../../domain/repositories/IUserRepository';
+import { IRoleRepository } from '../../domain/repositories/IRoleRepository';
 import { UserDto } from '../dto/response/UserDto';
 
 /**
@@ -9,8 +9,8 @@ import { UserDto } from '../dto/response/UserDto';
  */
 export class GetUserProfile {
   constructor(
-    private userRepository: UserRepository,
-    private roleRepository: RoleRepository,
+    private userRepository: IUserRepository,
+    private roleRepository: IRoleRepository,
   ) {}
 
   /**

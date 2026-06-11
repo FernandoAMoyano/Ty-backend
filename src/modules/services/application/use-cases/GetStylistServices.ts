@@ -1,7 +1,7 @@
 import { StylistService } from '../../domain/entities/StylistService';
-import { StylistServiceRepository } from '../../domain/repositories/StylistServiceRepository';
-import { ServiceRepository } from '../../domain/repositories/ServiceRepository';
-import { StylistRepository } from '../../domain/repositories/StylistRepository';
+import { IStylistServiceRepository } from '../../domain/repositories/IStylistServiceRepository';
+import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
+import { IStylistRepository } from '../../domain/repositories/IStylistRepository';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { StylistServiceDto } from '../dto/response/StylistServiceDto';
 
@@ -10,9 +10,9 @@ import { StylistServiceDto } from '../dto/response/StylistServiceDto';
  */
 export class GetStylistServices {
   constructor(
-    private stylistServiceRepository: StylistServiceRepository,
-    private serviceRepository: ServiceRepository,
-    private stylistRepository: StylistRepository,
+    private stylistServiceRepository: IStylistServiceRepository,
+    private serviceRepository: IServiceRepository,
+    private stylistRepository: IStylistRepository,
   ) {}
 
   /**
