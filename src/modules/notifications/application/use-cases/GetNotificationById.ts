@@ -1,4 +1,4 @@
-import { NotificationRepository } from '../../domain/repositories/NotificationRepository';
+import { INotificationRepository } from '../../domain/repositories/INotificationRepository';
 import { NotificationDto } from '../dto/response/NotificationDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
@@ -9,7 +9,7 @@ import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleErr
  * @description Maneja la consulta de una notificación específica con validación de permisos
  */
 export class GetNotificationById {
-  constructor(private notificationRepository: NotificationRepository) {}
+  constructor(private notificationRepository: INotificationRepository) {}
 
   /**
    * Ejecuta el caso de uso para obtener una notificación por ID

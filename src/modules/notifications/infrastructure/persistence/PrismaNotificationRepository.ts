@@ -1,12 +1,12 @@
 import { PrismaClient, NotificationType } from '@prisma/client';
 import { Notification, NotificationTypeEnum } from '../../domain/entities/Notification';
-import { NotificationRepository } from '../../domain/repositories/NotificationRepository';
+import { INotificationRepository } from '../../domain/repositories/INotificationRepository';
 
 /**
  * Implementación del repositorio de notificaciones usando Prisma
  * @description Maneja la persistencia de notificaciones en PostgreSQL
  */
-export class PrismaNotificationRepository implements NotificationRepository {
+export class PrismaNotificationRepository implements INotificationRepository {
   constructor(private prisma: PrismaClient) {}
 
   /**

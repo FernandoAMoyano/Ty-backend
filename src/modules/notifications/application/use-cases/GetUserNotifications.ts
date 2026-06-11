@@ -1,5 +1,5 @@
-import { NotificationRepository } from '../../domain/repositories/NotificationRepository';
-import { NotificationStatusRepository } from '../../domain/repositories/NotificationStatusRepository';
+import { INotificationRepository } from '../../domain/repositories/INotificationRepository';
+import { INotificationStatusRepository } from '../../domain/repositories/INotificationStatusRepository';
 import { NotificationStatusEnum } from '../../domain/entities/NotificationStatus';
 import { GetNotificationsFilterDto } from '../dto/request/GetNotificationsFilterDto';
 import { NotificationDto, NotificationListDto } from '../dto/response/NotificationDto';
@@ -12,8 +12,8 @@ import { ValidationError } from '../../../../shared/exceptions/ValidationError';
  */
 export class GetUserNotifications {
   constructor(
-    private notificationRepository: NotificationRepository,
-    private notificationStatusRepository: NotificationStatusRepository,
+    private notificationRepository: INotificationRepository,
+    private notificationStatusRepository: INotificationStatusRepository,
   ) {}
 
   /**

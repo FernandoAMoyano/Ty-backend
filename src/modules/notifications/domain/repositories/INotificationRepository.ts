@@ -5,7 +5,7 @@ import { Notification, NotificationTypeEnum } from '../entities/Notification';
  * @description Define el contrato para operaciones de persistencia de notificaciones
  * siguiendo el patrón Repository de Clean Architecture
  */
-export interface NotificationRepository {
+export interface INotificationRepository {
   /**
    * Busca una notificación por su ID único
    * @param id - ID único de la notificación
@@ -48,7 +48,7 @@ export interface NotificationRepository {
   /**
    * Cuenta las notificaciones no leídas de un usuario
    * @param userId - ID del usuario
-   * @param unreadStatusId - ID del estado que representa "no leído" (PENDING o SENT)
+   * @param unreadStatusId - ID del estado que representa "no leído"
    * @returns Promise con el conteo de notificaciones no leídas
    */
   countUnreadByUserId(userId: string, unreadStatusId: string): Promise<number>;
