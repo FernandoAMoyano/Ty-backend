@@ -1041,93 +1041,6 @@ paths:
         '404':
           $ref: '#/components/responses/Error404'
 
-  /services/{serviceId}/stylists:
-    get:
-      tags: [Stylist Services]
-      summary: Estilistas de un servicio
-      security: []
-      parameters:
-        - name: serviceId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "123e4567-e89b-12d3-a456-426614174000"
-      responses:
-        '200':
-          description: Estilistas del servicio obtenidos exitosamente
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Service stylists retrieved successfully"
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/StylistService'
-        '404':
-          $ref: '#/components/responses/Error404'
-
-  /services/{serviceId}/stylists/offering:
-    get:
-      tags: [Stylist Services]
-      summary: Estilistas que ofrecen el servicio
-      security: []
-      parameters:
-        - name: serviceId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "123e4567-e89b-12d3-a456-426614174000"
-      responses:
-        '200':
-          description: Estilistas que ofrecen el servicio obtenidos exitosamente
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Stylists offering service retrieved successfully"
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/StylistService'
-        '404':
-          $ref: '#/components/responses/Error404'
-
-  /services/{serviceId}/stylists/detailed:
-    get:
-      tags: [Stylist Services]
-      summary: Servicio con estilistas detallados
-      security: []
-      parameters:
-        - name: serviceId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "123e4567-e89b-12d3-a456-426614174000"
-      responses:
-        '200':
-          description: Servicio con estilistas obtenido exitosamente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '404':
-          $ref: '#/components/responses/Error404'
 
   # APPOINTMENTS
   /appointments:
@@ -1206,51 +1119,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
-
-  /appointments/statistics:
-    get:
-      tags: [Appointments]
-      summary: Obtener estadísticas de citas
-      responses:
-        '200':
-          description: Estadísticas obtenidas exitosamente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          $ref: '#/components/responses/Error401'
-
-  /appointments/date-range:
-    get:
-      tags: [Appointments]
-      summary: Obtener citas por rango de fechas
-      parameters:
-        - name: startDate
-          in: query
-          required: true
-          schema:
-            type: string
-            format: date-time
-            example: "2025-12-01T00:00:00.000Z"
-        - name: endDate
-          in: query
-          required: true
-          schema:
-            type: string
-            format: date-time
-            example: "2025-12-31T23:59:59.999Z"
-      responses:
-        '200':
-          description: Citas obtenidas exitosamente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '400':
-          $ref: '#/components/responses/Error400'
-        '401':
-          $ref: '#/components/responses/Error401'
 
   /appointments/client/{clientId}:
     get:
@@ -1849,6 +1717,797 @@ paths:
         '422':
           $ref: '#/components/responses/Error422'
 
+  # HOLIDAYS
+  /holidays:
+    get:
+      tags: [Holidays]
+      summary: Listar todos los feriados
+      security: []
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: integer
+            example: 2025
+        - name: month
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+            example: 12
+        - name: name
+          in: query
+          schema:
+            type: string
+            example: "Navidad"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+      responses:
+        '200':
+          description: Feriados obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Holiday'
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      totalPages:
+                        type: integer
+
+    post:
+      tags: [Holidays]
+      summary: Crear feriado (Solo Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, date]
+              properties:
+                name:
+                  type: string
+                  example: "Navidad"
+                date:
+                  type: string
+                  format: date
+                  example: "2025-12-25"
+                description:
+                  type: string
+                  example: "Día de Navidad"
+      responses:
+        '201':
+          description: Feriado creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '409':
+          $ref: '#/components/responses/Error409'
+
+  /holidays/upcoming:
+    get:
+      tags: [Holidays]
+      summary: Próximos feriados
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+            maximum: 50
+      responses:
+        '200':
+          description: Próximos feriados obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Holiday'
+
+  /holidays/check/{date}:
+    get:
+      tags: [Holidays]
+      summary: Verificar si fecha es feriado
+      security: []
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2025-12-25"
+      responses:
+        '200':
+          description: Verificación exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      isHoliday:
+                        type: boolean
+                        example: true
+                      holiday:
+                        $ref: '#/components/schemas/Holiday'
+
+  /holidays/year/{year}:
+    get:
+      tags: [Holidays]
+      summary: Feriados por año
+      security: []
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 2025
+      responses:
+        '200':
+          description: Feriados del año obtenidos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Holiday'
+
+  /holidays/{id}:
+    get:
+      tags: [Holidays]
+      summary: Obtener feriado por ID
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Feriado obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+    put:
+      tags: [Holidays]
+      summary: Actualizar feriado (Solo Admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                date:
+                  type: string
+                  format: date
+                description:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Feriado actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+    delete:
+      tags: [Holidays]
+      summary: Eliminar feriado (Solo Admin)
+      description: Elimina el feriado y todas sus excepciones asociadas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Feriado eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /holidays/{holidayId}/exceptions:
+    get:
+      tags: [Schedule Exceptions]
+      summary: Excepciones de un feriado
+      security: []
+      parameters:
+        - name: holidayId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Excepciones obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScheduleException'
+
+  /holidays/exceptions:
+    get:
+      tags: [Schedule Exceptions]
+      summary: Listar excepciones de horario
+      security: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: holidayId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Excepciones obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ScheduleException'
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+
+    post:
+      tags: [Schedule Exceptions]
+      summary: Crear excepción de horario (Solo Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [exceptionDate, startTimeException, endTimeException]
+              properties:
+                exceptionDate:
+                  type: string
+                  format: date
+                  example: "2025-12-24"
+                startTimeException:
+                  type: string
+                  pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                  example: "09:00"
+                endTimeException:
+                  type: string
+                  pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                  example: "14:00"
+                reason:
+                  type: string
+                  example: "Horario reducido de Nochebuena"
+                holidayId:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Excepción creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '409':
+          $ref: '#/components/responses/Error409'
+
+  /holidays/exceptions/upcoming:
+    get:
+      tags: [Schedule Exceptions]
+      summary: Próximas excepciones de horario
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+      responses:
+        '200':
+          description: Próximas excepciones obtenidas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ScheduleException'
+
+  /holidays/exceptions/{id}:
+    get:
+      tags: [Schedule Exceptions]
+      summary: Obtener excepción por ID
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Excepción obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+    put:
+      tags: [Schedule Exceptions]
+      summary: Actualizar excepción (Solo Admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                exceptionDate:
+                  type: string
+                  format: date
+                startTimeException:
+                  type: string
+                  pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                endTimeException:
+                  type: string
+                  pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                reason:
+                  type: string
+                  nullable: true
+                holidayId:
+                  type: string
+                  format: uuid
+                  nullable: true
+      responses:
+        '200':
+          description: Excepción actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+    delete:
+      tags: [Schedule Exceptions]
+      summary: Eliminar excepción (Solo Admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Excepción eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  # NOTIFICATIONS
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Obtener notificaciones del usuario
+      description: Lista paginada de notificaciones del usuario autenticado con filtros opcionales
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+            example: 20
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+            example: false
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [APPOINTMENT_CONFIRMATION, APPOINTMENT_REMINDER, APPOINTMENT_CANCELLATION, PROMOTIONAL, SYSTEM]
+            example: "SYSTEM"
+      responses:
+        '200':
+          description: Notificaciones obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Notifications retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      notifications:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Notification'
+                      total:
+                        type: integer
+                        example: 25
+                      page:
+                        type: integer
+                        example: 1
+                      totalPages:
+                        type: integer
+                        example: 3
+        '401':
+          $ref: '#/components/responses/Error401'
+
+    post:
+      tags: [Notifications]
+      summary: Crear notificación (Solo Admin)
+      description: Crea una nueva notificación para un usuario específico
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, message, userId]
+              properties:
+                type:
+                  type: string
+                  enum: [APPOINTMENT_CONFIRMATION, APPOINTMENT_REMINDER, APPOINTMENT_CANCELLATION, PROMOTIONAL, SYSTEM]
+                  example: "SYSTEM"
+                  description: "Tipo de notificación"
+                message:
+                  type: string
+                  maxLength: 1000
+                  example: "Su cita ha sido confirmada para mañana a las 10:00"
+                  description: "Contenido de la notificación (máx 1000 caracteres)"
+                userId:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                  description: "ID del usuario destinatario"
+      responses:
+        '201':
+          description: Notificación creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Notification created successfully"
+                  data:
+                    $ref: '#/components/schemas/Notification'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Obtener conteo de notificaciones no leídas
+      responses:
+        '200':
+          description: Conteo obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Unread count retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        example: 5
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  /notifications/mark-read:
+    post:
+      tags: [Notifications]
+      summary: Marcar notificaciones como leídas
+      description: Marca una o múltiples notificaciones como leídas. Usar notificationId para una sola o notificationIds para varias.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notificationId:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                  description: "ID de una notificación individual"
+                notificationIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  example: ["123e4567-e89b-12d3-a456-426614174000", "987fcdeb-51a2-3d4e-b567-0123456789ab"]
+                  description: "Lista de IDs de notificaciones"
+      responses:
+        '200':
+          description: Notificaciones marcadas como leídas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Notifications marked as read successfully"
+                  data:
+                    type: object
+                    properties:
+                      updatedCount:
+                        type: integer
+                        example: 3
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  /notifications/mark-all-read:
+    post:
+      tags: [Notifications]
+      summary: Marcar todas las notificaciones como leídas
+      description: Marca todas las notificaciones del usuario autenticado como leídas
+      responses:
+        '200':
+          description: Todas las notificaciones marcadas como leídas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "All notifications marked as read"
+                  data:
+                    type: object
+                    properties:
+                      updatedCount:
+                        type: integer
+                        example: 12
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  /notifications/{id}:
+    get:
+      tags: [Notifications]
+      summary: Obtener notificación por ID
+      description: Obtiene una notificación específica. Solo el propietario puede acceder.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Notificación obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Notification retrieved successfully"
+                  data:
+                    $ref: '#/components/schemas/Notification'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /notifications/{id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Marcar una notificación como leída
+      description: Marca una notificación específica como leída por su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Notificación marcada como leída
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Notification marked as read"
+                  data:
+                    $ref: '#/components/schemas/Notification'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
 
 components:
   securitySchemes:
@@ -2212,6 +2871,137 @@ components:
               example: 5
           description: "Distribución de pagos por método"
 
+    Holiday:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "Navidad"
+        date:
+          type: string
+          format: date
+          example: "2025-12-25"
+        description:
+          type: string
+          nullable: true
+          example: "Día de Navidad"
+        year:
+          type: integer
+          example: 2025
+        month:
+          type: integer
+          example: 12
+        day:
+          type: integer
+          example: 25
+        isPast:
+          type: boolean
+          example: false
+        isToday:
+          type: boolean
+          example: false
+        isFuture:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ScheduleException:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        exceptionDate:
+          type: string
+          format: date
+          example: "2025-12-24"
+        startTimeException:
+          type: string
+          example: "09:00"
+          description: "Hora de inicio en formato HH:MM"
+        endTimeException:
+          type: string
+          example: "14:00"
+          description: "Hora de fin en formato HH:MM"
+        reason:
+          type: string
+          nullable: true
+          example: "Horario reducido de Nochebuena"
+        holidayId:
+          type: string
+          format: uuid
+          nullable: true
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        isHolidayRelated:
+          type: boolean
+          example: false
+        durationInMinutes:
+          type: integer
+          example: 300
+          description: "Duración de la excepción en minutos"
+        isPast:
+          type: boolean
+          example: false
+        isToday:
+          type: boolean
+          example: false
+        isFuture:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        type:
+          type: string
+          enum: [APPOINTMENT_CONFIRMATION, APPOINTMENT_REMINDER, APPOINTMENT_CANCELLATION, PROMOTIONAL, SYSTEM]
+          example: "SYSTEM"
+          description: "Tipo de notificación"
+        message:
+          type: string
+          example: "Su cita ha sido confirmada para mañana a las 10:00"
+          description: "Contenido de la notificación"
+        userId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: "ID del usuario destinatario"
+        statusId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: "ID del estado de la notificación"
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-12-22T10:00:00.000Z"
+          description: "Fecha de envío (null si no fue enviada)"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-12-22T09:00:00.000Z"
+
   responses:
     Error400:
       description: Datos de entrada inválidos
@@ -2297,3 +3087,12 @@ tags:
 
   - name: Payments
     description: Gestión de pagos del sistema (Admin tiene acceso completo, Stylist acceso limitado)
+
+  - name: Holidays
+    description: Gestión de feriados y excepciones de horario (Consulta pública, modificación solo ADMIN)
+
+  - name: Schedule Exceptions
+    description: Excepciones puntuales de horario (cierre temprano, horarios especiales)
+
+  - name: Notifications
+    description: Gestión de notificaciones del sistema (Requiere autenticación, creación solo ADMIN)
