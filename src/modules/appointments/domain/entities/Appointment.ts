@@ -42,7 +42,7 @@ export class Appointment {
     stylistId?: string,
     serviceIds: string[] = [],
   ): Appointment {
-    return new Appointment(
+    const appointment = new Appointment(
       generateUuid(),
       dateTime,
       duration,
@@ -54,6 +54,8 @@ export class Appointment {
       undefined,
       serviceIds,
     );
+    appointment.validateDateNotInPast();
+    return appointment;
   }
 
   /**
@@ -113,14 +115,21 @@ export class Appointment {
   }
 
   /**
-   * Valida que la fecha y hora de la cita sean válidas
-   * @throws ValidationError si la fecha es inválida o está en el pasado
+   * Valida que la fecha y hora de la cita estén presentes y sean válidas
+   * @throws ValidationError si la fecha es nula o inválida
    */
   private validateDateTime(): void {
     if (!this.dateTime) {
       throw new ValidationError('Appointment date and time is required');
     }
+  }
 
+  /**
+   * Valida que la fecha de la cita no esté en el pasado
+   * Solo se aplica en creación de nuevas citas, no en reconstrucción desde persistencia
+   * @throws ValidationError si la fecha es anterior a la fecha actual
+   */
+  private validateDateNotInPast(): void {
     if (this.dateTime < new Date()) {
       throw new ValidationError('Appointment cannot be scheduled in the past');
     }
