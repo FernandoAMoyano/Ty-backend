@@ -12,7 +12,7 @@ export class ServiceValidations {
    * - categoryId: UUID válido requerido
    * - name: string 1-150 caracteres
    * - description: string 1-1000 caracteres
-   * - duration: entero 1-600 minutos
+   * - duration: entero 1-480 minutos
    * - durationVariation: entero no negativo, no mayor que duration
    * - price: float no negativo, convertido a centavos
    */
@@ -34,8 +34,8 @@ export class ServiceValidations {
       .withMessage('Description must be between 1 and 1000 characters'),
 
     body('duration')
-      .isInt({ min: 1, max: 600 })
-      .withMessage('Duration must be an integer between 1 and 600 minutes'),
+      .isInt({ min: 1, max: 480 })
+      .withMessage('Duration must be an integer between 1 and 480 minutes'),
 
     body('durationVariation')
       .isInt({ min: 0 })
@@ -84,8 +84,8 @@ export class ServiceValidations {
 
     body('duration')
       .optional()
-      .isInt({ min: 1, max: 600 })
-      .withMessage('Duration must be an integer between 1 and 600 minutes'),
+      .isInt({ min: 1, max: 480 })
+      .withMessage('Duration must be an integer between 1 and 480 minutes'),
 
     body('durationVariation')
       .optional()

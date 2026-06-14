@@ -61,6 +61,20 @@ describe('Service Entity', () => {
       }).toThrow(ValidationError);
     });
 
+    // Debería lanzar error si la duración excede el máximo de 480 minutos
+    it('should throw error if duration exceeds 480 minutes', () => {
+      expect(() => {
+        Service.create(
+          validServiceData.categoryId,
+          validServiceData.name,
+          validServiceData.description,
+          481, // excede máximo de 8 horas
+          0,
+          validServiceData.price,
+        );
+      }).toThrow('Service duration is too long (max 8 hours)');
+    });
+
     // Debería lanzar error si la variación de duración excede la duración
     it('should throw error if duration variation exceeds duration', () => {
       expect(() => {

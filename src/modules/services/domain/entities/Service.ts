@@ -112,9 +112,9 @@ export class Service {
       throw new ValidationError('Service duration must be positive');
     }
 
-    if (this.duration > 600) {
-      // 10 horas máximo
-      throw new ValidationError('Service duration is too long (max 10 hours)');
+    if (this.duration > 480) {
+      // 8 horas máximo (alineado con duración máxima de citas)
+      throw new ValidationError('Service duration is too long (max 8 hours)');
     }
 
     if (this.durationVariation < 0) {
