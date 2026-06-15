@@ -11,9 +11,11 @@ import { Category } from '../../../src/modules/services/domain/entities/Category
 import { ValidationError } from '../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../src/shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../src/shared/exceptions/ConflictError';
+import { BusinessRuleError } from '../../../src/shared/exceptions/BusinessRuleError';
 
 describe('Category Use Cases', () => {
   let mockCategoryRepository: jest.Mocked<CategoryRepository>;
+  let mockServiceRepository: any;
 
   beforeEach(() => {
     mockCategoryRepository = {
@@ -21,6 +23,20 @@ describe('Category Use Cases', () => {
       findByName: jest.fn(),
       findAll: jest.fn(),
       findActive: jest.fn(),
+      save: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      existsById: jest.fn(),
+      existsByName: jest.fn(),
+    };
+
+    mockServiceRepository = {
+      findById: jest.fn(),
+      findByName: jest.fn(),
+      findAll: jest.fn(),
+      findActive: jest.fn(),
+      findByCategory: jest.fn(),
+      findActiveByCategoryId: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -216,22 +232,32 @@ describe('Category Use Cases', () => {
     let deleteCategory: DeleteCategory;
 
     beforeEach(() => {
-      deleteCategory = new DeleteCategory(mockCategoryRepository);
+      deleteCategory = new DeleteCategory(mockCategoryRepository, mockServiceRepository);
     });
 
     it('should delete category successfully', async () => {
       mockCategoryRepository.existsById.mockResolvedValue(true);
+      mockServiceRepository.findByCategory.mockResolvedValue([]);
       mockCategoryRepository.delete.mockResolvedValue();
 
       await deleteCategory.execute('test-id');
 
       expect(mockCategoryRepository.existsById).toHaveBeenCalledWith('test-id');
+      expect(mockServiceRepository.findByCategory).toHaveBeenCalledWith('test-id');
       expect(mockCategoryRepository.delete).toHaveBeenCalledWith('test-id');
     });
 
     it('should throw NotFoundError if category not found', async () => {
       mockCategoryRepository.existsById.mockResolvedValue(false);
       await expect(deleteCategory.execute('non-existent-id')).rejects.toThrow(NotFoundError);
+    });
+
+    it('should throw BusinessRuleError if category has associated services', async () => {
+      mockCategoryRepository.existsById.mockResolvedValue(true);
+      mockServiceRepository.findByCategory.mockResolvedValue([{ id: 'service-1' }]);
+
+      await expect(deleteCategory.execute('test-id')).rejects.toThrow(BusinessRuleError);
+      expect(mockCategoryRepository.delete).not.toHaveBeenCalled();
     });
   });
 });
