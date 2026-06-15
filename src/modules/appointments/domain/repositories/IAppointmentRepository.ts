@@ -25,4 +25,5 @@ export interface IAppointmentRepository {
   countByDateRange(startDate: Date, endDate: Date): Promise<number>;
   findUpcomingAppointments(limit?: number): Promise<Appointment[]>;
   findPendingConfirmation(): Promise<Appointment[]>;
+  existsActiveByServiceId(serviceId: string): Promise<boolean>;
 }
