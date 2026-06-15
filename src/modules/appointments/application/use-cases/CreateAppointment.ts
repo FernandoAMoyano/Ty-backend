@@ -156,23 +156,17 @@ export class CreateAppointment {
 
   /**
    * Valida que todas las entidades relacionadas existen y retorna el Client.id real
+   * El clientId del DTO siempre se interpreta como User.id (que es lo que el frontend
+   * conoce tras el login). El use case busca el registro Client asociado a ese usuario.
    * @param createDto - Datos de la cita
    * @returns Promise con el Client.id real
    * @throws NotFoundError si alguna entidad no existe
    */
   private async validateRelatedEntitiesAndGetClientId(createDto: CreateAppointmentDto): Promise<string> {
-    // El DTO recibe clientId que puede ser:
-    // - Un User.id (el usuario cliente pasa su ID de usuario)
-    // - Un Client.id (si ya se conoce el ID de la entidad Client)
-    // Primero intentamos buscar por Client.id, si no existe, buscamos por User.id
-    
-    let client = await this.clientRepository.findById(createDto.clientId);
-    
-    if (!client) {
-      // Intentar buscar el Client por userId
-      client = await this.clientRepository.findByUserId(createDto.clientId);
-    }
-    
+    // El clientId del DTO es siempre el User.id del cliente
+    // Buscar el registro Client asociado a ese usuario
+    const client = await this.clientRepository.findByUserId(createDto.clientId);
+
     if (!client) {
       throw new NotFoundError('Client', createDto.clientId);
     }
