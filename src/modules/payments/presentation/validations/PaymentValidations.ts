@@ -10,14 +10,14 @@ export class PaymentValidations {
   static createPayment = [
     body('amount')
       .notEmpty()
-      .withMessage('El monto es requerido')
+      .withMessage('Amount is required')
       .isFloat({ min: 0.01 })
-      .withMessage('El monto debe ser mayor a 0'),
+      .withMessage('Amount must be greater than 0'),
     body('appointmentId')
       .notEmpty()
-      .withMessage('El ID de la cita es requerido')
+      .withMessage('Appointment ID is required')
       .isUUID()
-      .withMessage('El ID de la cita debe ser un UUID válido'),
+      .withMessage('Appointment ID must be a valid UUID'),
   ];
 
   /**
@@ -26,12 +26,12 @@ export class PaymentValidations {
   static processPayment = [
     param('id')
       .isUUID()
-      .withMessage('El ID del pago debe ser un UUID válido'),
+      .withMessage('Payment ID must be a valid UUID'),
     body('method')
       .notEmpty()
-      .withMessage('El método de pago es requerido')
+      .withMessage('Payment method is required')
       .isIn(['CASH', 'CREDIT_CARD', 'DEBIT_CARD', 'TRANSFER', 'ONLINE'])
-      .withMessage('El método de pago debe ser válido (CASH, CREDIT_CARD, DEBIT_CARD, TRANSFER, ONLINE)'),
+      .withMessage('Payment method must be valid (CASH, CREDIT_CARD, DEBIT_CARD, TRANSFER, ONLINE)'),
   ];
 
   /**
@@ -40,13 +40,13 @@ export class PaymentValidations {
   static refundPayment = [
     param('id')
       .isUUID()
-      .withMessage('El ID del pago debe ser un UUID válido'),
+      .withMessage('Payment ID must be a valid UUID'),
     body('reason')
       .optional()
       .isString()
-      .withMessage('La razón debe ser un texto')
+      .withMessage('Reason must be a string')
       .isLength({ max: 500 })
-      .withMessage('La razón no puede exceder 500 caracteres'),
+      .withMessage('Reason cannot exceed 500 characters'),
   ];
 
   /**
@@ -55,7 +55,7 @@ export class PaymentValidations {
   static paymentById = [
     param('id')
       .isUUID()
-      .withMessage('El ID del pago debe ser un UUID válido'),
+      .withMessage('Payment ID must be a valid UUID'),
   ];
 
   /**
@@ -64,7 +64,7 @@ export class PaymentValidations {
   static paymentsByAppointment = [
     param('appointmentId')
       .isUUID()
-      .withMessage('El ID de la cita debe ser un UUID válido'),
+      .withMessage('Appointment ID must be a valid UUID'),
   ];
 
   /**
@@ -74,27 +74,27 @@ export class PaymentValidations {
     query('page')
       .optional()
       .isInt({ min: 1 })
-      .withMessage('La página debe ser un número entero mayor a 0'),
+      .withMessage('Page must be a positive integer'),
     query('limit')
       .optional()
       .isInt({ min: 1, max: 100 })
-      .withMessage('El límite debe ser un número entre 1 y 100'),
+      .withMessage('Limit must be between 1 and 100'),
     query('status')
       .optional()
       .isIn(['PENDING', 'COMPLETED', 'REFUNDED', 'FAILED'])
-      .withMessage('El estado debe ser válido (PENDING, COMPLETED, REFUNDED, FAILED)'),
+      .withMessage('Status must be valid (PENDING, COMPLETED, REFUNDED, FAILED)'),
     query('appointmentId')
       .optional()
       .isUUID()
-      .withMessage('El ID de la cita debe ser un UUID válido'),
+      .withMessage('Appointment ID must be a valid UUID'),
     query('startDate')
       .optional()
       .isISO8601()
-      .withMessage('La fecha de inicio debe ser una fecha válida'),
+      .withMessage('Start date must be a valid ISO 8601 date'),
     query('endDate')
       .optional()
       .isISO8601()
-      .withMessage('La fecha de fin debe ser una fecha válida'),
+      .withMessage('End date must be a valid ISO 8601 date'),
   ];
 
   /**
@@ -104,11 +104,11 @@ export class PaymentValidations {
     query('startDate')
       .optional()
       .isISO8601()
-      .withMessage('La fecha de inicio debe ser una fecha válida'),
+      .withMessage('Start date must be a valid ISO 8601 date'),
     query('endDate')
       .optional()
       .isISO8601()
-      .withMessage('La fecha de fin debe ser una fecha válida'),
+      .withMessage('End date must be a valid ISO 8601 date'),
   ];
 
   /**
@@ -117,10 +117,10 @@ export class PaymentValidations {
   static updatePayment = [
     param('id')
       .isUUID()
-      .withMessage('El ID del pago debe ser un UUID válido'),
+      .withMessage('Payment ID must be a valid UUID'),
     body('amount')
       .optional()
       .isFloat({ min: 0.01 })
-      .withMessage('El monto debe ser mayor a 0'),
+      .withMessage('Amount must be greater than 0'),
   ];
 }
