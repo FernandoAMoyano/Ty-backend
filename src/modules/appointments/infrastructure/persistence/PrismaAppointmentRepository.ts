@@ -447,6 +447,27 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   }
 
   /**
+   * Verifica si existen citas activas (no canceladas ni completadas) para un servicio
+   * @param serviceId - ID del servicio a verificar
+   * @returns Promise que resuelve con true si existen citas activas
+   */
+  async existsActiveByServiceId(serviceId: string): Promise<boolean> {
+    const count = await this.prisma.appointment.count({
+      where: {
+        services: {
+          some: { id: serviceId },
+        },
+        status: {
+          name: {
+            notIn: ['CANCELLED', 'COMPLETED'],
+          },
+        },
+      },
+    });
+    return count > 0;
+  }
+
+  /**
    * Mapea datos de Prisma a entidad de dominio
    * @param appointmentData - Datos de la cita desde Prisma
    * @returns Entidad Appointment

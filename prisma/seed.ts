@@ -236,28 +236,28 @@ async function main() {
   console.log('📋 Creando estados de citas...');
   const pendingStatus = await prisma.appointmentStatus.create({
     data: {
-      name: 'Pendiente',
+      name: 'PENDING',
       description: 'Cita agendada pero pendiente de confirmación',
     },
   });
 
   const confirmedStatus = await prisma.appointmentStatus.create({
     data: {
-      name: 'Confirmada',
+      name: 'CONFIRMED',
       description: 'Cita confirmada',
     },
   });
 
   const completedStatus = await prisma.appointmentStatus.create({
     data: {
-      name: 'Completada',
+      name: 'COMPLETED',
       description: 'Cita realizada con éxito',
     },
   });
 
   const cancelledStatus = await prisma.appointmentStatus.create({
     data: {
-      name: 'Cancelada',
+      name: 'CANCELLED',
       description: 'Cita cancelada',
     },
   });

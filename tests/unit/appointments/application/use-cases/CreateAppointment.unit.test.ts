@@ -204,8 +204,7 @@ describe('CreateAppointment Use Case', () => {
     const stylistService = { stylistId: validStylistId, serviceId: validServiceId1, isOffering: true, customPrice: null, createdAt: new Date(), updatedAt: new Date() };
 
     mockAppointmentStatusRepository.findByName.mockResolvedValue(pendingStatus);
-    mockClientRepository.findById.mockResolvedValue(client);
-    mockClientRepository.findByUserId.mockResolvedValue(null); // No necesario si findById encuentra
+    mockClientRepository.findByUserId.mockResolvedValue(client);
     mockStylistRepository.findById.mockResolvedValue(stylist);
     mockServiceRepository.findById.mockResolvedValue(service);
     mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(stylistService as any);
@@ -452,7 +451,6 @@ describe('CreateAppointment Use Case', () => {
   describe('Not Found Handling', () => {
     // Debería lanzar NotFoundError cuando el cliente no existe
     it('should throw NotFoundError when client does not exist', async () => {
-      mockClientRepository.findById.mockResolvedValue(null);
       mockClientRepository.findByUserId.mockResolvedValue(null);
 
       await expect(useCase.execute(validCreateDto, validUserId)).rejects.toThrow(
@@ -460,8 +458,8 @@ describe('CreateAppointment Use Case', () => {
       );
     });
 
-    // Debería encontrar cliente por userId si no se encuentra por id
-    it('should find client by userId if not found by id', async () => {
+    // Debería encontrar cliente por userId (clientId del DTO siempre es User.id)
+    it('should find client by userId', async () => {
       const client = createMockClient(validClientId);
       const stylist = createMockStylist(validStylistId);
       const service = createMockService(validServiceId1);
@@ -469,8 +467,6 @@ describe('CreateAppointment Use Case', () => {
       const schedule = createMockSchedule('MONDAY');
       const appointment = createMockAppointment();
 
-      // No encuentra por id, pero sí por userId
-      mockClientRepository.findById.mockResolvedValue(null);
       mockClientRepository.findByUserId.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(stylist);
       mockServiceRepository.findById.mockResolvedValue(service);
@@ -485,13 +481,14 @@ describe('CreateAppointment Use Case', () => {
       const result = await useCase.execute(validCreateDto, validUserId);
 
       expect(mockClientRepository.findByUserId).toHaveBeenCalledWith(validClientId);
+      expect(mockClientRepository.findById).not.toHaveBeenCalled();
       expect(result.id).toBe(appointment.id);
     });
 
     // Debería lanzar NotFoundError cuando el estilista no existe
     it('should throw NotFoundError when stylist does not exist', async () => {
       const client = createMockClient(validClientId);
-      mockClientRepository.findById.mockResolvedValue(client);
+      mockClientRepository.findByUserId.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(null);
 
       await expect(useCase.execute(validCreateDto, validUserId)).rejects.toThrow(
@@ -504,7 +501,7 @@ describe('CreateAppointment Use Case', () => {
       const client = createMockClient(validClientId);
       const stylist = createMockStylist(validStylistId);
 
-      mockClientRepository.findById.mockResolvedValue(client);
+      mockClientRepository.findByUserId.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(stylist);
       mockServiceRepository.findById.mockResolvedValue(null);
 
@@ -520,7 +517,7 @@ describe('CreateAppointment Use Case', () => {
       const inactiveService = createMockService(validServiceId1, 60);
       (inactiveService as any).isActive = false;
 
-      mockClientRepository.findById.mockResolvedValue(client);
+      mockClientRepository.findByUserId.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(stylist);
       mockServiceRepository.findById.mockResolvedValue(inactiveService);
 
@@ -535,7 +532,7 @@ describe('CreateAppointment Use Case', () => {
       const stylist = createMockStylist(validStylistId);
       const service = createMockService(validServiceId1, 60);
 
-      mockClientRepository.findById.mockResolvedValue(client);
+      mockClientRepository.findByUserId.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(stylist);
       mockServiceRepository.findById.mockResolvedValue(service);
       mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(null);
@@ -552,7 +549,7 @@ describe('CreateAppointment Use Case', () => {
       const service = createMockService(validServiceId1, 60);
       const notOfferingAssignment = { stylistId: validStylistId, serviceId: validServiceId1, isOffering: false };
 
-      mockClientRepository.findById.mockResolvedValue(client);
+      mockClientRepository.findByUserId.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(stylist);
       mockServiceRepository.findById.mockResolvedValue(service);
       mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(notOfferingAssignment as any);
@@ -612,7 +609,7 @@ describe('CreateAppointment Use Case', () => {
       const pendingStatus = createMockAppointmentStatus('PENDING');
       const schedule = createMockSchedule('MONDAY');
 
-      mockClientRepository.findById.mockResolvedValue(client);
+      mockClientRepository.findByUserId.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(stylist);
       mockServiceRepository.findById.mockResolvedValue(service);
       mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(
@@ -638,7 +635,7 @@ describe('CreateAppointment Use Case', () => {
 
       await useCase.execute(validCreateDto, validUserId);
 
-      expect(mockClientRepository.findById).toHaveBeenCalledWith(validClientId);
+      expect(mockClientRepository.findByUserId).toHaveBeenCalledWith(validClientId);
       expect(mockStylistRepository.findById).toHaveBeenCalledWith(validStylistId);
       expect(mockServiceRepository.findById).toHaveBeenCalledWith(validServiceId1);
       expect(mockAppointmentStatusRepository.findByName).toHaveBeenCalledWith('PENDING');

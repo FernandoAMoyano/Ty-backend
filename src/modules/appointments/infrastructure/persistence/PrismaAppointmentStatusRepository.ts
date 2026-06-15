@@ -153,7 +153,7 @@ export class PrismaAppointmentStatusRepository implements IAppointmentStatusRepo
     const statusesData = await this.prisma.appointmentStatus.findMany({
       where: {
         name: {
-          in: ['COMPLETED', 'CANCELLED', 'NO_SHOW', 'Completada', 'Cancelada'],
+          in: ['COMPLETED', 'CANCELLED', 'NO_SHOW'],
         },
       },
       orderBy: { name: 'asc' },
@@ -176,7 +176,7 @@ export class PrismaAppointmentStatusRepository implements IAppointmentStatusRepo
     const statusesData = await this.prisma.appointmentStatus.findMany({
       where: {
         name: {
-          in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'Pendiente', 'Confirmada'],
+          in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'],
         },
       },
       orderBy: { name: 'asc' },

@@ -16,6 +16,7 @@ import { User } from '../../../src/modules/auth/domain/entities/User';
 import { ValidationError } from '../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../src/shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../src/shared/exceptions/ConflictError';
+import { BusinessRuleError } from '../../../src/shared/exceptions/BusinessRuleError';
 
 describe('StylistService Use Cases', () => {
   let mockStylistServiceRepository: jest.Mocked<StylistServiceRepository>;
@@ -134,6 +135,25 @@ describe('StylistService Use Cases', () => {
       mockUserRepository.findByIdWithRole.mockResolvedValue(mockUserWithRole);
       mockServiceRepository.findById.mockResolvedValue(null);
       await expect(assignServiceToStylist.execute('stylist-id', assignDto)).rejects.toThrow(NotFoundError);
+    });
+
+    // Debería lanzar BusinessRuleError si el servicio está inactivo
+    it('should throw BusinessRuleError if service is inactive', async () => {
+      const mockStylist = Stylist.create('user-id');
+      Object.defineProperty(mockStylist, 'id', { value: 'stylist-id', writable: false });
+      const mockUserWithRole = {
+        id: 'user-id', roleId: 'stylist-role-id', name: 'Test User',
+        email: 'test@example.com', phone: '+1234567890', password: 'password',
+        isActive: true, role: { id: 'stylist-role-id', name: 'STYLIST', description: 'Estilista' },
+      };
+      const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
+      mockService.deactivate();
+
+      mockStylistRepository.findById.mockResolvedValue(mockStylist);
+      mockUserRepository.findByIdWithRole.mockResolvedValue(mockUserWithRole);
+      mockServiceRepository.findById.mockResolvedValue(mockService);
+
+      await expect(assignServiceToStylist.execute('stylist-id', assignDto)).rejects.toThrow(BusinessRuleError);
     });
 
     it('should throw ValidationError if user is not a stylist', async () => {

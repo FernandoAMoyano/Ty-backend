@@ -102,7 +102,25 @@ describe('ScheduleRepository Integration Tests', () => {
     });
 
     it('should return empty array for day without schedule', async () => {
-      // Asegurar que no hay schedule para Sunday
+      // Limpiar en cascada: payments → appointments → schedules de SUNDAY
+      const sundaySchedules = await testPrisma.schedule.findMany({
+        where: { dayOfWeek: 'SUNDAY' },
+      });
+      if (sundaySchedules.length > 0) {
+        const sundayScheduleIds = sundaySchedules.map(s => s.id);
+        const sundayAppointments = await testPrisma.appointment.findMany({
+          where: { scheduleId: { in: sundayScheduleIds } },
+        });
+        if (sundayAppointments.length > 0) {
+          await testPrisma.payment.deleteMany({
+            where: { appointmentId: { in: sundayAppointments.map(a => a.id) } },
+          });
+          await testPrisma.appointment.deleteMany({
+            where: { scheduleId: { in: sundayScheduleIds } },
+          });
+        }
+      }
+
       await testPrisma.schedule.deleteMany({
         where: { dayOfWeek: 'SUNDAY' },
       });

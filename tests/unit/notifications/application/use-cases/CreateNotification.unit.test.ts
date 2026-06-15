@@ -6,11 +6,13 @@ import { NotificationStatus, NotificationStatusEnum } from '../../../../../src/m
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
+import { IUserRepository } from '../../../../../src/modules/auth/domain/repositories/IUserRepository';
 
 describe('CreateNotification Use Case', () => {
   let useCase: CreateNotification;
   let mockNotificationRepository: jest.Mocked<NotificationRepository>;
   let mockNotificationStatusRepository: jest.Mocked<NotificationStatusRepository>;
+  let mockUserRepository: jest.Mocked<Pick<IUserRepository, 'findById'>>;
 
   const validUserId = generateUuid();
   const validStatusId = generateUuid();
@@ -59,9 +61,14 @@ describe('CreateNotification Use Case', () => {
       existsByName: jest.fn(),
     };
 
+    mockUserRepository = {
+      findById: jest.fn().mockResolvedValue({ id: validUserId, name: 'Test User' }),
+    };
+
     useCase = new CreateNotification(
       mockNotificationRepository,
       mockNotificationStatusRepository,
+      mockUserRepository as unknown as jest.Mocked<IUserRepository>,
     );
   });
 
@@ -274,6 +281,18 @@ describe('CreateNotification Use Case', () => {
     it('should throw NotFoundError if PENDING status does not exist', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(useCase.execute(validCreateDto)).rejects.toThrow(NotFoundError);
+      expect(mockNotificationRepository.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('User Not Found', () => {
+    // Debería lanzar NotFoundError si el usuario destinatario no existe
+    it('should throw NotFoundError if user does not exist', async () => {
+      // Arrange
+      mockUserRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
       await expect(useCase.execute(validCreateDto)).rejects.toThrow(NotFoundError);

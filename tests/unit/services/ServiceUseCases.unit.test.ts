@@ -11,6 +11,8 @@ import { Category } from '../../../src/modules/services/domain/entities/Category
 import { ValidationError } from '../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../src/shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../src/shared/exceptions/ConflictError';
+import { BusinessRuleError } from '../../../src/shared/exceptions/BusinessRuleError';
+import { IAppointmentRepository } from '../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
 
 describe('Service Use Cases', () => {
   let mockServiceRepository: jest.Mocked<ServiceRepository>;
@@ -186,24 +188,42 @@ describe('Service Use Cases', () => {
 
   describe('DeleteService', () => {
     let deleteService: DeleteService;
+    let mockAppointmentRepository: jest.Mocked<Pick<IAppointmentRepository, 'existsActiveByServiceId'>>;
 
     beforeEach(() => {
-      deleteService = new DeleteService(mockServiceRepository);
+      mockAppointmentRepository = {
+        existsActiveByServiceId: jest.fn(),
+      };
+      deleteService = new DeleteService(
+        mockServiceRepository,
+        mockAppointmentRepository as unknown as jest.Mocked<IAppointmentRepository>,
+      );
     });
 
     it('should delete service successfully', async () => {
       mockServiceRepository.existsById.mockResolvedValue(true);
+      mockAppointmentRepository.existsActiveByServiceId.mockResolvedValue(false);
       mockServiceRepository.delete.mockResolvedValue();
 
       await deleteService.execute('service-id');
 
       expect(mockServiceRepository.existsById).toHaveBeenCalledWith('service-id');
+      expect(mockAppointmentRepository.existsActiveByServiceId).toHaveBeenCalledWith('service-id');
       expect(mockServiceRepository.delete).toHaveBeenCalledWith('service-id');
     });
 
     it('should throw NotFoundError if service not found', async () => {
       mockServiceRepository.existsById.mockResolvedValue(false);
       await expect(deleteService.execute('non-existent-id')).rejects.toThrow(NotFoundError);
+    });
+
+    // Debería lanzar BusinessRuleError si el servicio tiene citas activas
+    it('should throw BusinessRuleError if service has active appointments', async () => {
+      mockServiceRepository.existsById.mockResolvedValue(true);
+      mockAppointmentRepository.existsActiveByServiceId.mockResolvedValue(true);
+
+      await expect(deleteService.execute('service-id')).rejects.toThrow(BusinessRuleError);
+      expect(mockServiceRepository.delete).not.toHaveBeenCalled();
     });
   });
 

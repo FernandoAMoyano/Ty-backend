@@ -2,6 +2,7 @@ import { DeleteHoliday } from '../../../../../src/modules/holidays/application/u
 import { IHolidayRepository } from '../../../../../src/modules/holidays/domain/repositories/IHolidayRepository';
 import { IScheduleExceptionRepository } from '../../../../../src/modules/holidays/domain/repositories/IScheduleExceptionRepository';
 import { Holiday } from '../../../../../src/modules/holidays/domain/entities/Holiday';
+import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
 
 describe('DeleteHoliday Use Case', () => {
   let deleteHoliday: DeleteHoliday;
@@ -85,12 +86,12 @@ describe('DeleteHoliday Use Case', () => {
     expect(deleteExceptionsCallOrder).toBeLessThan(deleteHolidayCallOrder);
   });
 
-  // Debería lanzar error si el feriado no existe
-  it('should throw error if holiday not found', async () => {
+  // Debería lanzar NotFoundError si el feriado no existe
+  it('should throw NotFoundError if holiday not found', async () => {
     mockHolidayRepository.findById.mockResolvedValue(null);
 
     await expect(deleteHoliday.execute('non-existent-id')).rejects.toThrow(
-      'Feriado no encontrado',
+      NotFoundError,
     );
     expect(mockHolidayRepository.delete).not.toHaveBeenCalled();
   });

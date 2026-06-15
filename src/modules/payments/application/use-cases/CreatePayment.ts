@@ -42,7 +42,7 @@ export class CreatePayment {
     const allowedStatuses = ['CONFIRMED', 'COMPLETED'];
     if (!status || !allowedStatuses.includes(status.name)) {
       throw new BusinessRuleError(
-        `Cannot create a payment for an appointment with status ${status?.name || 'UNKNOWN'}. Allowed: ${allowedStatuses.join(', ')}`,
+        `Cannot create a payment for an appointment with status ${status?.name || 'UNKNOWN'}. Appointment must be confirmed or completed`,
       );
     }
 

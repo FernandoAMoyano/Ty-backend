@@ -6,6 +6,10 @@ import { INotificationStatusRepository } from './domain/repositories/INotificati
 import { PrismaNotificationRepository } from './infrastructure/persistence/PrismaNotificationRepository';
 import { PrismaNotificationStatusRepository } from './infrastructure/persistence/PrismaNotificationStatusRepository';
 
+// Repositorio externo
+import { IUserRepository } from '../auth/domain/repositories/IUserRepository';
+import { PrismaUserRepository } from '../auth/infrastructure/persistence/PrismaUserRepository';
+
 // Use Cases
 import { CreateNotification } from './application/use-cases/CreateNotification';
 import { GetUserNotifications } from './application/use-cases/GetUserNotifications';
@@ -78,11 +82,13 @@ export class NotificationContainer {
     // 1. Inicializar repositorios
     this._notificationRepository = new PrismaNotificationRepository(this.prisma);
     this._notificationStatusRepository = new PrismaNotificationStatusRepository(this.prisma);
+    const userRepository: IUserRepository = new PrismaUserRepository(this.prisma);
 
     // 2. Inicializar use cases
     this._createNotification = new CreateNotification(
       this._notificationRepository,
       this._notificationStatusRepository,
+      userRepository,
     );
 
     this._getUserNotifications = new GetUserNotifications(

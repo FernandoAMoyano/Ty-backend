@@ -6,6 +6,7 @@ import { IUserRepository } from '../../../auth/domain/repositories/IUserReposito
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
+import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
 import { AssignServiceDto } from '../dto/request/AssignServiceDto';
 import { StylistServiceDto } from '../dto/response/StylistServiceDto';
 
@@ -55,6 +56,10 @@ export class AssignServiceToStylist {
     const service = await this.serviceRepository.findById(assignDto.serviceId);
     if (!service) {
       throw new NotFoundError('Service', assignDto.serviceId);
+    }
+
+    if (!service.isActive) {
+      throw new BusinessRuleError('Cannot assign an inactive service to a stylist');
     }
 
     const existingAssignment = await this.stylistServiceRepository.existsAssignment(

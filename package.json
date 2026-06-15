@@ -1,7 +1,7 @@
 {
   "name": "turnity-backend",
   "version": "1.0.0",
-   "license": "MIT",
+  "license": "MIT",
   "author": "Fernando Moyano",
   "repository": {
     "type": "git",
@@ -22,20 +22,12 @@
     "prisma:db:push": "prisma db push",
     "test": "jest",
     "test:watch": "jest --watch",
-
-
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\"",
-
-
     "docker:dev:build": "docker-compose -f docker-compose.dev.yml build",
     "docker:dev:up": "docker-compose -f docker-compose.dev.yml up",
     "docker:dev:down": "docker-compose -f docker-compose.dev.yml down",
-
-
-
-    
     "docker:prisma:migrate:dev": "docker exec -it turnity-api-dev npx prisma migrate dev",
     "docker:generate:prisma:client": "docker exec -it turnity-api-dev npx prisma generate",
     "docker:db:prisma:seed": "docker exec -it turnity-api-dev npx prisma db seed",
@@ -60,7 +52,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.2",
-    "nodemailer": "^7.0.3",
+    "nodemailer": "^8.0.7",
     "pg": "^8.15.6",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",

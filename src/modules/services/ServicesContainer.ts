@@ -50,6 +50,10 @@ import { PrismaStylistRepository } from './infrastructure/persistence/PrismaStyl
 import { IUserRepository } from '../auth/domain/repositories/IUserRepository';
 import { PrismaUserRepository } from '../auth/infrastructure/persistence/PrismaUserRepository';
 
+// Importar appointmentRepository desde el módulo de citas
+import { IAppointmentRepository } from '../appointments/domain/repositories/IAppointmentRepository';
+import { PrismaAppointmentRepository } from '../appointments/infrastructure/persistence/PrismaAppointmentRepository';
+
 // Capa de presentación
 import { CategoryController } from './presentation/controllers/CategoryController';
 import { ServiceController } from './presentation/controllers/ServiceController';
@@ -135,6 +139,7 @@ export class ServicesContainer {
     const stylistServiceRepository: IStylistServiceRepository = new PrismaStylistServiceRepository(this.prisma);
     const stylistRepository: IStylistRepository = new PrismaStylistRepository(this.prisma);
     const userRepository: IUserRepository = new PrismaUserRepository(this.prisma);
+    const appointmentRepository: IAppointmentRepository = new PrismaAppointmentRepository(this.prisma);
 
     // 2. Use cases — Categorías
     this._createCategory = new CreateCategory(categoryRepository);
@@ -144,7 +149,7 @@ export class ServicesContainer {
     this._getActiveCategories = new GetActiveCategories(categoryRepository);
     this._activateCategory = new ActivateCategory(categoryRepository);
     this._deactivateCategory = new DeactivateCategory(categoryRepository);
-    this._deleteCategory = new DeleteCategory(categoryRepository);
+    this._deleteCategory = new DeleteCategory(categoryRepository, serviceRepository);
 
     // 3. Use cases — Servicios
     this._createService = new CreateService(serviceRepository, categoryRepository);
@@ -156,7 +161,7 @@ export class ServicesContainer {
     this._getActiveServicesByCategory = new GetActiveServicesByCategory(serviceRepository, categoryRepository);
     this._activateService = new ActivateService(serviceRepository, categoryRepository);
     this._deactivateService = new DeactivateService(serviceRepository, categoryRepository);
-    this._deleteService = new DeleteService(serviceRepository);
+    this._deleteService = new DeleteService(serviceRepository, appointmentRepository);
 
     // 4. Use cases — StylistService
     this._assignServiceToStylist = new AssignServiceToStylist(stylistServiceRepository, serviceRepository, userRepository, stylistRepository);
