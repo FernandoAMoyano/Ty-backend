@@ -1,6 +1,7 @@
 import { Notification, NotificationTypeEnum } from '../../domain/entities/Notification';
 import { INotificationRepository } from '../../domain/repositories/INotificationRepository';
 import { INotificationStatusRepository } from '../../domain/repositories/INotificationStatusRepository';
+import { IUserRepository } from '../../../auth/domain/repositories/IUserRepository';
 import { NotificationStatusEnum } from '../../domain/entities/NotificationStatus';
 import { CreateNotificationDto } from '../dto/request/CreateNotificationDto';
 import { NotificationDto } from '../dto/response/NotificationDto';
@@ -15,6 +16,7 @@ export class CreateNotification {
   constructor(
     private notificationRepository: INotificationRepository,
     private notificationStatusRepository: INotificationStatusRepository,
+    private userRepository: IUserRepository,
   ) {}
 
   /**
@@ -28,10 +30,16 @@ export class CreateNotification {
     // 1. Validar datos de entrada
     this.validateInput(dto);
 
-    // 2. Obtener el estado inicial (PENDING)
+    // 2. Verificar que el usuario destinatario existe
+    const userExists = await this.userRepository.findById(dto.userId);
+    if (!userExists) {
+      throw new NotFoundError('User', dto.userId);
+    }
+
+    // 3. Obtener el estado inicial (PENDING)
     const pendingStatus = await this.getPendingStatus();
 
-    // 3. Crear la entidad de notificación
+    // 4. Crear la entidad de notificación
     const notification = Notification.create(
       dto.type,
       dto.message,
@@ -39,10 +47,10 @@ export class CreateNotification {
       pendingStatus.id,
     );
 
-    // 4. Guardar la notificación
+    // 5. Guardar la notificación
     const savedNotification = await this.notificationRepository.save(notification);
 
-    // 5. Mapear a DTO de respuesta
+    // 6. Mapear a DTO de respuesta
     return this.mapToDto(savedNotification);
   }
 
