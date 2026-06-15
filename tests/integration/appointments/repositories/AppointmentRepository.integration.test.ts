@@ -49,10 +49,10 @@ describe('AppointmentRepository Integration Tests', () => {
     testScheduleId = schedule.id;
 
     const status = await testPrisma.appointmentStatus.findFirst({
-      where: { name: 'Pendiente' },
+      where: { name: 'PENDING' },
     });
     if (!status) {
-      throw new Error('No se encontró el status "Pendiente" en el seed');
+      throw new Error('Status "PENDING" not found in seed data');
     }
     testStatusId = status.id;
   });

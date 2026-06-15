@@ -29,9 +29,9 @@ describe('AppointmentStatusRepository Integration Tests', () => {
 
       // Verificar que incluye los estados principales del seed
       const statusNames = statuses.map((status) => status.name);
-      expect(statusNames).toContain('Pendiente');
-      expect(statusNames).toContain('Confirmada');
-      expect(statusNames).toContain('Completada');
+      expect(statusNames).toContain('PENDING');
+      expect(statusNames).toContain('CONFIRMED');
+      expect(statusNames).toContain('COMPLETED');
 
       // Verificar que todos tienen propiedades requeridas
       statuses.forEach((status) => {
@@ -46,7 +46,7 @@ describe('AppointmentStatusRepository Integration Tests', () => {
     it('should find status by existing id', async () => {
       // Obtener un estado del seed
       const seedStatus = await testPrisma.appointmentStatus.findFirst({
-        where: { name: 'Pendiente' },
+        where: { name: 'PENDING' },
       });
 
       expect(seedStatus).toBeDefined();
@@ -55,7 +55,7 @@ describe('AppointmentStatusRepository Integration Tests', () => {
 
       expect(foundStatus).toBeDefined();
       expect(foundStatus!.id).toBe(seedStatus!.id);
-      expect(foundStatus!.name).toBe('Pendiente');
+      expect(foundStatus!.name).toBe('PENDING');
     });
 
     it('should return null for non-existing id', async () => {
@@ -69,10 +69,10 @@ describe('AppointmentStatusRepository Integration Tests', () => {
 
   describe('findByName', () => {
     it('should find status by existing name', async () => {
-      const foundStatus = await repository.findByName('Pendiente');
+      const foundStatus = await repository.findByName('PENDING');
 
       expect(foundStatus).toBeDefined();
-      expect(foundStatus!.name).toBe('Pendiente');
+      expect(foundStatus!.name).toBe('PENDING');
       expect(foundStatus!.id).toBeDefined();
     });
 
@@ -83,7 +83,7 @@ describe('AppointmentStatusRepository Integration Tests', () => {
     });
 
     it('should be case-sensitive when finding by name', async () => {
-      const foundStatus = await repository.findByName('pendiente'); // minúscula
+      const foundStatus = await repository.findByName('pending'); // minúscula
 
       expect(foundStatus).toBeNull(); // No debería encontrar porque es case-sensitive
     });
@@ -210,7 +210,7 @@ describe('AppointmentStatusRepository Integration Tests', () => {
     it('should return true for existing id', async () => {
       // Usar estado del seed
       const seedStatus = await testPrisma.appointmentStatus.findFirst({
-        where: { name: 'Pendiente' },
+        where: { name: 'PENDING' },
       });
 
       expect(seedStatus).toBeDefined();
@@ -229,7 +229,7 @@ describe('AppointmentStatusRepository Integration Tests', () => {
 
   describe('existsByName', () => {
     it('should return true for existing name', async () => {
-      const exists = await repository.existsByName('Pendiente');
+      const exists = await repository.existsByName('PENDING');
       expect(exists).toBe(true);
     });
 
@@ -239,7 +239,7 @@ describe('AppointmentStatusRepository Integration Tests', () => {
     });
 
     it('should be case-sensitive', async () => {
-      const exists = await repository.existsByName('pendiente'); // minúscula
+      const exists = await repository.existsByName('pending'); // minúscula
       expect(exists).toBe(false);
     });
   });
@@ -248,21 +248,21 @@ describe('AppointmentStatusRepository Integration Tests', () => {
     it('should return terminal statuses', async () => {
       const terminalStatuses = await repository.findTerminalStatuses();
 
-      // Los estados terminales típicamente incluyen Completada, Cancelada
+      // Los estados terminales típicamente incluyen COMPLETED, CANCELLED
       expect(terminalStatuses.length).toBeGreaterThanOrEqual(1);
 
       // Verificar que incluye estados esperados
       const statusNames = terminalStatuses.map((status) => status.name);
-      expect(statusNames).toContain('Completada');
-      expect(statusNames).toContain('Cancelada');
+      expect(statusNames).toContain('COMPLETED');
+      expect(statusNames).toContain('CANCELLED');
     });
 
     it('should not include non-terminal statuses', async () => {
       const terminalStatuses = await repository.findTerminalStatuses();
 
       const statusNames = terminalStatuses.map((status) => status.name);
-      expect(statusNames).not.toContain('Pendiente');
-      expect(statusNames).not.toContain('Confirmada');
+      expect(statusNames).not.toContain('PENDING');
+      expect(statusNames).not.toContain('CONFIRMED');
     });
   });
 
@@ -270,16 +270,16 @@ describe('AppointmentStatusRepository Integration Tests', () => {
     it('should return active statuses', async () => {
       const activeStatuses = await repository.findActiveStatuses();
 
-      // Los estados activos no incluyen Cancelada ni Completada
+      // Los estados activos no incluyen CANCELLED ni COMPLETED
       expect(activeStatuses.length).toBeGreaterThanOrEqual(2);
 
       const statusNames = activeStatuses.map((status) => status.name);
-      expect(statusNames).toContain('Pendiente');
-      expect(statusNames).toContain('Confirmada');
+      expect(statusNames).toContain('PENDING');
+      expect(statusNames).toContain('CONFIRMED');
 
       // No debería incluir estados terminales
-      expect(statusNames).not.toContain('Completada');
-      expect(statusNames).not.toContain('Cancelada');
+      expect(statusNames).not.toContain('COMPLETED');
+      expect(statusNames).not.toContain('CANCELLED');
     });
   });
 
