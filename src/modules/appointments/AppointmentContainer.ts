@@ -16,9 +16,11 @@ import { PrismaScheduleRepository } from './infrastructure/persistence/PrismaSch
 // Repositorios de módulos externos
 import { IServiceRepository } from '../services/domain/repositories/IServiceRepository';
 import { IStylistRepository } from '../services/domain/repositories/IStylistRepository';
+import { IStylistServiceRepository } from '../services/domain/repositories/IStylistServiceRepository';
 import { IClientRepository } from '../auth/domain/repositories/IClientRepository';
 import { PrismaServiceRepository } from '../services/infrastructure/persistence/PrismaServiceRepository';
 import { PrismaStylistRepository } from '../services/infrastructure/persistence/PrismaStylistRepository';
+import { PrismaStylistServiceRepository } from '../services/infrastructure/persistence/PrismaStylistServiceRepository';
 import { PrismaClientRepository } from '../auth/infrastructure/persistence/PrismaClientRepository';
 
 // Casos de uso
@@ -61,6 +63,7 @@ export class AppointmentContainer {
   // Repositorios - Módulos externos
   private _serviceRepository: IServiceRepository;
   private _stylistRepository: IStylistRepository;
+  private _stylistServiceRepository: IStylistServiceRepository;
   private _clientRepository: IClientRepository;
 
   /**
@@ -104,6 +107,7 @@ export class AppointmentContainer {
     // Repositorios de módulos externos
     this._serviceRepository = new PrismaServiceRepository(this.prisma);
     this._stylistRepository = new PrismaStylistRepository(this.prisma);
+    this._stylistServiceRepository = new PrismaStylistServiceRepository(this.prisma);
     this._clientRepository = new PrismaClientRepository(this.prisma);
 
     // Casos de uso implementados
@@ -113,6 +117,7 @@ export class AppointmentContainer {
       this._scheduleRepository,
       this._serviceRepository,
       this._stylistRepository,
+      this._stylistServiceRepository,
       this._clientRepository,
     );
 

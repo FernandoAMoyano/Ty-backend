@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../../src/app';
 import { loginAsAdmin, loginTestUser } from '../../setup/helpers';
-import { createTestAppointment } from '../../setup/appointments-helpers';
+import { createConfirmedTestAppointment } from '../../setup/appointments-helpers';
 
 // Tests de integración para el módulo de Pagos
 describe('Payments Integration Tests', () => {
@@ -26,8 +26,8 @@ describe('Payments Integration Tests', () => {
     });
     stylistToken = stylistResponse.body.data.token;
 
-    // Crear una cita de prueba para los tests
-    const appointment = await createTestAppointment();
+    // Crear una cita de prueba confirmada para los tests de pagos
+    const appointment = await createConfirmedTestAppointment();
     testAppointmentId = appointment.id;
   });
 

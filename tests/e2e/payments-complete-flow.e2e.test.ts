@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../src/app';
 import { loginAsAdmin, loginTestUser } from '../setup/helpers';
-import { createTestAppointment } from '../setup/appointments-helpers';
+import { createConfirmedTestAppointment } from '../setup/appointments-helpers';
 
 // Tests E2E para el flujo completo del módulo de Pagos
 describe('Payments Complete Flow E2E Tests', () => {
@@ -25,8 +25,8 @@ describe('Payments Complete Flow E2E Tests', () => {
     });
     stylistToken = stylistResponse.body.data.token;
 
-    // Crear una cita de prueba para los tests E2E
-    const appointment = await createTestAppointment();
+    // Crear una cita de prueba confirmada para los tests E2E de pagos
+    const appointment = await createConfirmedTestAppointment();
     testAppointmentId = appointment.id;
   });
 

@@ -102,13 +102,12 @@ describe('Appointment Entity', () => {
   });
 
   describe('Appointment Validation', () => {
-    // Debería lanzar error para fecha en el pasado
-    it('should throw error for past date', () => {
+    // Debería lanzar error para fecha en el pasado al crear con create()
+    it('should throw error for past date via create()', () => {
       const pastDate = new Date('2020-01-01T10:00:00.000Z');
 
       expect(() => {
-        new Appointment(
-          validAppointmentData.id,
+        Appointment.create(
           pastDate,
           validAppointmentData.duration,
           validAppointmentData.userId,
@@ -117,6 +116,31 @@ describe('Appointment Entity', () => {
           validAppointmentData.statusId,
         );
       }).toThrow('Appointment cannot be scheduled in the past');
+    });
+
+    // Debería permitir fechas pasadas al reconstruir desde persistencia
+    it('should allow past dates via fromPersistence()', () => {
+      const pastDate = new Date('2020-01-01T10:00:00.000Z');
+      const createdAt = new Date('2019-12-01T10:00:00.000Z');
+      const updatedAt = new Date('2019-12-15T10:00:00.000Z');
+
+      const appointment = Appointment.fromPersistence(
+        validAppointmentData.id,
+        pastDate,
+        validAppointmentData.duration,
+        validAppointmentData.userId,
+        validAppointmentData.clientId,
+        validAppointmentData.scheduleId,
+        validAppointmentData.statusId,
+        validAppointmentData.stylistId,
+        undefined,
+        validAppointmentData.serviceIds,
+        createdAt,
+        updatedAt,
+      );
+
+      expect(appointment.dateTime).toEqual(pastDate);
+      expect(appointment.isInPast()).toBe(true);
     });
 
     // Debería lanzar error para duración cero
@@ -365,18 +389,17 @@ describe('Appointment Entity', () => {
 
       // Debería detectar si la cita está en el pasado
       it('should detect if appointment is in past', () => {
-        const pastAppointment = new Appointment(
+        const pastDate = new Date('2020-01-01T10:00:00.000Z');
+
+        const pastAppointment = Appointment.fromPersistence(
           generateUuid(),
-          getFutureDate(10), // Fecha futura para validación inicial
+          pastDate,
           60,
           validAppointmentData.userId,
           validAppointmentData.clientId,
           validAppointmentData.scheduleId,
           validAppointmentData.statusId,
         );
-
-        // Cambiar a fecha pasada después de la validación inicial
-        pastAppointment.dateTime = new Date('2020-01-01T10:00:00.000Z');
 
         expect(pastAppointment.isInPast()).toBe(true);
       });

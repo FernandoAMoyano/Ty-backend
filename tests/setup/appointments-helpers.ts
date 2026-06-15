@@ -4,6 +4,31 @@ import { generateUuid } from '../../src/shared/utils/uuid';
 import { DayOfWeek } from '@prisma/client';
 
 /**
+ * Crea un appointment de prueba en estado confirmado para testing de pagos y otros flujos
+ * @param overrides - Propiedades opcionales para sobrescribir los valores por defecto
+ * @returns Promise que resuelve con el appointment confirmado creado en la base de datos
+ * @example
+ * ```typescript
+ * const appointment = await createConfirmedTestAppointment();
+ * ```
+ */
+export async function createConfirmedTestAppointment(overrides: Partial<any> = {}): Promise<any> {
+  const confirmedStatus = await testPrisma.appointmentStatus.findFirst({
+    where: { name: 'CONFIRMED' }
+  });
+
+  if (!confirmedStatus) {
+    throw new Error('Confirmed status not found in database. Ensure seed data is loaded.');
+  }
+
+  return createTestAppointment({
+    statusId: confirmedStatus.id,
+    confirmedAt: new Date(),
+    ...overrides,
+  });
+}
+
+/**
  * Interfaz para los datos del seed que retorna getSeedData
  */
 interface SeedData {
@@ -77,14 +102,14 @@ async function getOrCreateBaseData() {
 
   // Obtener o crear status
   let status = await testPrisma.appointmentStatus.findFirst({
-    where: { name: 'Pendiente' }
+    where: { name: 'PENDING' }
   });
 
   if (!status) {
     status = await testPrisma.appointmentStatus.create({
       data: {
         id: generateUuid(),
-        name: 'Pendiente',
+        name: 'PENDING',
         description: 'Appointment pending confirmation'
       }
     });
@@ -346,15 +371,15 @@ export async function cleanupAll(): Promise<void> {
  */
 export async function getSeedData(): Promise<SeedData> {
   const pendingStatus = await testPrisma.appointmentStatus.findFirst({
-    where: { name: 'Pendiente' }
+    where: { name: 'PENDING' }
   });
 
   const confirmedStatus = await testPrisma.appointmentStatus.findFirst({
-    where: { name: 'Confirmada' }
+    where: { name: 'CONFIRMED' }
   });
 
   const completedStatus = await testPrisma.appointmentStatus.findFirst({
-    where: { name: 'Completada' }
+    where: { name: 'COMPLETED' }
   });
 
   const mondaySchedule = await testPrisma.schedule.findFirst({

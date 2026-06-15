@@ -4,12 +4,14 @@ import { IAppointmentStatusRepository } from '../../domain/repositories/IAppoint
 import { IScheduleRepository } from '../../domain/repositories/IScheduleRepository';
 import { IServiceRepository } from '../../../services/domain/repositories/IServiceRepository';
 import { IStylistRepository } from '../../../services/domain/repositories/IStylistRepository';
+import { IStylistServiceRepository } from '../../../services/domain/repositories/IStylistServiceRepository';
 import { IClientRepository } from '../../../auth/domain/repositories/IClientRepository';
 import { CreateAppointmentDto } from '../dto/request/CreateAppointmentDto';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
+import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
 
 /**
  * Caso de uso para crear una nueva cita en el sistema
@@ -22,8 +24,43 @@ export class CreateAppointment {
     private scheduleRepository: IScheduleRepository,
     private serviceRepository: IServiceRepository,
     private stylistRepository: IStylistRepository,
+    private stylistServiceRepository: IStylistServiceRepository,
     private clientRepository: IClientRepository,
   ) {}
+
+  /**
+   * Valida que la cita completa (inicio + duración) esté dentro del horario laboral del día
+   * @param dateTimeStr - Fecha y hora de la cita en formato ISO string
+   * @param duration - Duración total de la cita en minutos
+   * @param schedule - Horario laboral del día
+   * @throws BusinessRuleError si la cita está fuera del horario laboral
+   */
+  private validateWorkingHours(dateTimeStr: string, duration: number, schedule: any): void {
+    const appointmentDate = new Date(dateTimeStr);
+    const appointmentHours = appointmentDate.getHours();
+    const appointmentMinutes = appointmentDate.getMinutes();
+
+    // Convertir horarios a minutos desde medianoche para comparación
+    const [startH, startM] = schedule.startTime.split(':').map(Number);
+    const [endH, endM] = schedule.endTime.split(':').map(Number);
+
+    const appointmentStartInMinutes = appointmentHours * 60 + appointmentMinutes;
+    const appointmentEndInMinutes = appointmentStartInMinutes + duration;
+    const scheduleStartInMinutes = startH * 60 + startM;
+    const scheduleEndInMinutes = endH * 60 + endM;
+
+    if (appointmentStartInMinutes < scheduleStartInMinutes) {
+      throw new BusinessRuleError(
+        `Appointment starts before working hours (${schedule.startTime})`,
+      );
+    }
+
+    if (appointmentEndInMinutes > scheduleEndInMinutes) {
+      throw new BusinessRuleError(
+        `Appointment ends after working hours (${schedule.endTime})`,
+      );
+    }
+  }
 
   /**
    * Ejecuta el caso de uso para crear una nueva cita
@@ -44,16 +81,19 @@ export class CreateAppointment {
     // 3. Calcular duración total si no se proporciona
     const totalDuration = await this.calculateTotalDuration(createDto);
 
-    // 4. Validar disponibilidad y conflictos
-    await this.validateAvailability(createDto, totalDuration);
-
-    // 5. Obtener estado inicial (pendiente)
-    const pendingStatus = await this.getPendingStatus();
-
-    // 6. Obtener horario apropiado
+    // 4. Obtener horario apropiado para el día
     const schedule = await this.getAppropriateSchedule(createDto.dateTime);
 
-    // 7. Crear la entidad de cita con el Client.id correcto
+    // 5. Validar que la cita esté dentro del horario laboral
+    this.validateWorkingHours(createDto.dateTime, totalDuration, schedule);
+
+    // 6. Validar disponibilidad y conflictos
+    await this.validateAvailability(createDto, totalDuration);
+
+    // 7. Obtener estado inicial (pendiente)
+    const pendingStatus = await this.getPendingStatus();
+
+    // 8. Crear la entidad de cita con el Client.id correcto
     const appointment = Appointment.create(
       new Date(createDto.dateTime),
       totalDuration,
@@ -65,10 +105,10 @@ export class CreateAppointment {
       createDto.serviceIds,
     );
 
-    // 8. Guardar en repositorio
+    // 9. Guardar en repositorio
     const savedAppointment = await this.appointmentRepository.save(appointment);
 
-    // 9. Mapear a DTO de respuesta
+    // 10. Mapear a DTO de respuesta
     return this.mapToAppointmentDto(savedAppointment);
   }
 
@@ -145,11 +185,30 @@ export class CreateAppointment {
       }
     }
 
-    // Validar que todos los servicios existen
+    // Validar que todos los servicios existen y están activos
     for (const serviceId of createDto.serviceIds) {
       const service = await this.serviceRepository.findById(serviceId);
       if (!service) {
         throw new NotFoundError('Service', serviceId);
+      }
+      if (!service.isActive) {
+        throw new BusinessRuleError(`Service '${service.name}' is not currently active`);
+      }
+    }
+
+    // Validar que el estilista ofrezca los servicios seleccionados (si se especifica estilista)
+    if (createDto.stylistId) {
+      for (const serviceId of createDto.serviceIds) {
+        const assignment = await this.stylistServiceRepository.findByStylistAndService(
+          createDto.stylistId,
+          serviceId,
+        );
+        if (!assignment) {
+          throw new BusinessRuleError('Stylist does not offer one of the selected services');
+        }
+        if (!assignment.isOffering) {
+          throw new BusinessRuleError('Stylist is not currently offering one of the selected services');
+        }
       }
     }
 
@@ -200,9 +259,7 @@ export class CreateAppointment {
       throw new ConflictError('There are conflicting appointments at this time');
     }
 
-    // TODO: Validar horarios de trabajo del estilista
-    // TODO: Validar días festivos
-    // TODO: Validar horarios de la tienda
+    // TODO: Validar días festivos (ISSUE-12: diferido)
   }
 
   /**

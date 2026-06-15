@@ -4,6 +4,7 @@ import { AppointmentStatusRepository } from '../../../../../src/modules/appointm
 import { ScheduleRepository } from '../../../../../src/modules/appointments/domain/repositories/ScheduleRepository';
 import { ServiceRepository } from '../../../../../src/modules/services/domain/repositories/ServiceRepository';
 import { StylistRepository } from '../../../../../src/modules/services/domain/repositories/StylistRepository';
+import { IStylistServiceRepository } from '../../../../../src/modules/services/domain/repositories/IStylistServiceRepository';
 import { ClientRepository } from '../../../../../src/modules/auth/domain/repositories/Client';
 import { Appointment } from '../../../../../src/modules/appointments/domain/entities/Appointment';
 import { AppointmentStatus } from '../../../../../src/modules/appointments/domain/entities/AppointmentStatus';
@@ -15,6 +16,7 @@ import { CreateAppointmentDto } from '../../../../../src/modules/appointments/ap
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../../src/shared/exceptions/ConflictError';
+import { BusinessRuleError } from '../../../../../src/shared/exceptions/BusinessRuleError';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('CreateAppointment Use Case', () => {
@@ -24,6 +26,7 @@ describe('CreateAppointment Use Case', () => {
   let mockScheduleRepository: jest.Mocked<ScheduleRepository>;
   let mockServiceRepository: jest.Mocked<ServiceRepository>;
   let mockStylistRepository: jest.Mocked<StylistRepository>;
+  let mockStylistServiceRepository: jest.Mocked<IStylistServiceRepository>;
   let mockClientRepository: jest.Mocked<ClientRepository>;
 
   // Utilidades de fecha dinámicas y mantenibles
@@ -35,6 +38,9 @@ describe('CreateAppointment Use Case', () => {
     while (future.getDay() !== 1) { // 1 = lunes
       future.setDate(future.getDate() + 1);
     }
+
+    // Fijar hora dentro del horario laboral del mock schedule (09:00-18:00)
+    future.setHours(10, 0, 0, 0);
     
     return future;
   };
@@ -195,12 +201,14 @@ describe('CreateAppointment Use Case', () => {
     const stylist = createMockStylist(validStylistId);
     const service = createMockService(validServiceId1, 60);
     const schedule = createMockSchedule('MONDAY');
+    const stylistService = { stylistId: validStylistId, serviceId: validServiceId1, isOffering: true, customPrice: null, createdAt: new Date(), updatedAt: new Date() };
 
     mockAppointmentStatusRepository.findByName.mockResolvedValue(pendingStatus);
     mockClientRepository.findById.mockResolvedValue(client);
     mockClientRepository.findByUserId.mockResolvedValue(null); // No necesario si findById encuentra
     mockStylistRepository.findById.mockResolvedValue(stylist);
     mockServiceRepository.findById.mockResolvedValue(service);
+    mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(stylistService as any);
     mockScheduleRepository.findAll.mockResolvedValue([schedule]);
     mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([]);
     mockAppointmentRepository.save.mockResolvedValue(appointment);
@@ -283,6 +291,18 @@ describe('CreateAppointment Use Case', () => {
       existsById: jest.fn(),
     } as unknown as jest.Mocked<StylistRepository>;
 
+    mockStylistServiceRepository = {
+      findByStylistAndService: jest.fn(),
+      findByStylist: jest.fn(),
+      findByService: jest.fn(),
+      findActiveOfferings: jest.fn(),
+      findStylistsOfferingService: jest.fn(),
+      save: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      existsAssignment: jest.fn(),
+    } as unknown as jest.Mocked<IStylistServiceRepository>;
+
     // Mock de ClientRepository
     mockClientRepository = {
       findById: jest.fn(),
@@ -301,6 +321,7 @@ describe('CreateAppointment Use Case', () => {
       mockScheduleRepository,
       mockServiceRepository,
       mockStylistRepository,
+      mockStylistServiceRepository,
       mockClientRepository,
     );
   });
@@ -453,6 +474,9 @@ describe('CreateAppointment Use Case', () => {
       mockClientRepository.findByUserId.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(stylist);
       mockServiceRepository.findById.mockResolvedValue(service);
+      mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(
+        { stylistId: validStylistId, serviceId: validServiceId1, isOffering: true } as any,
+      );
       mockAppointmentStatusRepository.findByName.mockResolvedValue(pendingStatus);
       mockScheduleRepository.findAll.mockResolvedValue([schedule]);
       mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([]);
@@ -488,6 +512,94 @@ describe('CreateAppointment Use Case', () => {
         new NotFoundError('Service', validServiceId1),
       );
     });
+
+    // Debería lanzar BusinessRuleError cuando un servicio no está activo
+    it('should throw BusinessRuleError when service is not active', async () => {
+      const client = createMockClient(validClientId);
+      const stylist = createMockStylist(validStylistId);
+      const inactiveService = createMockService(validServiceId1, 60);
+      (inactiveService as any).isActive = false;
+
+      mockClientRepository.findById.mockResolvedValue(client);
+      mockStylistRepository.findById.mockResolvedValue(stylist);
+      mockServiceRepository.findById.mockResolvedValue(inactiveService);
+
+      await expect(useCase.execute(validCreateDto, validUserId)).rejects.toThrow(
+        BusinessRuleError,
+      );
+    });
+
+    // Debería lanzar BusinessRuleError cuando el estilista no tiene asignado el servicio
+    it('should throw BusinessRuleError when stylist does not offer service', async () => {
+      const client = createMockClient(validClientId);
+      const stylist = createMockStylist(validStylistId);
+      const service = createMockService(validServiceId1, 60);
+
+      mockClientRepository.findById.mockResolvedValue(client);
+      mockStylistRepository.findById.mockResolvedValue(stylist);
+      mockServiceRepository.findById.mockResolvedValue(service);
+      mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(null);
+
+      await expect(useCase.execute(validCreateDto, validUserId)).rejects.toThrow(
+        BusinessRuleError,
+      );
+    });
+
+    // Debería lanzar BusinessRuleError cuando el estilista no está ofreciendo el servicio actualmente
+    it('should throw BusinessRuleError when stylist is not currently offering service', async () => {
+      const client = createMockClient(validClientId);
+      const stylist = createMockStylist(validStylistId);
+      const service = createMockService(validServiceId1, 60);
+      const notOfferingAssignment = { stylistId: validStylistId, serviceId: validServiceId1, isOffering: false };
+
+      mockClientRepository.findById.mockResolvedValue(client);
+      mockStylistRepository.findById.mockResolvedValue(stylist);
+      mockServiceRepository.findById.mockResolvedValue(service);
+      mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(notOfferingAssignment as any);
+
+      await expect(useCase.execute(validCreateDto, validUserId)).rejects.toThrow(
+        BusinessRuleError,
+      );
+    });
+  });
+
+  describe('Working Hours Validation', () => {
+    // Debería lanzar BusinessRuleError cuando la cita empieza antes del horario laboral
+    it('should throw BusinessRuleError when appointment starts before working hours', async () => {
+      const earlyDate = getNextMonday(48);
+      earlyDate.setHours(7, 0, 0, 0); // 7:00 AM, antes de 09:00
+
+      const earlyDto: CreateAppointmentDto = {
+        ...validCreateDto,
+        dateTime: earlyDate.toISOString(),
+      };
+
+      const appointment = createMockAppointment();
+      setupBasicSuccessfulMocks(appointment);
+
+      await expect(useCase.execute(earlyDto, validUserId)).rejects.toThrow(
+        BusinessRuleError,
+      );
+    });
+
+    // Debería lanzar BusinessRuleError cuando la cita termina después del horario laboral
+    it('should throw BusinessRuleError when appointment ends after working hours', async () => {
+      const lateDate = getNextMonday(48);
+      lateDate.setHours(17, 30, 0, 0); // 17:30, una cita de 60 min terminaría a las 18:30
+
+      const lateDto: CreateAppointmentDto = {
+        ...validCreateDto,
+        dateTime: lateDate.toISOString(),
+        duration: 60,
+      };
+
+      const appointment = createMockAppointment();
+      setupBasicSuccessfulMocks(appointment);
+
+      await expect(useCase.execute(lateDto, validUserId)).rejects.toThrow(
+        BusinessRuleError,
+      );
+    });
   });
 
   describe('Conflict Detection', () => {
@@ -503,6 +615,9 @@ describe('CreateAppointment Use Case', () => {
       mockClientRepository.findById.mockResolvedValue(client);
       mockStylistRepository.findById.mockResolvedValue(stylist);
       mockServiceRepository.findById.mockResolvedValue(service);
+      mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(
+        { stylistId: validStylistId, serviceId: validServiceId1, isOffering: true } as any,
+      );
       mockAppointmentStatusRepository.findByName.mockResolvedValue(pendingStatus);
       mockScheduleRepository.findAll.mockResolvedValue([schedule]);
       mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([

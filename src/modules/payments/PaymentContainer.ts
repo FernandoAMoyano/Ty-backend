@@ -4,6 +4,12 @@ import { PrismaClient } from '@prisma/client';
 import { IPaymentRepository } from './domain/repositories/IPaymentRepository';
 import { PrismaPaymentRepository } from './infrastructure/persistence/PrismaPaymentRepository';
 
+// Repositorios de módulos externos
+import { IAppointmentRepository } from '../appointments/domain/repositories/IAppointmentRepository';
+import { IAppointmentStatusRepository } from '../appointments/domain/repositories/IAppointmentStatusRepository';
+import { PrismaAppointmentRepository } from '../appointments/infrastructure/persistence/PrismaAppointmentRepository';
+import { PrismaAppointmentStatusRepository } from '../appointments/infrastructure/persistence/PrismaAppointmentStatusRepository';
+
 // Use Cases
 import { CreatePayment } from './application/use-cases/CreatePayment';
 import { GetPaymentById } from './application/use-cases/GetPaymentById';
@@ -31,6 +37,10 @@ export class PaymentContainer {
 
   // Repository
   private _paymentRepository: IPaymentRepository;
+
+  // Repositorios externos
+  private _appointmentRepository: IAppointmentRepository;
+  private _appointmentStatusRepository: IAppointmentStatusRepository;
 
   // Use Cases
   private _createPayment: CreatePayment;
@@ -77,11 +87,17 @@ export class PaymentContainer {
    * @private
    */
   private setupDependencies(): void {
-    // 1. Inicializar repositorio
+    // 1. Inicializar repositorios
     this._paymentRepository = new PrismaPaymentRepository(this.prisma);
+    this._appointmentRepository = new PrismaAppointmentRepository(this.prisma);
+    this._appointmentStatusRepository = new PrismaAppointmentStatusRepository(this.prisma);
 
     // 2. Inicializar use cases
-    this._createPayment = new CreatePayment(this._paymentRepository);
+    this._createPayment = new CreatePayment(
+      this._paymentRepository,
+      this._appointmentRepository,
+      this._appointmentStatusRepository,
+    );
     this._getPaymentById = new GetPaymentById(this._paymentRepository);
     this._getPaymentsByAppointment = new GetPaymentsByAppointment(this._paymentRepository);
     this._getPayments = new GetPayments(this._paymentRepository);
