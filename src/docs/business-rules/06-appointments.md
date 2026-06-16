@@ -1,6 +1,6 @@
 # Citas (Appointments) - Reglas de Negocio
 
-> Última actualización: 2026-06-12 | Versión: 2.1
+> Última actualización: 2026-06-15 | Versión: 2.2
 
 ---
 
@@ -56,18 +56,36 @@ Entidad completa con métodos de negocio, no solo un enum.
 
 ---
 
-## 3. Permisos por Rol
+## 3. Permisos
 
-| Acción | ADMIN | STYLIST | CLIENT | Público |
-|--------|-------|---------|--------|---------|
-| Ver slots disponibles | ✅ | ✅ | ✅ | ✅ |
-| Crear cita | ✅ | ✅ | ✅ | ❌ |
-| Ver cita por ID | ✅ | ✅ | ✅ | ❌ |
-| Actualizar cita | ✅ | ✅ | ✅ | ❌ |
-| Confirmar cita | ✅ | ✅ | ❌ | ❌ |
-| Cancelar cita | ✅ | ✅ | ✅ | ❌ |
-| Ver citas por cliente | ✅ | ✅ | ✅ | ❌ |
-| Ver citas por estilista | ✅ | ✅ | ❌ | ❌ |
+El modelo de permisos de este módulo es **ownership-based** (basado en participación), no role-based. Las acciones de mutación dependen de la relación del usuario con la cita, no de su rol.
+
+### 3.1 Acciones públicas
+
+| Acción | Acceso |
+|--------|--------|
+| Ver slots disponibles | Público (sin autenticación) |
+
+### 3.2 Acciones de consulta
+
+Todas las rutas de consulta requieren solo `authenticate` (sin `authorize`). Cualquier usuario autenticado puede acceder, independientemente de su rol.
+
+| Acción | ADMIN | STYLIST | CLIENT |
+|--------|-------|---------|--------|
+| Ver cita por ID | ✅ | ✅ | ✅ |
+| Ver citas por cliente | ✅ | ✅ | ✅ |
+| Ver citas por estilista | ✅ | ✅ | ✅ |
+
+### 3.3 Acciones de mutación (ownership-based)
+
+| Acción | ¿Quién puede? | Validación en código |
+|--------|--------------|---------------------|
+| Crear cita | Cualquier autenticado | Solo `authenticate` |
+| Confirmar cita | El creador (`userId`) o el estilista asignado (`stylistId`) | `ConfirmAppointment` valida participación |
+| Cancelar cita | El creador (`userId`), cliente (`clientId`), o estilista (`stylistId`) | `CancelAppointment` valida participación |
+| Actualizar cita | Cualquier autenticado | Solo `authenticate` |
+
+> **Nota:** No existe actualmente un override de ADMIN que permita confirmar/cancelar cualquier cita. Los permisos son estrictamente por participación en la cita.
 
 ---
 
@@ -77,12 +95,15 @@ Entidad completa con métodos de negocio, no solo un enum.
 
 | Regla | Descripción |
 |-------|-------------|
-| Fecha futura | No se pueden crear citas en el pasado |
+| Fecha futura | No se pueden crear citas en el pasado (validación solo en `create()`, no en `fromPersistence()`) |
 | Límite futuro | Máximo 6 meses de anticipación |
 | Servicio requerido | Al menos un `serviceId` debe proporcionarse |
-| Cliente válido | El `clientId` debe existir en la tabla Client |
+| Servicios activos | Todos los servicios deben tener `isActive = true`. Se lanza `BusinessRuleError` si algún servicio está inactivo |
+| Estilista ofrece servicios | Si se especifica `stylistId`, el estilista debe tener asignado cada servicio (`IStylistServiceRepository.findByStylistAndService`) y estar ofreciéndolo (`isOffering = true`) |
+| Cliente válido | El `clientId` del DTO es siempre el `User.id` (el ID que el frontend conoce tras login). El use case busca el Client vía `findByUserId()` y lanza `NotFoundError` si no existe |
 | Estilista válido | Si se especifica, el `stylistId` debe existir |
 | Día laboral | Debe existir un Schedule configurado para el día de la semana |
+| Horario laboral | La hora de la cita debe caer dentro del rango `startTime`-`endTime` del Schedule. La cita completa (inicio + duración) debe terminar antes de `endTime` |
 | Sin conflictos | No debe haber citas superpuestas en el mismo horario (validado por `findConflictingAppointments`) |
 | Estado inicial | Se crea con estado PENDING |
 | Duración auto-calculada | Si no se proporciona `duration`, se calcula sumando la duración de los servicios seleccionados (mínimo 15 min) |
@@ -110,6 +131,8 @@ Entidad completa con métodos de negocio, no solo un enum.
 | Registro | Se guarda `confirmedAt` con la fecha de confirmación |
 | Notas | Opcionales, máximo 500 caracteres |
 
+> **Limitación conocida (ISSUE-16):** El campo `notes` de confirmación es aceptado y validado por la API pero no se persiste actualmente. La entidad Appointment no tiene campo para almacenar esta información. Será almacenado en una futura iteración.
+
 ### 4.4 Cancelación de Citas
 
 | Regla | Descripción |
@@ -122,6 +145,8 @@ Entidad completa con métodos de negocio, no solo un enum.
 | Transición válida | Validada vía `canTransitionTo()` |
 | Razón opcional | Se puede incluir motivo de cancelación (máx 500 caracteres) |
 | Tipo de cancelación | `cancelledBy` validado contra valores: `client`, `stylist`, `admin`, `system` |
+
+> **Limitación conocida (ISSUE-16):** Los campos `reason` y `cancelledBy` de cancelación son aceptados y validados por la API pero no se persisten actualmente. La entidad Appointment no tiene campos para almacenar esta información. Serán almacenados en una futura iteración.
 
 ### 4.5 Modificación de Citas
 
@@ -207,11 +232,21 @@ NO_SHOW (No Se Presentó)
 
 ## 9. Relaciones con Otros Módulos
 
-- **Auth**: El `userId` identifica quién creó la cita
-- **Clients**: Cada cita está asociada a un cliente (`clientId`)
-- **Stylists**: Las citas pueden asignarse a estilistas (`stylistId`)
-- **Services**: Las citas incluyen uno o más servicios (`serviceIds`)
-- **Schedules**: Determina disponibilidad de horarios y vincula la cita a un horario (`scheduleId`)
-- **Holidays**: Los feriados afectan la disponibilidad
-- **Payments**: Las citas pueden tener pagos asociados
+- **Auth**: El `userId` identifica quién creó la cita. El `clientId` del DTO es siempre el `User.id`
+- **Clients**: Cada cita está asociada a un cliente (`clientId`). El use case resuelve el Client vía `findByUserId()`
+- **Stylists**: Las citas pueden asignarse a estilistas (`stylistId`). Se valida que el estilista ofrezca los servicios seleccionados (`isOffering = true`)
+- **Services**: Las citas incluyen uno o más servicios (`serviceIds`). Se valida que estén activos (`isActive = true`)
+- **Schedules**: Determina disponibilidad de horarios y vincula la cita a un horario (`scheduleId`). Se valida que la cita caiga dentro del horario laboral
+- **Holidays**: Los feriados deberían afectar la disponibilidad, pero la integración está diferida (ver ISSUE-12 en INTERVENTION_PLAN.md)
+- **Payments**: Las citas pueden tener pagos asociados. Solo se permiten pagos para citas en estado CONFIRMED o COMPLETED
 - **Notifications**: Se envían notificaciones sobre citas
+
+---
+
+## 10. Limitaciones Conocidas
+
+| ID | Descripción |
+|----|-------------|
+| ISSUE-12 | `GetAvailableSlots` y `CreateAppointment` no consultan feriados ni excepciones de horario. La lógica de prioridad `ScheduleException > Holiday > Schedule regular` está planificada como feature futura |
+| ISSUE-16 | Los campos `reason`, `cancelledBy` (cancelación) y `notes` (confirmación) son validados por la API pero no se persisten. Las entidades no tienen campos para esta información |
+| ISSUE-20 | No existe un límite de citas por cliente por día. La protección contra abuso depende de la validación de conflictos de horario |

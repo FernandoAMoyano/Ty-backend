@@ -1,6 +1,6 @@
 # Notificaciones - Reglas de Negocio
 
-> Última actualización: 2026-06-12 | Versión: 2.1
+> Última actualización: 2026-06-15 | Versión: 2.2
 
 ---
 
@@ -82,7 +82,7 @@ Entidad completa con métodos de negocio, no solo un enum.
 | Regla | Descripción |
 |-------|-------------|
 | Solo Admin | Solo administradores pueden crear notificaciones |
-| userId requerido | Debe ser un UUID válido (formato validado, existencia del usuario no verificada) |
+| userId requerido | Debe ser un UUID válido. `CreateNotification` verifica que el usuario exista en la BD vía `IUserRepository.findById()` y lanza `NotFoundError` si no existe |
 | Tipo válido | Debe ser uno de los valores del `NotificationTypeEnum` |
 | Mensaje requerido | No puede estar vacío, máximo 1000 caracteres |
 | Estado inicial | Se crea con estado PENDING |
@@ -152,6 +152,8 @@ FAILED (Fallida)
 | type | string | Filtrar por tipo de notificación (valor del enum) |
 | unreadOnly | boolean | Solo notificaciones no leídas (filtra por statusId ≠ READ) |
 
+> **Nota (ISSUE-26):** El default de `limit` es 20, sin máximo documentado explícitamente. Otros módulos como Holidays usan 10 por menor volumen esperado.
+
 ---
 
 ## 8. Códigos de Error
@@ -167,5 +169,5 @@ FAILED (Fallida)
 
 ## 9. Relaciones con Otros Módulos
 
-- **Auth**: Las notificaciones se envían a usuarios específicos (`userId`)
+- **Auth**: Las notificaciones se envían a usuarios específicos (`userId`). Se verifica que el usuario exista antes de crear la notificación
 - **Appointments**: Notificaciones de confirmación, recordatorio y cancelación

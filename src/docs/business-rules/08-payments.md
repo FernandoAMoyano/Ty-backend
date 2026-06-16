@@ -1,6 +1,6 @@
 # Pagos - Reglas de Negocio
 
-> Última actualización: 2026-06-12 | Versión: 2.1
+> Última actualización: 2026-06-15 | Versión: 2.2
 
 ---
 
@@ -70,10 +70,12 @@ El módulo de pagos gestiona el procesamiento de cobros asociados a las citas. S
 |-------|-------------|-------------|
 | Monto requerido | El campo `amount` es obligatorio | 400 |
 | Monto positivo | El monto debe ser mayor a 0 | 400 |
-| Cita válida | El `appointmentId` debe ser UUID válido (formato validado, existencia no verificada) | 400 |
+| Cita válida | El `appointmentId` debe ser UUID válido. `CreatePayment` verifica que la cita exista vía `IAppointmentRepository.findById()` y lanza `NotFoundError` si no existe | 400/404 |
+| Estado de cita permitido | Solo se pueden crear pagos para citas en estado **CONFIRMED** o **COMPLETED**. CONFIRMED = prepago, COMPLETED = pago posterior. Se lanza `BusinessRuleError` para otros estados | 422 |
 | UUID válido | Los IDs deben tener formato UUID | 400 |
 | Estado inicial | Los pagos se crean con estado PENDING | - |
 | Método nulo | El método de pago es null hasta procesarse | - |
+| Múltiples pagos | Se permiten múltiples pagos por cita (pagos parciales, split payments). No hay validación de unicidad | - |
 
 ### 4.2 Procesamiento de Pagos
 
@@ -93,6 +95,8 @@ El módulo de pagos gestiona el procesamiento de cobros asociados a las citas. S
 | Razón | La API acepta `reason` opcional (máx 500 chars) pero no se almacena en la entidad | - |
 | Estado final | El estado cambia a REFUNDED | - |
 | Solo Admin | Solo administradores pueden reembolsar | 403 |
+
+> **Limitación conocida (ISSUE-16):** El campo `reason` de reembolso es aceptado y validado por la API pero no se persiste actualmente. La entidad Payment no tiene campo para almacenar esta información. Será almacenado en una futura iteración.
 
 ### 4.4 Cancelación de Pagos
 
@@ -158,6 +162,8 @@ FAILED (Cancelado/Fallido)
 | startDate | date | Fecha inicio del rango |
 | endDate | date | Fecha fin del rango |
 
+> **Nota (ISSUE-26):** El default de `limit` es 20 con máximo 100. Consistente con Notifications (20). Holidays usa 10 por menor volumen esperado.
+
 ---
 
 ## 8. Estadísticas de Pagos
@@ -191,4 +197,24 @@ FAILED (Cancelado/Fallido)
 
 ## 10. Relaciones con Otros Módulos
 
-- **Appointments**: Cada pago está asociado a una cita
+- **Appointments**: Cada pago está asociado a una cita. Se verifica existencia y estado de la cita al crear el pago. Solo se permiten pagos para citas CONFIRMED (prepago) o COMPLETED (pago posterior)
+- **Services**: Los precios de servicios se almacenan en **centavos**. El `amount` del pago se expresa en la **unidad monetaria base** (ej: pesos, dólares), NO en centavos. La conversión es responsabilidad del consumidor de la API
+
+---
+
+## 11. Decisiones de Diseño
+
+| Decisión | Descripción |
+|----------|-------------|
+| Monto independiente (ISSUE-08, ISSUE-24) | El `amount` del pago es definido por el operador (Admin o Stylist) y no se valida automáticamente contra los precios de los servicios de la cita. Esto permite flexibilidad para descuentos, propinas, pagos parciales y ajustes manuales |
+| Unidad monetaria (ISSUE-08) | El `amount` se expresa en la unidad monetaria base (ej: pesos), a diferencia de los precios de servicios que se almacenan en centavos. La conversión es responsabilidad del consumidor de la API |
+| Múltiples pagos por cita | Se permiten múltiples pagos para la misma cita sin restricción de unicidad, permitiendo pagos parciales y split payments |
+| Estados permitidos | Solo CONFIRMED y COMPLETED permiten pagos: CONFIRMED = prepago antes del servicio, COMPLETED = cobro posterior al servicio |
+
+---
+
+## 12. Limitaciones Conocidas
+
+| ID | Descripción |
+|----|-------------|
+| ISSUE-16 | El campo `reason` de reembolso es validado por la API pero no se persiste. La entidad Payment no tiene campo para almacenar esta información |
