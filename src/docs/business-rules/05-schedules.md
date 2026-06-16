@@ -1,6 +1,6 @@
 # Horarios - Reglas de Negocio
 
-> Última actualización: 2026-06-12 | Versión: 2.1
+> Última actualización: 2026-06-15 | Versión: 2.2
 
 ---
 
@@ -88,6 +88,8 @@ Los horarios definen los días y horas de operación del salón. Cada día de la
 8. Retornar respuesta con slots y metadata
 ```
 
+> **Limitación conocida (ISSUE-12):** Actualmente, `GetAvailableSlots` solo consulta el `Schedule` regular por día de la semana. No consulta feriados (`IHolidayRepository`) ni excepciones de horario (`IScheduleExceptionRepository`). La lógica de prioridad `ScheduleException > Holiday > Schedule regular` está planificada como feature futura. Del mismo modo, `CreateAppointment` no valida contra feriados ni excepciones al crear una cita.
+
 ### 4.3 Detección de Conflictos
 
 | Regla | Descripción |
@@ -140,5 +142,5 @@ La entidad Schedule no tiene endpoints propios. Se accede a través del módulo 
 
 ## 7. Relaciones con Otros Módulos
 
-- **Appointments**: Los horarios determinan cuándo se pueden crear citas. GetAvailableSlots es el endpoint público.
-- **Holidays**: Los feriados pueden vincular horarios especiales via `holidayId`. Las ScheduleExceptions modifican días específicos.
+- **Appointments**: Los horarios determinan cuándo se pueden crear citas. `GetAvailableSlots` es el endpoint público. `CreateAppointment` valida que la hora de la cita caiga dentro del horario laboral del día (`startTime`-`endTime`)
+- **Holidays**: Los feriados pueden vincular horarios especiales via `holidayId`. Las ScheduleExceptions modifican días específicos. **Nota:** La integración entre feriados/excepciones y disponibilidad de citas está diferida como feature futura (ver ISSUE-12 en INTERVENTION_PLAN.md)

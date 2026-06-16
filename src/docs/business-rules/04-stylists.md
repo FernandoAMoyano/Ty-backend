@@ -1,6 +1,6 @@
 # Estilistas y Asignación de Servicios - Reglas de Negocio
 
-> Última actualización: 2026-06-12 | Versión: 2.1
+> Última actualización: 2026-06-16 | Versión: 2.2
 
 ---
 
@@ -142,6 +142,14 @@ Todos los endpoints están bajo el prefijo `/api/v1/services`.
 ## 7. Relaciones con Otros Módulos
 
 - **Auth**: Cada estilista tiene un User con rol STYLIST
-- **Services**: Los estilistas asignan servicios que ofrecen
-- **Appointments**: Las citas se asignan a estilistas específicos
+- **Services**: Los estilistas asignan servicios que ofrecen. Solo se pueden asignar servicios activos (`isActive = true`)
+- **Appointments**: Las citas se asignan a estilistas específicos. `CreateAppointment` valida que el estilista ofrezca los servicios seleccionados (`isOffering = true`)
 - **Schedules**: Cada estilista puede tener su propio horario
+
+---
+
+## 8. Limitaciones Conocidas
+
+| ID | Descripción |
+|----|-------------|
+| ISSUE-17 | La desactivación de un usuario con rol STYLIST (`isActive = false`) no tiene efecto cascada sobre las entidades del estilista. Sus asignaciones StylistService permanecen activas, sus citas pendientes/confirmadas siguen vigentes, y sigue apareciendo en consultas de estilistas por servicio. Se recomienda cancelar manualmente las citas pendientes y desactivar las asignaciones antes de desactivar un estilista |

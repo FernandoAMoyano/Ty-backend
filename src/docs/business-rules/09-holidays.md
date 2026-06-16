@@ -1,6 +1,6 @@
 # Feriados y Excepciones de Horario - Reglas de Negocio
 
-> Última actualización: 2026-06-12 | Versión: 2.1
+> Última actualización: 2026-06-16 | Versión: 2.2
 
 ---
 
@@ -62,14 +62,17 @@ El módulo de feriados gestiona los días especiales donde el salón puede tener
 |-------|-------------|
 | Nombre requerido | No puede estar vacío, máximo 100 caracteres, se trimea al guardar |
 | Fecha requerida | La fecha debe estar en formato ISO 8601 (YYYY-MM-DD) |
+| Fechas pasadas permitidas | Se permite crear feriados para fechas pasadas para mantener un registro histórico. Las propiedades computadas `isPast`, `isToday` y `isFuture` permiten filtrar según necesidad |
 | Unicidad de fecha | No pueden existir dos feriados en la misma fecha |
 | Descripción opcional | Puede ser null o string, máximo 500 caracteres, se trimea al guardar |
+| Sin efecto en citas | Crear un feriado no afecta las citas existentes para esa fecha (ver Limitaciones Conocidas) |
 
 ### 4.2 Creación de Excepciones
 
 | Regla | Descripción |
 |-------|-------------|
 | Fecha requerida | La fecha debe estar en formato ISO 8601 |
+| Fechas pasadas permitidas | Se permite crear excepciones para fechas pasadas para mantener un registro histórico |
 | Horarios requeridos | startTimeException y endTimeException en formato HH:MM |
 | Formato de hora válido | Regex `^([01]?[0-9]|2[0-3]):[0-5][0-9]$` |
 | Hora fin > hora inicio | La hora de fin debe ser posterior a la hora de inicio |
@@ -91,6 +94,15 @@ El módulo de feriados gestiona los días especiales donde el salón puede tener
 |-------|-------------|
 | Cascada | Al eliminar un feriado, se eliminan sus excepciones asociadas |
 | Irreversible | La eliminación es permanente |
+
+### 4.5 Feriados sin Excepción de Horario
+
+| Regla | Descripción |
+|-------|-------------|
+| Día cerrado por defecto | Un feriado sin excepción de horario asociada se interpreta como día cerrado (sin disponibilidad) |
+| Horario especial | Si el salón opera en un feriado con horario especial, se debe crear una `ScheduleException` vinculada al feriado |
+
+> **Nota (ISSUE-22):** Esta regla define la intención de diseño. Actualmente no tiene efecto en runtime porque la integración holidays↔appointments no está implementada (ISSUE-12).
 
 ---
 
@@ -173,6 +185,8 @@ El módulo de feriados gestiona los días especiales donde el salón puede tener
 | holidayId | UUID | Filtrar por feriado asociado |
 | reason | string | Filtrar por razón (búsqueda parcial) |
 
+> **Nota (ISSUE-26):** El default de `limit` es 10 tanto para Holidays como para ScheduleExceptions, por menor volumen esperado de datos. Otros módulos como Payments y Notifications usan 20.
+
 ---
 
 ## 8. Códigos de Error
@@ -189,15 +203,24 @@ El módulo de feriados gestiona los días especiales donde el salón puede tener
 
 ## 9. Relaciones con Otros Módulos
 
-### Con Appointments
+- **Appointments**: Los feriados y excepciones de horario deberían afectar la disponibilidad de citas. El sistema de disponibilidad debería consultar `CheckIsHoliday` antes de ofrecer slots. Las excepciones de horario modifican los horarios regulares para fechas específicas. **Nota:** Esta integración está diferida como feature futura (ver ISSUE-12 en INTERVENTION_PLAN.md)
+- **Schedules**: Las excepciones de horario (`ScheduleException`) actúan como modificadores temporales de los `Schedule` regulares. En una fecha con excepción, el horario de la excepción prevalece sobre el horario regular
 
-Los feriados y excepciones de horario afectan la disponibilidad de citas:
+---
 
-- El sistema de disponibilidad debería consultar `CheckIsHoliday` antes de ofrecer slots
-- Las excepciones de horario modifican los horarios regulares para fechas específicas
-- Esta integración debe implementarse en el módulo de Appointments
+## 10. Decisiones de Diseño
 
-### Con Schedules
+| Decisión | Descripción |
+|----------|-------------|
+| Fechas pasadas permitidas (ISSUE-23) | Se permite crear feriados y excepciones para fechas pasadas para mantener un registro histórico. Las propiedades computadas `isPast`, `isToday` y `isFuture` permiten filtrar según necesidad |
+| Feriado sin excepción = cerrado (ISSUE-22) | Un feriado sin excepción de horario asociada se interpreta como día cerrado. Si el salón opera ese día, se debe crear una ScheduleException vinculada |
 
-- Las excepciones de horario (`ScheduleException`) actúan como modificadores temporales de los `Schedule` regulares
-- En una fecha con excepción, el horario de la excepción prevalece sobre el horario regular
+---
+
+## 11. Limitaciones Conocidas
+
+| ID | Descripción |
+|----|-------------|
+| ISSUE-12 | `GetAvailableSlots` y `CreateAppointment` no consultan feriados ni excepciones de horario. La lógica de prioridad `ScheduleException > Holiday > Schedule regular` está planificada como feature futura |
+| ISSUE-21 | Crear un feriado no afecta las citas existentes para esa fecha. La notificación y/o cancelación automática de citas afectadas se implementará en una futura iteración, una vez que la integración holidays↔appointments esté completa (depende de ISSUE-12) |
+| ISSUE-23 | No hay validación que impida crear feriados o excepciones para fechas pasadas. Es intencional para mantener registro histórico |

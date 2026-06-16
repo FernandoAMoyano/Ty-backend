@@ -1,6 +1,6 @@
 # Categorías - Reglas de Negocio
 
-> Última actualización: 2026-06-12 | Versión: 2.1
+> Última actualización: 2026-06-16 | Versión: 2.2
 
 ---
 
@@ -71,6 +71,8 @@ Las categorías agrupan los servicios ofrecidos por el salón (ej: "Cortes", "Co
 |-------|-------------|
 | Servicios asociados | Al desactivar una categoría, sus servicios siguen activos |
 | Filtrado | Las categorías inactivas no aparecen en listados públicos |
+
+> **Decisión de diseño (ISSUE-18):** Los servicios de una categoría inactiva permanecen accesibles individualmente (por ID, búsqueda, listado general). Solo la navegación por categoría se ve afectada. La desactivación de una categoría no tiene efecto cascada sobre el estado `isActive` de sus servicios.
 
 ---
 

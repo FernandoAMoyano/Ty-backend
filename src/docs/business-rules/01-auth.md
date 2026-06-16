@@ -1,6 +1,6 @@
 # Autenticación y Usuarios - Reglas de Negocio
 
-> Última actualización: 2026-06-12 | Versión: 2.2
+> Última actualización: 2026-06-16 | Versión: 2.2
 
 ---
 
@@ -152,3 +152,12 @@ El `AuthMiddleware` protege las rutas que requieren autenticación. Expone dos m
 - **Appointments**: El `userId` se usa para identificar quién crea las citas
 - **Notifications**: Las notificaciones se envían a usuarios específicos
 - **Payments**: Los pagos están asociados a citas de usuarios
+- **Stylists**: Los usuarios con rol STYLIST tienen un perfil Stylist asociado automáticamente
+
+---
+
+## 9. Limitaciones Conocidas
+
+| ID | Descripción |
+|----|-------------|
+| ISSUE-17 | La desactivación de un usuario (`isActive = false`) no tiene efecto cascada sobre sus entidades asociadas. Si el usuario es un estilista, sus asignaciones de servicios (StylistService) permanecen activas, sus citas pendientes/confirmadas siguen vigentes, y sigue apareciendo en consultas de estilistas por servicio. Se recomienda cancelar manualmente las citas pendientes y desactivar las asignaciones antes de desactivar un estilista |
