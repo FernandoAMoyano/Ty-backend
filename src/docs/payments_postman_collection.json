@@ -25,6 +25,11 @@
       "key": "appointment_id",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "stylist_id",
+      "value": "",
+      "type": "string"
     }
   ],
   "auth": {
@@ -88,6 +93,9 @@
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    if (response.data.user.stylist) {",
+                  "        pm.collectionVariables.set('stylist_id', response.data.user.stylist.id);",
+                  "    }",
                   "    console.log('✅ Estilista Lucía login exitosa');",
                   "}"
                 ]
@@ -111,7 +119,7 @@
               "host": ["{{base_url}}"],
               "path": ["auth", "login"]
             },
-            "description": "Login con estilista Lucía. Guarda token automáticamente."
+            "description": "Login con estilista Lucía. Guarda token y stylist_id automáticamente."
           }
         },
         {
@@ -180,21 +188,11 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/appointments/date-range?startDate=2020-01-01T00:00:00.000Z&endDate=2030-12-31T23:59:59.999Z",
+              "raw": "{{base_url}}/appointments/stylist/{{stylist_id}}",
               "host": ["{{base_url}}"],
-              "path": ["appointments", "date-range"],
-              "query": [
-                {
-                  "key": "startDate",
-                  "value": "2020-01-01T00:00:00.000Z"
-                },
-                {
-                  "key": "endDate",
-                  "value": "2030-12-31T23:59:59.999Z"
-                }
-              ]
+              "path": ["appointments", "stylist", "{{stylist_id}}"]
             },
-            "description": "Obtiene una cita existente para usar en los tests de pagos"
+            "description": "Obtiene citas del estilista logueado para usar su appointment_id en los tests de pagos. Alternativa: setear appointment_id manualmente."
           }
         }
       ]

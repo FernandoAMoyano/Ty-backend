@@ -436,9 +436,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/stylists/{{stylist_id}}/services",
+              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services",
               "host": ["{{base_url}}"],
-              "path": ["stylists", "{{stylist_id}}", "services"]
+              "path": ["services", "stylists", "{{stylist_id}}", "services"]
             }
           }
         },
@@ -448,9 +448,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/stylists/{{stylist_id}}/services/active",
+              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services/active",
               "host": ["{{base_url}}"],
-              "path": ["stylists", "{{stylist_id}}", "services", "active"]
+              "path": ["services", "stylists", "{{stylist_id}}", "services", "active"]
             }
           }
         },
@@ -498,9 +498,9 @@
               "raw": "{\n  \"serviceId\": \"{{service_id}}\",\n  \"customPrice\": 45.00\n}"
             },
             "url": {
-              "raw": "{{base_url}}/stylists/{{stylist_id}}/services",
+              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services",
               "host": ["{{base_url}}"],
-              "path": ["stylists", "{{stylist_id}}", "services"]
+              "path": ["services", "stylists", "{{stylist_id}}", "services"]
             }
           }
         },
@@ -524,9 +524,9 @@
               "raw": "{\n  \"customPrice\": 50.00,\n  \"isOffering\": true\n}"
             },
             "url": {
-              "raw": "{{base_url}}/stylists/{{stylist_id}}/services/{{service_id}}",
+              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services/{{service_id}}",
               "host": ["{{base_url}}"],
-              "path": ["stylists", "{{stylist_id}}", "services", "{{service_id}}"]
+              "path": ["services", "stylists", "{{stylist_id}}", "services", "{{service_id}}"]
             }
           }
         },
@@ -542,9 +542,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/stylists/{{stylist_id}}/services/{{service_id}}",
+              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services/{{service_id}}",
               "host": ["{{base_url}}"],
-              "path": ["stylists", "{{stylist_id}}", "services", "{{service_id}}"]
+              "path": ["services", "stylists", "{{stylist_id}}", "services", "{{service_id}}"]
             }
           }
         },
@@ -554,9 +554,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/stylists/{{stylist_id}}/services/detailed",
+              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services/detailed",
               "host": ["{{base_url}}"],
-              "path": ["stylists", "{{stylist_id}}", "services", "detailed"]
+              "path": ["services", "stylists", "{{stylist_id}}", "services", "detailed"]
             }
           }
         },
