@@ -2,29 +2,46 @@ import { Appointment } from '../../domain/entities/Appointment';
 import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
+import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
 
 /**
  * Caso de uso para obtener todas las citas de un cliente específico
- * Maneja la búsqueda y validación de existencia del cliente y retorna sus citas ordenadas
+ * Aplica control de acceso híbrido: ownership + role-based
+ * - ADMIN: puede ver citas de cualquier cliente
+ * - CLIENT: solo puede ver sus propias citas (clientId === requesterId)
+ * - STYLIST: ve citas del cliente donde es el estilista asignado
  */
 export class GetAppointmentsByClient {
   constructor(private appointmentRepository: IAppointmentRepository) {}
 
   /**
    * Ejecuta el caso de uso para obtener las citas de un cliente
-   * @param clientId - ID único del cliente
-   * @returns Promise con array de DTOs de las citas del cliente ordenadas por fecha (más recientes primero)
+   * @param clientId - ID único del cliente (corresponde a User.id)
+   * @param requesterId - ID del usuario que realiza la consulta
+   * @param requesterRole - Nombre del rol del usuario solicitante
+   * @returns Promise con array de DTOs de las citas del cliente
    * @throws ValidationError si el ID del cliente no es válido
+   * @throws UnauthorizedError si el usuario no tiene permisos
    */
-  async execute(clientId: string): Promise<AppointmentDto[]> {
+  async execute(
+    clientId: string,
+    requesterId: string,
+    requesterRole: string,
+  ): Promise<AppointmentDto[]> {
     // 1. Validar datos básicos
     this.validateInput(clientId);
 
-    // 2. Buscar todas las citas del cliente en el repositorio
+    // 2. Validar permisos de acceso
+    this.validateAccessPermissions(clientId, requesterId, requesterRole);
+
+    // 3. Buscar todas las citas del cliente en el repositorio
     const appointments = await this.appointmentRepository.findByClientId(clientId);
 
-    // 3. Mapear a DTOs de respuesta
-    return appointments.map(appointment => this.mapToAppointmentDto(appointment));
+    // 4. Filtrar por ownership si es STYLIST
+    const filteredAppointments = this.filterByRole(appointments, requesterId, requesterRole);
+
+    // 5. Mapear a DTOs de respuesta
+    return filteredAppointments.map(appointment => this.mapToAppointmentDto(appointment));
   }
 
   /**
@@ -42,6 +59,49 @@ export class GetAppointmentsByClient {
     if (!uuidRegex.test(clientId)) {
       throw new ValidationError('Client ID must be a valid UUID');
     }
+  }
+
+  /**
+   * Valida que el usuario tenga permisos para consultar citas del cliente
+   * @param clientId - ID del cliente consultado
+   * @param requesterId - ID del usuario solicitante
+   * @param requesterRole - Nombre del rol del usuario
+   * @throws UnauthorizedError si no tiene permisos
+   */
+  private validateAccessPermissions(
+    clientId: string,
+    requesterId: string,
+    requesterRole: string,
+  ): void {
+    // ADMIN puede ver citas de cualquier cliente
+    if (requesterRole === 'ADMIN') return;
+
+    // STYLIST puede consultar cualquier cliente (se filtra en resultados)
+    if (requesterRole === 'STYLIST') return;
+
+    // CLIENT solo puede ver sus propias citas
+    if (clientId !== requesterId) {
+      throw new UnauthorizedError('You can only view your own appointments');
+    }
+  }
+
+  /**
+   * Filtra las citas según el rol del solicitante
+   * STYLIST solo ve citas donde es el estilista asignado
+   * @param appointments - Lista completa de citas
+   * @param requesterId - ID del usuario solicitante
+   * @param requesterRole - Nombre del rol del usuario
+   * @returns Lista filtrada de citas
+   */
+  private filterByRole(
+    appointments: Appointment[],
+    requesterId: string,
+    requesterRole: string,
+  ): Appointment[] {
+    if (requesterRole === 'STYLIST') {
+      return appointments.filter(a => a.stylistId === requesterId);
+    }
+    return appointments;
   }
 
   /**
