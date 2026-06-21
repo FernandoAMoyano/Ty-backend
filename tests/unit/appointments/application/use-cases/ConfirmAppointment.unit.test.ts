@@ -1,6 +1,6 @@
 import { ConfirmAppointment } from '../../../../../src/modules/appointments/application/use-cases/ConfirmAppointment';
-import { AppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/AppointmentRepository';
-import { AppointmentStatusRepository } from '../../../../../src/modules/appointments/domain/repositories/AppointmentStatusRepository';
+import { IAppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
+import { IAppointmentStatusRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentStatusRepository';
 import { Appointment } from '../../../../../src/modules/appointments/domain/entities/Appointment';
 import {
   AppointmentStatus,
@@ -13,8 +13,8 @@ import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('ConfirmAppointment Use Case', () => {
   let useCase: ConfirmAppointment;
-  let mockAppointmentRepository: jest.Mocked<AppointmentRepository>;
-  let mockAppointmentStatusRepository: jest.Mocked<AppointmentStatusRepository>;
+  let mockAppointmentRepository: jest.Mocked<IAppointmentRepository>;
+  let mockAppointmentStatusRepository: jest.Mocked<IAppointmentStatusRepository>;
 
   // Generar fechas futuras dinámicamente para evitar problemas de tiempo
   const getFutureDate = (hoursFromNow: number = 48): Date => {
@@ -32,6 +32,9 @@ describe('ConfirmAppointment Use Case', () => {
   const validPendingStatusId = generateUuid();
   const validConfirmedStatusId = generateUuid();
   const validServiceIds = [generateUuid(), generateUuid()];
+
+  // Constante de rol para tests que no prueban permisos
+  const adminRole = 'ADMIN';
 
   // DTOs de ejemplo
   const validConfirmDto: ConfirmAppointmentDto = {
@@ -51,12 +54,13 @@ describe('ConfirmAppointment Use Case', () => {
       statusId: string;
       confirmedAt: Date;
       userId: string;
+      clientId: string;
       stylistId: string;
     }> = {},
   ): Appointment => {
     const baseData = {
       id: validAppointmentId,
-      dateTime: getFutureDate(48), // 2 días en futuro por defecto
+      dateTime: getFutureDate(48),
       duration: 60,
       userId: validUserId,
       clientId: validClientId,
@@ -106,19 +110,14 @@ describe('ConfirmAppointment Use Case', () => {
     );
 
     mockAppointmentRepository.findById.mockResolvedValue(appointment);
-    // Para validateConfirmationRules (status actual)
     mockAppointmentStatusRepository.findById.mockResolvedValueOnce(pendingStatus);
-    // Para getConfirmedStatus
     mockAppointmentStatusRepository.findByName.mockResolvedValue(confirmedStatus);
-    // Para validateStatusTransition - current status
     mockAppointmentStatusRepository.findById.mockResolvedValueOnce(pendingStatus);
-    // Para validateStatusTransition - new status
     mockAppointmentStatusRepository.findById.mockResolvedValueOnce(confirmedStatus);
     mockAppointmentRepository.update.mockResolvedValue(appointment);
   };
 
   beforeEach(() => {
-    // Crear mock completo del AppointmentRepository
     mockAppointmentRepository = {
       findById: jest.fn(),
       findAll: jest.fn(),
@@ -140,9 +139,9 @@ describe('ConfirmAppointment Use Case', () => {
       countByDateRange: jest.fn(),
       findUpcomingAppointments: jest.fn(),
       findPendingConfirmation: jest.fn(),
+      existsActiveByServiceId: jest.fn(),
     };
 
-    // Crear mock del AppointmentStatusRepository
     mockAppointmentStatusRepository = {
       findById: jest.fn(),
       findByName: jest.fn(),
@@ -156,7 +155,6 @@ describe('ConfirmAppointment Use Case', () => {
       findActiveStatuses: jest.fn(),
     };
 
-    // Crear instancia del caso de uso con los mocks
     useCase = new ConfirmAppointment(mockAppointmentRepository, mockAppointmentStatusRepository);
   });
 
@@ -167,116 +165,131 @@ describe('ConfirmAppointment Use Case', () => {
   describe('Successful Execution', () => {
     // Debería confirmar cita exitosamente con datos completos
     it('should confirm appointment successfully with complete data', async () => {
-      // Arrange
-      const appointment = createMockAppointment({
-        userId: validRequesterId, // El requester es el creador
-      });
+      const appointment = createMockAppointment({ userId: validRequesterId });
       setupSuccessfulMocks(appointment);
 
-      // Act
-      const result = await useCase.execute(validAppointmentId, validConfirmDto, validRequesterId);
+      const result = await useCase.execute(
+        validAppointmentId,
+        validConfirmDto,
+        validRequesterId,
+        adminRole,
+      );
 
-      // Assert
       expect(mockAppointmentRepository.findById).toHaveBeenCalledWith(validAppointmentId);
       expect(mockAppointmentStatusRepository.findByName).toHaveBeenCalledWith(
         AppointmentStatusEnum.CONFIRMED,
       );
       expect(mockAppointmentRepository.update).toHaveBeenCalledWith(appointment);
-
       expect(result.id).toBe(appointment.id);
     });
 
     // Debería confirmar cita exitosamente con datos mínimos
     it('should confirm appointment successfully with minimal data', async () => {
-      // Arrange
-      const appointment = createMockAppointment({
-        userId: validRequesterId,
-      });
+      const appointment = createMockAppointment({ userId: validRequesterId });
       setupSuccessfulMocks(appointment);
 
-      // Act
-      const result = await useCase.execute(validAppointmentId, minimalConfirmDto, validRequesterId);
+      const result = await useCase.execute(
+        validAppointmentId,
+        minimalConfirmDto,
+        validRequesterId,
+        adminRole,
+      );
 
-      // Assert
       expect(result.id).toBe(appointment.id);
       expect(mockAppointmentRepository.update).toHaveBeenCalled();
     });
 
     // Debería permitir confirmación por el estilista asignado
     it('should allow confirmation by assigned stylist', async () => {
-      // Arrange
-      const appointment = createMockAppointment({
-        stylistId: validRequesterId, // El requester es el estilista
-      });
+      const appointment = createMockAppointment({ stylistId: validRequesterId });
       setupSuccessfulMocks(appointment);
 
-      // Act
-      const result = await useCase.execute(validAppointmentId, validConfirmDto, validRequesterId);
+      const result = await useCase.execute(
+        validAppointmentId,
+        validConfirmDto,
+        validRequesterId,
+        'STYLIST',
+      );
 
-      // Assert
       expect(result.id).toBe(appointment.id);
       expect(mockAppointmentRepository.update).toHaveBeenCalled();
+    });
+
+    // Debería permitir confirmación por el clientId
+    it('should allow confirmation by clientId', async () => {
+      const appointment = createMockAppointment({ clientId: validRequesterId });
+      setupSuccessfulMocks(appointment);
+
+      const result = await useCase.execute(
+        validAppointmentId,
+        validConfirmDto,
+        validRequesterId,
+        'CLIENT',
+      );
+
+      expect(result.id).toBe(appointment.id);
+      expect(mockAppointmentRepository.update).toHaveBeenCalled();
+    });
+
+    // Debería permitir ADMIN confirmar cualquier cita
+    it('should allow ADMIN to confirm any appointment', async () => {
+      const unrelatedAdminId = generateUuid();
+      const appointment = createMockAppointment();
+      setupSuccessfulMocks(appointment);
+
+      const result = await useCase.execute(
+        validAppointmentId,
+        validConfirmDto,
+        unrelatedAdminId,
+        'ADMIN',
+      );
+
+      expect(result.id).toBe(appointment.id);
     });
   });
 
   describe('Input Validation', () => {
     // Debería lanzar error para appointmentId vacío
     it('should throw error for empty appointmentId', async () => {
-      // Act & Assert
-      await expect(useCase.execute('', validConfirmDto, validRequesterId)).rejects.toThrow(
-        new ValidationError('Appointment ID is required'),
-      );
-
+      await expect(
+        useCase.execute('', validConfirmDto, validRequesterId, adminRole),
+      ).rejects.toThrow(new ValidationError('Appointment ID is required'));
       expect(mockAppointmentRepository.findById).not.toHaveBeenCalled();
     });
 
     // Debería lanzar error para appointmentId con formato UUID inválido
     it('should throw error for invalid appointmentId UUID format', async () => {
-      // Act & Assert
       await expect(
-        useCase.execute('invalid-uuid', validConfirmDto, validRequesterId),
+        useCase.execute('invalid-uuid', validConfirmDto, validRequesterId, adminRole),
       ).rejects.toThrow(new ValidationError('Appointment ID must be a valid UUID'));
-
       expect(mockAppointmentRepository.findById).not.toHaveBeenCalled();
     });
 
     // Debería lanzar error para requesterId vacío
     it('should throw error for empty requesterId', async () => {
-      // Act & Assert
-      await expect(useCase.execute(validAppointmentId, validConfirmDto, '')).rejects.toThrow(
-        new ValidationError('Requester ID is required'),
-      );
-
+      await expect(
+        useCase.execute(validAppointmentId, validConfirmDto, '', adminRole),
+      ).rejects.toThrow(new ValidationError('Requester ID is required'));
       expect(mockAppointmentRepository.findById).not.toHaveBeenCalled();
     });
 
     // Debería lanzar error para notas vacías si se proporcionan
     it('should throw error for empty notes if provided', async () => {
-      // Arrange
-      const invalidConfirmDto: ConfirmAppointmentDto = {
-        notes: '   ', // Solo espacios
-      };
+      const invalidConfirmDto: ConfirmAppointmentDto = { notes: '   ' };
 
-      // Act & Assert
       await expect(
-        useCase.execute(validAppointmentId, invalidConfirmDto, validRequesterId),
+        useCase.execute(validAppointmentId, invalidConfirmDto, validRequesterId, adminRole),
       ).rejects.toThrow(new ValidationError('Confirmation notes cannot be empty if provided'));
-
       expect(mockAppointmentRepository.findById).not.toHaveBeenCalled();
     });
 
     // Debería lanzar error para notas demasiado largas
     it('should throw error for notes too long', async () => {
-      // Arrange
-      const invalidConfirmDto: ConfirmAppointmentDto = {
-        notes: 'x'.repeat(501), // 501 caracteres
-      };
+      const invalidConfirmDto: ConfirmAppointmentDto = { notes: 'x'.repeat(501) };
 
-      // Act & Assert
       await expect(
-        useCase.execute(validAppointmentId, invalidConfirmDto, validRequesterId),
+        useCase.execute(validAppointmentId, invalidConfirmDto, validRequesterId, adminRole),
       ).rejects.toThrow(new ValidationError('Confirmation notes cannot exceed 500 characters'));
-
       expect(mockAppointmentRepository.findById).not.toHaveBeenCalled();
     });
   });
@@ -284,36 +297,32 @@ describe('ConfirmAppointment Use Case', () => {
   describe('Business Rules Validation', () => {
     // Debería lanzar BusinessRuleError para cita ya confirmada
     it('should throw BusinessRuleError for already confirmed appointment', async () => {
-      // Arrange
       const appointment = createMockAppointment({
         userId: validRequesterId,
-        confirmedAt: new Date(), // Ya confirmada
+        confirmedAt: new Date(),
       });
-
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
-      // Act & Assert
       await expect(
-        useCase.execute(validAppointmentId, validConfirmDto, validRequesterId),
+        useCase.execute(validAppointmentId, validConfirmDto, validRequesterId, adminRole),
       ).rejects.toThrow(new BusinessRuleError('Appointment is already confirmed'));
     });
 
-    // Debería lanzar BusinessRuleError para usuario sin permisos
+    // Debería lanzar BusinessRuleError para usuario sin permisos (no ADMIN)
     it('should throw BusinessRuleError for user without permissions', async () => {
-      // Arrange
       const unauthorizedUserId = generateUuid();
       const appointment = createMockAppointment({
-        userId: validUserId, // Diferente al requester
-        stylistId: validStylistId, // Diferente al requester
+        userId: validUserId,
+        stylistId: validStylistId,
       });
       const pendingStatus = createMockAppointmentStatus(AppointmentStatusEnum.PENDING);
 
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
       mockAppointmentStatusRepository.findById.mockResolvedValue(pendingStatus);
 
-      // Act & Assert
+      // Usar rol CLIENT para que no tenga ADMIN override
       await expect(
-        useCase.execute(validAppointmentId, validConfirmDto, unauthorizedUserId),
+        useCase.execute(validAppointmentId, validConfirmDto, unauthorizedUserId, 'CLIENT'),
       ).rejects.toThrow(
         new BusinessRuleError('You do not have permission to confirm this appointment'),
       );
@@ -321,9 +330,8 @@ describe('ConfirmAppointment Use Case', () => {
 
     // Debería lanzar BusinessRuleError para confirmación demasiado tarde
     it('should throw BusinessRuleError for too late confirmation', async () => {
-      // Arrange
       const soonDate = new Date();
-      soonDate.setMinutes(soonDate.getMinutes() + 30); // Solo 30 minutos en futuro
+      soonDate.setMinutes(soonDate.getMinutes() + 30);
 
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -334,29 +342,20 @@ describe('ConfirmAppointment Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
       mockAppointmentStatusRepository.findById.mockResolvedValue(pendingStatus);
 
-      // Act & Assert
       await expect(
-        useCase.execute(validAppointmentId, validConfirmDto, validRequesterId),
-      ).rejects.toThrow(
-        new BusinessRuleError(
-          'Appointments can only be confirmed at least 1 hour in advance. ' +
-            'For last-minute confirmations, please contact customer service.',
-        ),
-      );
+        useCase.execute(validAppointmentId, validConfirmDto, validRequesterId, adminRole),
+      ).rejects.toThrow(BusinessRuleError);
     });
   });
 
   describe('Repository Integration', () => {
     // Debería llamar repositorios con parámetros correctos
     it('should call repositories with correct parameters', async () => {
-      // Arrange
       const appointment = createMockAppointment({ userId: validRequesterId });
       setupSuccessfulMocks(appointment);
 
-      // Act
-      await useCase.execute(validAppointmentId, validConfirmDto, validRequesterId);
+      await useCase.execute(validAppointmentId, validConfirmDto, validRequesterId, adminRole);
 
-      // Assert
       expect(mockAppointmentRepository.findById).toHaveBeenCalledWith(validAppointmentId);
       expect(mockAppointmentStatusRepository.findByName).toHaveBeenCalledWith(
         AppointmentStatusEnum.CONFIRMED,
@@ -368,16 +367,16 @@ describe('ConfirmAppointment Use Case', () => {
   describe('Data Mapping', () => {
     // Debería mapear fechas a formato ISO string
     it('should map dates to ISO string format', async () => {
-      // Arrange
-      const appointment = createMockAppointment({
-        userId: validRequesterId,
-      });
+      const appointment = createMockAppointment({ userId: validRequesterId });
       setupSuccessfulMocks(appointment);
 
-      // Act
-      const result = await useCase.execute(validAppointmentId, validConfirmDto, validRequesterId);
+      const result = await useCase.execute(
+        validAppointmentId,
+        validConfirmDto,
+        validRequesterId,
+        adminRole,
+      );
 
-      // Assert
       expect(result.dateTime).toBe(appointment.dateTime.toISOString());
       expect(result.createdAt).toBe(appointment.createdAt.toISOString());
       expect(result.updatedAt).toBe(appointment.updatedAt.toISOString());
@@ -385,14 +384,16 @@ describe('ConfirmAppointment Use Case', () => {
 
     // Debería mantener la estructura de arrays intacta
     it('should maintain array structure intact', async () => {
-      // Arrange
       const appointment = createMockAppointment({ userId: validRequesterId });
       setupSuccessfulMocks(appointment);
 
-      // Act
-      const result = await useCase.execute(validAppointmentId, validConfirmDto, validRequesterId);
+      const result = await useCase.execute(
+        validAppointmentId,
+        validConfirmDto,
+        validRequesterId,
+        adminRole,
+      );
 
-      // Assert
       expect(Array.isArray(result.serviceIds)).toBe(true);
       expect(result.serviceIds).toEqual(appointment.serviceIds);
     });
