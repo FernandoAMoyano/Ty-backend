@@ -16,6 +16,8 @@ export interface AuthenticatedRequest extends Request {
     roleId: string;
     /** Email del usuario para identificación */
     email: string;
+    /** Nombre del rol del usuario, disponible después de pasar por authorize */
+    roleName?: string;
   };
 }
 
@@ -80,6 +82,9 @@ export class AuthMiddleware {
         if (!userRole || !allowedRoles.includes(userRole.name)) {
           throw new UnauthorizedError('Insufficient permissions');
         }
+
+        // Adjuntar nombre del rol para que los controllers/use cases puedan usarlo
+        req.user.roleName = userRole.name;
 
         next();
       } catch (error) {
