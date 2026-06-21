@@ -70,8 +70,16 @@ export class AppointmentController {
    * @throws NotFoundError si la cita no existe
    */
   async getAppointmentById(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId || !req.user?.roleName) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
     const { id } = req.params;
-    const result = await this.getAppointmentByIdUseCase.execute(id);
+    const result = await this.getAppointmentByIdUseCase.execute(
+      id,
+      req.user.userId,
+      req.user.roleName,
+    );
 
     return res.status(200).json({
       success: true,
@@ -91,8 +99,16 @@ export class AppointmentController {
    * @throws NotFoundError si el cliente no existe
    */
   async getAppointmentsByClient(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId || !req.user?.roleName) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
     const { clientId } = req.params;
-    const result = await this.getAppointmentsByClientUseCase.execute(clientId);
+    const result = await this.getAppointmentsByClientUseCase.execute(
+      clientId,
+      req.user.userId,
+      req.user.roleName,
+    );
 
     return res.status(200).json({
       success: true,
@@ -112,8 +128,16 @@ export class AppointmentController {
    * @throws NotFoundError si el estilista no existe
    */
   async getAppointmentsByStylist(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId || !req.user?.roleName) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
     const { stylistId } = req.params;
-    const result = await this.getAppointmentsByStylistUseCase.execute(stylistId);
+    const result = await this.getAppointmentsByStylistUseCase.execute(
+      stylistId,
+      req.user.userId,
+      req.user.roleName,
+    );
 
     return res.status(200).json({
       success: true,
@@ -142,7 +166,12 @@ export class AppointmentController {
 
     const { id } = req.params;
     const updateDto: UpdateAppointmentDto = req.body;
-    const result = await this.updateAppointmentUseCase.execute(id, updateDto, req.user.userId);
+    const result = await this.updateAppointmentUseCase.execute(
+      id,
+      updateDto,
+      req.user.userId,
+      req.user.roleName!,
+    );
 
     return res.status(200).json({
       success: true,
@@ -170,7 +199,12 @@ export class AppointmentController {
 
     const { id } = req.params;
     const confirmDto: ConfirmAppointmentDto = req.body;
-    const result = await this.confirmAppointmentUseCase.execute(id, confirmDto, req.user.userId);
+    const result = await this.confirmAppointmentUseCase.execute(
+      id,
+      confirmDto,
+      req.user.userId,
+      req.user.roleName!,
+    );
 
     return res.status(200).json({
       success: true,
@@ -198,7 +232,12 @@ export class AppointmentController {
 
     const { id } = req.params;
     const cancelDto: CancelAppointmentDto = req.body;
-    const result = await this.cancelAppointmentUseCase.execute(id, cancelDto, req.user.userId);
+    const result = await this.cancelAppointmentUseCase.execute(
+      id,
+      cancelDto,
+      req.user.userId,
+      req.user.roleName!,
+    );
 
     return res.status(200).json({
       success: true,
