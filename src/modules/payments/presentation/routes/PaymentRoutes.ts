@@ -77,10 +77,11 @@ export class PaymentRoutes {
       },
     );
 
-    // GET /appointment/:appointmentId - Pagos de una cita
+    // GET /appointment/:appointmentId - Pagos de una cita (admin, stylist)
     this.router.get(
       '/appointment/:appointmentId',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
+      this.authMiddleware.authorize(['ADMIN', 'STYLIST']),
       PaymentValidations.paymentsByAppointment,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
@@ -92,10 +93,11 @@ export class PaymentRoutes {
     // RUTAS CON PARÁMETROS DINÁMICOS - AL FINAL
     // ==========================================
 
-    // GET /:id - Obtener pago por ID
+    // GET /:id - Obtener pago por ID (admin, stylist)
     this.router.get(
       '/:id',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
+      this.authMiddleware.authorize(['ADMIN', 'STYLIST']),
       PaymentValidations.paymentById,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
