@@ -23,6 +23,7 @@ export class CancelAppointment {
    * @param appointmentId - ID único de la cita a cancelar
    * @param cancelDto - Datos de cancelación (razón, tipo, notificaciones)
    * @param requesterId - ID del usuario que realiza la cancelación
+   * @param requesterRole - Nombre del rol del usuario solicitante
    * @returns Promise con el DTO de la cita cancelada
    * @throws ValidationError si los datos no son válidos
    * @throws NotFoundError si la cita no existe
@@ -32,6 +33,7 @@ export class CancelAppointment {
     appointmentId: string,
     cancelDto: CancelAppointmentDto,
     requesterId: string,
+    requesterRole: string,
   ): Promise<AppointmentDto> {
     // 1. Validar datos de entrada
     this.validateInput(appointmentId, cancelDto, requesterId);
@@ -43,7 +45,7 @@ export class CancelAppointment {
     }
 
     // 3. Validar reglas de negocio para cancelación
-    await this.validateCancellationRules(appointment, requesterId);
+    await this.validateCancellationRules(appointment, requesterId, requesterRole);
 
     // 4. Obtener el estado "CANCELLED"
     const cancelledStatus = await this.getCancelledStatus();
@@ -126,6 +128,7 @@ export class CancelAppointment {
   private async validateCancellationRules(
     appointment: Appointment,
     requesterId: string,
+    requesterRole: string,
   ): Promise<void> {
     // 1. Verificar que la cita no esté ya cancelada
     const currentStatus = await this.appointmentStatusRepository.findById(appointment.statusId);
@@ -144,7 +147,7 @@ export class CancelAppointment {
     }
 
     // 4. Verificar permisos de cancelación
-    await this.validateCancellationPermissions(appointment, requesterId);
+    await this.validateCancellationPermissions(appointment, requesterId, requesterRole);
 
     // 5. Verificar política de cancelación (ej: 24 horas antes)
     this.validateCancellationPolicy(appointment);
@@ -152,20 +155,21 @@ export class CancelAppointment {
 
   /**
    * Valida que el usuario tenga permisos para cancelar la cita
+   * Aplica ownership unificado (userId || clientId || stylistId) con ADMIN override
    * @param appointment - Entidad de la cita
    * @param requesterId - ID del usuario solicitante
+   * @param requesterRole - Nombre del rol del usuario
    * @throws BusinessRuleError si no tiene permisos
    */
   private async validateCancellationPermissions(
     appointment: Appointment,
     requesterId: string,
+    requesterRole: string,
   ): Promise<void> {
-    // El usuario puede cancelar si es:
-    // 1. El creador de la cita
-    // 2. El cliente de la cita
-    // 3. El estilista asignado
-    // 4. Un administrador (esto se validaría con roles, por ahora simplificado)
+    // ADMIN puede cancelar cualquier cita
+    if (requesterRole === 'ADMIN') return;
 
+    // Ownership unificado: userId, clientId o stylistId
     const canCancel =
       appointment.userId === requesterId ||
       appointment.clientId === requesterId ||

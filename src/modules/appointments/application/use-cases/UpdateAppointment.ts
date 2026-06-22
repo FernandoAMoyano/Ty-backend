@@ -28,12 +28,14 @@ export class UpdateAppointment {
    * @param appointmentId - ID único de la cita a actualizar
    * @param updateDto - Datos de actualización
    * @param requesterId - ID del usuario que realiza la actualización
+   * @param requesterRole - Nombre del rol del usuario solicitante
    * @returns Promise con el DTO de la cita actualizada
    */
   async execute(
     appointmentId: string,
     updateDto: UpdateAppointmentDto,
     requesterId: string,
+    requesterRole: string,
   ): Promise<AppointmentDto> {
     // 1. Validar datos de entrada
     this.validateInput(appointmentId, updateDto, requesterId);
@@ -45,7 +47,7 @@ export class UpdateAppointment {
     }
 
     // 3. Validar permisos de actualización
-    await this.validateUpdatePermissions(appointment, requesterId);
+    await this.validateUpdatePermissions(appointment, requesterId, requesterRole);
 
     // 4. Validar reglas de negocio para actualización
     await this.validateUpdateRules(appointment, updateDto);
@@ -197,18 +199,20 @@ export class UpdateAppointment {
 
   /**
    * Valida que el usuario tenga permisos para actualizar la cita
+   * Aplica ownership unificado (userId || clientId || stylistId) con ADMIN override
    */
   private async validateUpdatePermissions(
     appointment: Appointment,
     requesterId: string,
+    requesterRole: string,
   ): Promise<void> {
-    // El usuario puede actualizar si es:
-    // 1. El creador de la cita
-    // 2. El estilista asignado
-    // 3. Un administrador (por implementar)
+    // ADMIN puede actualizar cualquier cita
+    if (requesterRole === 'ADMIN') return;
 
+    // Ownership unificado: userId, clientId o stylistId
     const canUpdate = 
       appointment.userId === requesterId ||
+      appointment.clientId === requesterId ||
       appointment.stylistId === requesterId;
 
     if (!canUpdate) {

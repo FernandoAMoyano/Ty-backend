@@ -43,10 +43,11 @@ export class AppointmentRoutes {
       },
     );
 
-    // Rutas protegidas que requieren autenticación
+    // Rutas protegidas que requieren autenticación y autorización por rol
     this.router.post(
       '/',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
+      this.authMiddleware.authorize(['ADMIN', 'STYLIST', 'CLIENT']),
       AppointmentValidations.createAppointment,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
@@ -57,6 +58,7 @@ export class AppointmentRoutes {
     this.router.get(
       '/client/:clientId',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
+      this.authMiddleware.authorize(['ADMIN', 'STYLIST', 'CLIENT']),
       AppointmentValidations.appointmentsByClient,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
@@ -67,6 +69,7 @@ export class AppointmentRoutes {
     this.router.get(
       '/stylist/:stylistId',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
+      this.authMiddleware.authorize(['ADMIN', 'STYLIST', 'CLIENT']),
       AppointmentValidations.appointmentsByStylist,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
@@ -77,6 +80,7 @@ export class AppointmentRoutes {
     this.router.get(
       '/:id',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
+      this.authMiddleware.authorize(['ADMIN', 'STYLIST', 'CLIENT']),
       AppointmentValidations.appointmentById,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
@@ -87,6 +91,7 @@ export class AppointmentRoutes {
     this.router.put(
       '/:id',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
+      this.authMiddleware.authorize(['ADMIN', 'STYLIST', 'CLIENT']),
       AppointmentValidations.updateAppointment,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
@@ -97,6 +102,7 @@ export class AppointmentRoutes {
     this.router.post(
       '/:id/confirm',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
+      this.authMiddleware.authorize(['ADMIN', 'STYLIST', 'CLIENT']),
       AppointmentValidations.confirmAppointment,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
@@ -107,6 +113,7 @@ export class AppointmentRoutes {
     this.router.post(
       '/:id/cancel',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
+      this.authMiddleware.authorize(['ADMIN', 'STYLIST', 'CLIENT']),
       AppointmentValidations.cancelAppointment,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {

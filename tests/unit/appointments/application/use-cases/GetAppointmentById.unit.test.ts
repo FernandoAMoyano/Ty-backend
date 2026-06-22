@@ -1,13 +1,14 @@
 import { GetAppointmentById } from '../../../../../src/modules/appointments/application/use-cases/GetAppointmentById';
-import { AppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/AppointmentRepository';
+import { IAppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
 import { Appointment } from '../../../../../src/modules/appointments/domain/entities/Appointment';
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
+import { UnauthorizedError } from '../../../../../src/shared/exceptions/UnauthorizedError';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('GetAppointmentById Use Case', () => {
   let useCase: GetAppointmentById;
-  let mockAppointmentRepository: jest.Mocked<AppointmentRepository>;
+  let mockAppointmentRepository: jest.Mocked<IAppointmentRepository>;
 
   // Generar fechas futuras dinámicamente para evitar problemas de tiempo
   const getFutureDate = (daysFromNow: number = 30): Date => {
@@ -23,6 +24,10 @@ describe('GetAppointmentById Use Case', () => {
   const validScheduleId = generateUuid();
   const validStatusId = generateUuid();
   const validServiceIds = [generateUuid(), generateUuid()];
+
+  // Constantes de permisos — tests existentes usan ADMIN para bypass de ownership
+  const adminRequesterId = generateUuid();
+  const adminRole = 'ADMIN';
 
   // Crear appointment de ejemplo para los tests
   const createMockAppointment = (
@@ -99,6 +104,7 @@ describe('GetAppointmentById Use Case', () => {
       countByDateRange: jest.fn(),
       findUpcomingAppointments: jest.fn(),
       findPendingConfirmation: jest.fn(),
+      existsActiveByServiceId: jest.fn(),
     };
 
     // Crear instancia del caso de uso con el mock
@@ -117,7 +123,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
       // Act
-      const result = await useCase.execute(validAppointmentId);
+      const result = await useCase.execute(validAppointmentId, adminRequesterId, adminRole);
 
       // Assert
       expect(mockAppointmentRepository.findById).toHaveBeenCalledTimes(1);
@@ -147,7 +153,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
       // Act
-      const result = await useCase.execute(validAppointmentId);
+      const result = await useCase.execute(validAppointmentId, adminRequesterId, adminRole);
 
       // Assert
       expect(result.confirmedAt).toBe(confirmedAt.toISOString());
@@ -176,7 +182,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
       // Act
-      const result = await useCase.execute(specificId);
+      const result = await useCase.execute(specificId, adminRequesterId, adminRole);
 
       // Assert
       expect(result.id).toBe(specificId);
@@ -200,7 +206,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(shortAppointment);
 
       // Act
-      const result = await useCase.execute(validAppointmentId);
+      const result = await useCase.execute(validAppointmentId, adminRequesterId, adminRole);
 
       // Assert
       expect(result.duration).toBe(30);
@@ -214,7 +220,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
       // Act
-      const result = await useCase.execute(validAppointmentId);
+      const result = await useCase.execute(validAppointmentId, adminRequesterId, adminRole);
 
       // Assert
       expect(result).not.toBeInstanceOf(Array);
@@ -230,7 +236,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(useCase.execute(validAppointmentId)).rejects.toThrow(
+      await expect(useCase.execute(validAppointmentId, adminRequesterId, adminRole)).rejects.toThrow(
         new NotFoundError('Appointment', validAppointmentId),
       );
 
@@ -244,7 +250,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(useCase.execute(specificId)).rejects.toThrow(
+      await expect(useCase.execute(specificId, adminRequesterId, adminRole)).rejects.toThrow(
         new NotFoundError('Appointment', specificId),
       );
 
@@ -258,12 +264,13 @@ describe('GetAppointmentById Use Case', () => {
 
       // Act & Assert
       try {
-        await useCase.execute(validAppointmentId);
+        await useCase.execute(validAppointmentId, adminRequesterId, adminRole);
         fail('Should have thrown NotFoundError');
       } catch (error) {
         expect(error).toBeInstanceOf(NotFoundError);
-        expect(error.message).toContain('Appointment');
-        expect(error.message).toContain(validAppointmentId);
+        const notFoundError = error as NotFoundError;
+        expect(notFoundError.message).toContain('Appointment');
+        expect(notFoundError.message).toContain(validAppointmentId);
       }
     });
   });
@@ -272,7 +279,7 @@ describe('GetAppointmentById Use Case', () => {
     // Debería lanzar error para appointmentId vacío
     it('should throw error for empty appointmentId', async () => {
       // Act & Assert
-      await expect(useCase.execute('')).rejects.toThrow(
+      await expect(useCase.execute('', adminRequesterId, adminRole)).rejects.toThrow(
         new ValidationError('Appointment ID is required'),
       );
 
@@ -282,7 +289,7 @@ describe('GetAppointmentById Use Case', () => {
     // Debería lanzar error para appointmentId nulo
     it('should throw error for null appointmentId', async () => {
       // Act & Assert
-      await expect(useCase.execute(null as any)).rejects.toThrow(
+      await expect(useCase.execute(null as any, adminRequesterId, adminRole)).rejects.toThrow(
         new ValidationError('Appointment ID is required'),
       );
 
@@ -292,7 +299,7 @@ describe('GetAppointmentById Use Case', () => {
     // Debería lanzar error para appointmentId undefined
     it('should throw error for undefined appointmentId', async () => {
       // Act & Assert
-      await expect(useCase.execute(undefined as any)).rejects.toThrow(
+      await expect(useCase.execute(undefined as any, adminRequesterId, adminRole)).rejects.toThrow(
         new ValidationError('Appointment ID is required'),
       );
 
@@ -302,7 +309,7 @@ describe('GetAppointmentById Use Case', () => {
     // Debería lanzar error para appointmentId solo con espacios
     it('should throw error for whitespace-only appointmentId', async () => {
       // Act & Assert
-      await expect(useCase.execute('   ')).rejects.toThrow(
+      await expect(useCase.execute('   ', adminRequesterId, adminRole)).rejects.toThrow(
         new ValidationError('Appointment ID is required'),
       );
 
@@ -312,7 +319,7 @@ describe('GetAppointmentById Use Case', () => {
     // Debería lanzar error para formato UUID inválido
     it('should throw error for invalid UUID format', async () => {
       // Act & Assert
-      await expect(useCase.execute('invalid-uuid')).rejects.toThrow(
+      await expect(useCase.execute('invalid-uuid', adminRequesterId, adminRole)).rejects.toThrow(
         new ValidationError('Appointment ID must be a valid UUID'),
       );
 
@@ -322,7 +329,7 @@ describe('GetAppointmentById Use Case', () => {
     // Debería lanzar error para UUID con formato parcialmente correcto
     it('should throw error for partially correct UUID format', async () => {
       // Act & Assert
-      await expect(useCase.execute('12345678-1234-1234-1234-12345678901')).rejects.toThrow(
+      await expect(useCase.execute('12345678-1234-1234-1234-12345678901', adminRequesterId, adminRole)).rejects.toThrow(
         new ValidationError('Appointment ID must be a valid UUID'),
       );
 
@@ -337,7 +344,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
       // Act
-      const result = await useCase.execute(validUuid);
+      const result = await useCase.execute(validUuid, adminRequesterId, adminRole);
 
       // Assert
       expect(result.id).toBe(validUuid);
@@ -359,12 +366,93 @@ describe('GetAppointmentById Use Case', () => {
         const appointment = createMockAppointment({ id: uuid });
         mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
-        const result = await useCase.execute(uuid);
+        const result = await useCase.execute(uuid, adminRequesterId, adminRole);
         expect(result.id).toBe(uuid);
         expect(mockAppointmentRepository.findById).toHaveBeenCalledWith(uuid);
       }
 
       expect(mockAppointmentRepository.findById).toHaveBeenCalledTimes(validUuids.length);
+    });
+  });
+
+  describe('Access Control', () => {
+    // Debería permitir acceso a ADMIN para cualquier cita
+    it('should allow ADMIN to view any appointment', async () => {
+      // Arrange
+      const appointment = createMockAppointment();
+      mockAppointmentRepository.findById.mockResolvedValue(appointment);
+      const unrelatedAdminId = generateUuid();
+
+      // Act
+      const result = await useCase.execute(validAppointmentId, unrelatedAdminId, 'ADMIN');
+
+      // Assert
+      expect(result.id).toBe(validAppointmentId);
+    });
+
+    // Debería permitir al STYLIST asignado ver la cita
+    it('should allow assigned STYLIST to view the appointment', async () => {
+      // Arrange
+      const appointment = createMockAppointment();
+      mockAppointmentRepository.findById.mockResolvedValue(appointment);
+
+      // Act — validStylistId es el stylistId de la cita
+      const result = await useCase.execute(validAppointmentId, validStylistId, 'STYLIST');
+
+      // Assert
+      expect(result.id).toBe(validAppointmentId);
+    });
+
+    // Debería denegar acceso a STYLIST no asignado
+    it('should deny access to unassigned STYLIST', async () => {
+      // Arrange
+      const appointment = createMockAppointment();
+      mockAppointmentRepository.findById.mockResolvedValue(appointment);
+      const otherStylistId = generateUuid();
+
+      // Act & Assert
+      await expect(
+        useCase.execute(validAppointmentId, otherStylistId, 'STYLIST'),
+      ).rejects.toThrow(UnauthorizedError);
+    });
+
+    // Debería permitir al creador (userId) ver la cita como CLIENT
+    it('should allow creator (userId) to view the appointment as CLIENT', async () => {
+      // Arrange
+      const appointment = createMockAppointment();
+      mockAppointmentRepository.findById.mockResolvedValue(appointment);
+
+      // Act — validUserId es el userId de la cita
+      const result = await useCase.execute(validAppointmentId, validUserId, 'CLIENT');
+
+      // Assert
+      expect(result.id).toBe(validAppointmentId);
+    });
+
+    // Debería permitir al clientId ver la cita como CLIENT
+    it('should allow clientId to view the appointment as CLIENT', async () => {
+      // Arrange
+      const appointment = createMockAppointment();
+      mockAppointmentRepository.findById.mockResolvedValue(appointment);
+
+      // Act — validClientId es el clientId de la cita
+      const result = await useCase.execute(validAppointmentId, validClientId, 'CLIENT');
+
+      // Assert
+      expect(result.id).toBe(validAppointmentId);
+    });
+
+    // Debería denegar acceso a CLIENT no relacionado
+    it('should deny access to unrelated CLIENT', async () => {
+      // Arrange
+      const appointment = createMockAppointment();
+      mockAppointmentRepository.findById.mockResolvedValue(appointment);
+      const unrelatedClientId = generateUuid();
+
+      // Act & Assert
+      await expect(
+        useCase.execute(validAppointmentId, unrelatedClientId, 'CLIENT'),
+      ).rejects.toThrow(UnauthorizedError);
     });
   });
 
@@ -376,7 +464,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockRejectedValue(repositoryError);
 
       // Act & Assert
-      await expect(useCase.execute(validAppointmentId)).rejects.toThrow(repositoryError);
+      await expect(useCase.execute(validAppointmentId, adminRequesterId, adminRole)).rejects.toThrow(repositoryError);
       expect(mockAppointmentRepository.findById).toHaveBeenCalledWith(validAppointmentId);
     });
 
@@ -387,7 +475,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockRejectedValue(timeoutError);
 
       // Act & Assert
-      await expect(useCase.execute(validAppointmentId)).rejects.toThrow('Query timeout');
+      await expect(useCase.execute(validAppointmentId, adminRequesterId, adminRole)).rejects.toThrow('Query timeout');
       expect(mockAppointmentRepository.findById).toHaveBeenCalledWith(validAppointmentId);
     });
 
@@ -398,7 +486,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockRejectedValue(networkError);
 
       // Act & Assert
-      await expect(useCase.execute(validAppointmentId)).rejects.toThrow('Network error');
+      await expect(useCase.execute(validAppointmentId, adminRequesterId, adminRole)).rejects.toThrow('Network error');
       expect(mockAppointmentRepository.findById).toHaveBeenCalledWith(validAppointmentId);
     });
 
@@ -410,12 +498,13 @@ describe('GetAppointmentById Use Case', () => {
 
       // Act & Assert
       try {
-        await useCase.execute(validAppointmentId);
+        await useCase.execute(validAppointmentId, adminRequesterId, adminRole);
         fail('Should have thrown error');
       } catch (error) {
         expect(error).not.toBeInstanceOf(NotFoundError);
         expect(error).toBeInstanceOf(Error);
-        expect(error.message).toBe('Database error');
+        const err = error as Error;
+        expect(err.message).toBe('Database error');
       }
     });
   });
@@ -429,7 +518,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
       // Act
-      await useCase.execute(testAppointmentId);
+      await useCase.execute(testAppointmentId, adminRequesterId, adminRole);
 
       // Assert
       expect(mockAppointmentRepository.findById).toHaveBeenCalledTimes(1);
@@ -443,7 +532,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
       // Act
-      await useCase.execute(validAppointmentId);
+      await useCase.execute(validAppointmentId, adminRequesterId, adminRole);
 
       // Assert
       expect(mockAppointmentRepository.findById).toHaveBeenCalledTimes(1);
@@ -456,7 +545,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
       // Act
-      await useCase.execute(validAppointmentId);
+      await useCase.execute(validAppointmentId, adminRequesterId, adminRole);
 
       // Assert
       expect(mockAppointmentRepository.findById).toHaveBeenCalledTimes(1);
@@ -501,7 +590,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
       // Act
-      const result = await useCase.execute(validAppointmentId);
+      const result = await useCase.execute(validAppointmentId, adminRequesterId, adminRole);
 
       // Assert
       expect(result.dateTime).toBe(specificDateTime.toISOString());
@@ -517,7 +606,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
       // Act
-      const result = await useCase.execute(validAppointmentId);
+      const result = await useCase.execute(validAppointmentId, adminRequesterId, adminRole);
 
       // Assert
       expect(result.confirmedAt).toBe(confirmedAt.toISOString());
@@ -530,7 +619,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
       // Act
-      const result = await useCase.execute(validAppointmentId);
+      const result = await useCase.execute(validAppointmentId, adminRequesterId, adminRole);
 
       // Assert
       expect(result.confirmedAt).toBeUndefined();
@@ -545,7 +634,7 @@ describe('GetAppointmentById Use Case', () => {
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
 
       // Act
-      const result = await useCase.execute(validAppointmentId);
+      const result = await useCase.execute(validAppointmentId, adminRequesterId, adminRole);
 
       // Assert
       expect(result.serviceIds).toEqual(customServiceIds);

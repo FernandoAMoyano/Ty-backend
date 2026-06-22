@@ -23,6 +23,7 @@ export class ConfirmAppointment {
    * @param appointmentId - ID único de la cita a confirmar
    * @param confirmDto - Datos de confirmación (notas, notificaciones, etc.)
    * @param requesterId - ID del usuario que realiza la confirmación
+   * @param requesterRole - Nombre del rol del usuario solicitante
    * @returns Promise con el DTO de la cita confirmada
    * @throws ValidationError si los datos no son válidos
    * @throws NotFoundError si la cita no existe
@@ -32,6 +33,7 @@ export class ConfirmAppointment {
     appointmentId: string,
     confirmDto: ConfirmAppointmentDto,
     requesterId: string,
+    requesterRole: string,
   ): Promise<AppointmentDto> {
     // 1. Validar datos de entrada
     this.validateInput(appointmentId, confirmDto, requesterId);
@@ -43,7 +45,7 @@ export class ConfirmAppointment {
     }
 
     // 3. Validar reglas de negocio para confirmación
-    await this.validateConfirmationRules(appointment, requesterId);
+    await this.validateConfirmationRules(appointment, requesterId, requesterRole);
 
     // 4. Obtener el estado "CONFIRMED"
     const confirmedStatus = await this.getConfirmedStatus();
@@ -121,6 +123,7 @@ export class ConfirmAppointment {
   private async validateConfirmationRules(
     appointment: Appointment,
     requesterId: string,
+    requesterRole: string,
   ): Promise<void> {
     // 1. Verificar que la cita no esté ya confirmada
     if (appointment.isConfirmed()) {
@@ -144,7 +147,7 @@ export class ConfirmAppointment {
     }
 
     // 5. Verificar permisos de confirmación
-    await this.validateConfirmationPermissions(appointment, requesterId);
+    await this.validateConfirmationPermissions(appointment, requesterId, requesterRole);
 
     // 6. Verificar política de confirmación (ej: hasta 1 hora antes)
     this.validateConfirmationPolicy(appointment);
@@ -152,25 +155,24 @@ export class ConfirmAppointment {
 
   /**
    * Valida que el usuario tenga permisos para confirmar la cita
+   * Aplica ownership unificado (userId || clientId || stylistId) con ADMIN override
    * @param appointment - Entidad de la cita
    * @param requesterId - ID del usuario solicitante
+   * @param requesterRole - Nombre del rol del usuario
    * @throws BusinessRuleError si no tiene permisos
    */
   private async validateConfirmationPermissions(
     appointment: Appointment,
     requesterId: string,
+    requesterRole: string,
   ): Promise<void> {
-    // El usuario puede confirmar si es:
-    // 1. El creador de la cita
-    // 2. El cliente de la cita (autoconfirmación)
-    // 3. El estilista asignado
-    // 4. Un administrador (esto se validaría con roles, por ahora simplificamos)
+    // ADMIN puede confirmar cualquier cita
+    if (requesterRole === 'ADMIN') return;
 
-    // Para validar si el requesterId corresponde al clientId, necesitamos verificar
-    // que el requesterId sea el userId asociado al cliente
-    // Por ahora simplificamos permitiendo al creador y al estilista
+    // Ownership unificado: userId, clientId o stylistId
     const canConfirm = 
       appointment.userId === requesterId ||
+      appointment.clientId === requesterId ||
       appointment.stylistId === requesterId;
 
     if (!canConfirm) {
