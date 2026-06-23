@@ -15,6 +15,9 @@ export class Appointment {
     public serviceIds: string[] = [],
     public createdAt: Date = new Date(),
     public updatedAt: Date = new Date(),
+    public cancellationReason?: string,
+    public cancelledBy?: string,
+    public confirmationNotes?: string,
   ) {
     this.validate();
   }
@@ -87,6 +90,9 @@ export class Appointment {
     serviceIds: string[] = [],
     createdAt?: Date,
     updatedAt?: Date,
+    cancellationReason?: string,
+    cancelledBy?: string,
+    confirmationNotes?: string,
   ): Appointment {
     return new Appointment(
       id,
@@ -101,6 +107,9 @@ export class Appointment {
       serviceIds,
       createdAt,
       updatedAt,
+      cancellationReason,
+      cancelledBy,
+      confirmationNotes,
     );
   }
 
@@ -338,19 +347,25 @@ export class Appointment {
   /**
    * Marca la cita como confirmada, estableciendo la fecha de confirmación y cambiando el estado
    * @param confirmedStatusId - ID del estado "confirmado"
+   * @param notes - Notas de confirmación (opcional)
    * @throws ValidationError si la cita ya está confirmada
    */
-  markAsConfirmed(confirmedStatusId: string): void {
+  markAsConfirmed(confirmedStatusId: string, notes?: string): void {
     this.confirm();
     this.changeStatus(confirmedStatusId);
+    if (notes) this.confirmationNotes = notes;
   }
 
   /**
-   * Marca la cita como cancelada cambiando su estado
+   * Marca la cita como cancelada, almacenando razón y tipo de cancelación
    * @param cancelledStatusId - ID del estado "cancelado"
+   * @param reason - Razón de la cancelación (opcional)
+   * @param cancelledByType - Tipo de cancelación: client, stylist, admin, system (opcional)
    */
-  markAsCancelled(cancelledStatusId: string): void {
+  markAsCancelled(cancelledStatusId: string, reason?: string, cancelledByType?: string): void {
     this.changeStatus(cancelledStatusId);
+    if (reason) this.cancellationReason = reason;
+    if (cancelledByType) this.cancelledBy = cancelledByType;
   }
 
   /**
@@ -406,6 +421,9 @@ export class Appointment {
       serviceIds: this.serviceIds,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
+      cancellationReason: this.cancellationReason,
+      cancelledBy: this.cancelledBy,
+      confirmationNotes: this.confirmationNotes,
     };
   }
 }

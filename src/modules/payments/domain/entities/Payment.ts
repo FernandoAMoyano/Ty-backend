@@ -31,6 +31,7 @@ export interface PaymentProps {
   method: PaymentMethodEnum | null;
   paymentDate: Date | null;
   appointmentId: string;
+  refundReason?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,6 +47,7 @@ export class Payment {
   private _method: PaymentMethodEnum | null;
   private _paymentDate: Date | null;
   private readonly _appointmentId: string;
+  private _refundReason?: string;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
@@ -56,6 +58,7 @@ export class Payment {
     this._method = props.method;
     this._paymentDate = props.paymentDate;
     this._appointmentId = props.appointmentId;
+    this._refundReason = props.refundReason;
     this._createdAt = props.createdAt;
     this._updatedAt = props.updatedAt;
   }
@@ -83,6 +86,13 @@ export class Payment {
 
   get appointmentId(): string {
     return this._appointmentId;
+  }
+
+  /**
+   * Razón del reembolso (disponible solo si el pago fue reembolsado)
+   */
+  get refundReason(): string | undefined {
+    return this._refundReason;
   }
 
   get createdAt(): Date {
@@ -148,12 +158,14 @@ export class Payment {
 
   /**
    * Procesa un reembolso del pago
+   * @param reason - Razón del reembolso (opcional)
    */
-  refund(): void {
+  refund(reason?: string): void {
     if (this._status !== PaymentStatusEnum.COMPLETED) {
       throw new Error('Only completed payments can be refunded');
     }
     this._status = PaymentStatusEnum.REFUNDED;
+    if (reason) this._refundReason = reason;
     this._updatedAt = new Date();
   }
 
@@ -183,6 +195,7 @@ export class Payment {
       method: this._method,
       paymentDate: this._paymentDate,
       appointmentId: this._appointmentId,
+      refundReason: this._refundReason,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
     };
