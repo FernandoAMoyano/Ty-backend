@@ -119,6 +119,7 @@ export class PrismaPaymentRepository implements IPaymentRepository {
         status: payment.status as PaymentStatus,
         method: payment.method as PaymentMethod | null,
         paymentDate: payment.paymentDate,
+        refundReason: payment.refundReason,
       },
     });
 
@@ -232,6 +233,7 @@ export class PrismaPaymentRepository implements IPaymentRepository {
       method: data.method as PaymentMethodEnum | null,
       paymentDate: data.paymentDate,
       appointmentId: data.appointmentId,
+      refundReason: data.refundReason ?? undefined,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });
