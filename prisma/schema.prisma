@@ -106,12 +106,15 @@ model AppointmentStatus {
 }
 
 model Appointment {
-  id          String            @id @default(uuid())
-  dateTime    DateTime
-  duration    Int
-  confirmedAt DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id                String            @id @default(uuid())
+  dateTime          DateTime
+  duration          Int
+  confirmedAt       DateTime?
+  cancellationReason String?
+  cancelledBy       String?
+  confirmationNotes String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   userId      String
   clientId    String
   stylistId   String?
@@ -186,6 +189,7 @@ model Payment {
   status        PaymentStatus
   method        PaymentMethod?
   paymentDate   DateTime?
+  refundReason  String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   appointmentId String
