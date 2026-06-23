@@ -3,6 +3,9 @@ export interface AppointmentDto {
   dateTime: string; // cadena ISO
   duration: number;
   confirmedAt?: string; // ISO string
+  cancellationReason?: string;
+  cancelledBy?: string;
+  confirmationNotes?: string;
   createdAt: string;
   updatedAt: string;
 

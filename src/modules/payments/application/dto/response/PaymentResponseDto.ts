@@ -36,6 +36,11 @@ export interface PaymentResponseDto {
   appointmentId: string;
 
   /**
+   * Razón del reembolso (disponible si el pago fue reembolsado)
+   */
+  refundReason?: string;
+
+  /**
    * Fecha de creación del registro
    */
   createdAt: Date;

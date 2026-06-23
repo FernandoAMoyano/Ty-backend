@@ -91,6 +91,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         statusId: appointment.statusId,
         stylistId: appointment.stylistId,
         confirmedAt: appointment.confirmedAt,
+        cancellationReason: appointment.cancellationReason,
+        cancelledBy: appointment.cancelledBy,
+        confirmationNotes: appointment.confirmationNotes,
         updatedAt: appointment.updatedAt,
         services: {
           set: appointment.serviceIds.map((id) => ({ id })),
@@ -486,6 +489,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       appointmentData.services?.map((service: any) => service.id) || [],
       appointmentData.createdAt,
       appointmentData.updatedAt,
+      appointmentData.cancellationReason ?? undefined,
+      appointmentData.cancelledBy ?? undefined,
+      appointmentData.confirmationNotes ?? undefined,
     );
   }
 }
