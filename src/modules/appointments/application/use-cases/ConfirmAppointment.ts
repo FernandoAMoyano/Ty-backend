@@ -53,18 +53,13 @@ export class ConfirmAppointment {
     // 5. Verificar transición de estado válida
     await this.validateStatusTransition(appointment, confirmedStatus.id);
 
-    // 6. Confirmar la cita (establece confirmedAt y cambia estado)
-    appointment.markAsConfirmed(confirmedStatus.id);
+    // 6. Confirmar la cita con notas opcionales
+    appointment.markAsConfirmed(confirmedStatus.id, confirmDto.notes);
 
-    // 7. Agregar información de confirmación si hay notas
-    if (confirmDto.notes) {
-      this.addConfirmationNotes(appointment, confirmDto, requesterId);
-    }
-
-    // 8. Guardar los cambios
+    // 7. Guardar los cambios
     const updatedAppointment = await this.appointmentRepository.update(appointment);
 
-    // 9. Mapear a DTO de respuesta
+    // 8. Mapear a DTO de respuesta
     return this.mapToAppointmentDto(updatedAppointment);
   }
 
@@ -240,20 +235,6 @@ export class ConfirmAppointment {
   }
 
   /**
-   * Agrega información de confirmación a la cita
-   * @param appointment - Entidad de la cita
-   * @param confirmDto - DTO con información de confirmación
-   * @param requesterId - ID del usuario que confirma
-   */
-  private addConfirmationNotes(
-    appointment: Appointment,
-    _confirmDto: ConfirmAppointmentDto,
-    _requesterId: string,
-  ): void {
-    appointment.updatedAt = new Date();
-  }
-
-  /**
    * Mapea una entidad Appointment a su DTO de respuesta
    * @param appointment - Entidad de cita
    * @returns DTO de cita para respuesta
@@ -264,6 +245,9 @@ export class ConfirmAppointment {
       dateTime: appointment.dateTime.toISOString(),
       duration: appointment.duration,
       confirmedAt: appointment.confirmedAt?.toISOString(),
+      cancellationReason: appointment.cancellationReason,
+      cancelledBy: appointment.cancelledBy,
+      confirmationNotes: appointment.confirmationNotes,
       createdAt: appointment.createdAt.toISOString(),
       updatedAt: appointment.updatedAt.toISOString(),
       userId: appointment.userId,

@@ -53,18 +53,13 @@ export class CancelAppointment {
     // 5. Verificar transición de estado válida
     await this.validateStatusTransition(appointment, cancelledStatus.id);
 
-    // 6. Cancelar la cita
-    appointment.markAsCancelled(cancelledStatus.id);
+    // 6. Cancelar la cita con razón y tipo de cancelación
+    appointment.markAsCancelled(cancelledStatus.id, cancelDto.reason, cancelDto.cancelledBy);
 
-    // 7. Agregar información de cancelación (si hay razón)
-    if (cancelDto.reason) {
-      this.addCancellationReason(appointment, cancelDto, requesterId);
-    }
-
-    // 8. Guardar los cambios
+    // 7. Guardar los cambios
     const updatedAppointment = await this.appointmentRepository.update(appointment);
 
-    // 9. Mapear a DTO de respuesta
+    // 8. Mapear a DTO de respuesta
     return this.mapToAppointmentDto(updatedAppointment);
   }
 
@@ -240,20 +235,6 @@ export class CancelAppointment {
   }
 
   /**
-   * Agrega información de cancelación a la cita
-   * @param appointment - Entidad de la cita
-   * @param cancelDto - DTO con información de cancelación
-   * @param requesterId - ID del usuario que cancela
-   */
-  private addCancellationReason(
-    appointment: Appointment,
-    _cancelDto: CancelAppointmentDto,
-    _requesterId: string,
-  ): void {
-    appointment.updatedAt = new Date();
-  }
-
-  /**
    * Mapea una entidad Appointment a su DTO de respuesta
    * @param appointment - Entidad de cita
    * @returns DTO de cita para respuesta
@@ -264,6 +245,9 @@ export class CancelAppointment {
       dateTime: appointment.dateTime.toISOString(),
       duration: appointment.duration,
       confirmedAt: appointment.confirmedAt?.toISOString(),
+      cancellationReason: appointment.cancellationReason,
+      cancelledBy: appointment.cancelledBy,
+      confirmationNotes: appointment.confirmationNotes,
       createdAt: appointment.createdAt.toISOString(),
       updatedAt: appointment.updatedAt.toISOString(),
       userId: appointment.userId,

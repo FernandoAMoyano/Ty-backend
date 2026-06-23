@@ -30,8 +30,8 @@ export class RefundPayment {
       throw new BusinessRuleError('Only completed payments can be refunded');
     }
 
-    // Marcar como reembolsado
-    payment.refund();
+    // Marcar como reembolsado con razón opcional
+    payment.refund(dto.reason);
 
     // Guardar cambios
     const updatedPayment = await this.paymentRepository.update(payment);
@@ -47,6 +47,7 @@ export class RefundPayment {
       method: payment.method,
       paymentDate: payment.paymentDate,
       appointmentId: payment.appointmentId,
+      refundReason: payment.refundReason,
       createdAt: payment.createdAt,
       updatedAt: payment.updatedAt,
     };

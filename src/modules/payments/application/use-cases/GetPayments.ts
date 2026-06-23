@@ -48,6 +48,7 @@ export class GetPayments {
       method: payment.method,
       paymentDate: payment.paymentDate,
       appointmentId: payment.appointmentId,
+      refundReason: payment.refundReason,
       createdAt: payment.createdAt,
       updatedAt: payment.updatedAt,
     };

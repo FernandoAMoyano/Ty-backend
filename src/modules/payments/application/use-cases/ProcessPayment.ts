@@ -47,6 +47,7 @@ export class ProcessPayment {
       method: payment.method,
       paymentDate: payment.paymentDate,
       appointmentId: payment.appointmentId,
+      refundReason: payment.refundReason,
       createdAt: payment.createdAt,
       updatedAt: payment.updatedAt,
     };
