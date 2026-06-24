@@ -8,10 +8,19 @@ import { RefreshToken } from './application/use-cases/RefreshToken';
 import { GetUserProfile } from './application/use-cases/GetUserProfile';
 import { UpdateUserProfile } from './application/use-cases/UpdateUserProfile';
 import { ChangeUserPassword } from './application/use-cases/ChangeUserPassword';
+import { DeactivateUser } from './application/use-cases/DeactivateUser';
 import { PrismaUserRepository } from './infrastructure/persistence/PrismaUserRepository';
 import { PrismaRoleRepository } from './infrastructure/persistence/PrismaRolRepository';
+import { PrismaStylistRepository } from '../services/infrastructure/persistence/PrismaStylistRepository';
+import { PrismaStylistServiceRepository } from '../services/infrastructure/persistence/PrismaStylistServiceRepository';
+import { PrismaAppointmentRepository } from '../appointments/infrastructure/persistence/PrismaAppointmentRepository';
+import { PrismaAppointmentStatusRepository } from '../appointments/infrastructure/persistence/PrismaAppointmentStatusRepository';
 import { IUserRepository } from './domain/repositories/IUserRepository';
 import { IRoleRepository } from './domain/repositories/IRoleRepository';
+import { IStylistRepository } from '../services/domain/repositories/IStylistRepository';
+import { IStylistServiceRepository } from '../services/domain/repositories/IStylistServiceRepository';
+import { IAppointmentRepository } from '../appointments/domain/repositories/IAppointmentRepository';
+import { IAppointmentStatusRepository } from '../appointments/domain/repositories/IAppointmentStatusRepository';
 import { BcryptHashService } from './infrastructure/services/BcryptHashService';
 import { JwtTokenService } from './infrastructure/services/JwtTokenService';
 import { JwtService } from './application/services/JwtService';
@@ -35,6 +44,7 @@ export class AuthContainer {
   private _getUserProfile: GetUserProfile;
   private _updateUserProfile: UpdateUserProfile;
   private _changeUserPassword: ChangeUserPassword;
+  private _deactivateUser: DeactivateUser;
 
   /**
    * Constructor privado que inicializa todas las dependencias del módulo
@@ -64,9 +74,15 @@ export class AuthContainer {
    * @description Inyecta dependencias siguiendo el orden: repositories -> services -> use cases -> controllers
    */
   private setupDependencies(): void {
-    // Repositories
+    // Repositories - Auth
     const userRepository: IUserRepository = new PrismaUserRepository(this.prisma);
     const roleRepository: IRoleRepository = new PrismaRoleRepository(this.prisma);
+
+    // Repositories - Cross-module (para cascada en desactivación)
+    const stylistRepository: IStylistRepository = new PrismaStylistRepository(this.prisma);
+    const stylistServiceRepository: IStylistServiceRepository = new PrismaStylistServiceRepository(this.prisma);
+    const appointmentRepository: IAppointmentRepository = new PrismaAppointmentRepository(this.prisma);
+    const appointmentStatusRepository: IAppointmentStatusRepository = new PrismaAppointmentStatusRepository(this.prisma);
 
     // Services
     const hashService: HashService = new BcryptHashService();
@@ -79,6 +95,14 @@ export class AuthContainer {
     this._getUserProfile = new GetUserProfile(userRepository, roleRepository);
     this._updateUserProfile = new UpdateUserProfile(userRepository, roleRepository);
     this._changeUserPassword = new ChangeUserPassword(userRepository, hashService);
+    this._deactivateUser = new DeactivateUser(
+      userRepository,
+      roleRepository,
+      stylistRepository,
+      stylistServiceRepository,
+      appointmentRepository,
+      appointmentStatusRepository,
+    );
 
     // HTTP Layer - Inyectamos los casos de uso directamente
     this._authController = new AuthController(
@@ -88,6 +112,7 @@ export class AuthContainer {
       this._getUserProfile,
       this._updateUserProfile,
       this._changeUserPassword,
+      this._deactivateUser,
     );
 
     this._authMiddleware = new AuthMiddleware(jwtService);
