@@ -29,6 +29,7 @@ export class AuthRoutes {
    * - GET /auth/profile - Obtener perfil (requiere autenticación)
    * - PUT /auth/profile - Actualizar perfil (requiere autenticación)
    * - PUT /auth/change-password - Cambiar contraseña (requiere autenticación)
+   * - PATCH /auth/users/:id/deactivate - Desactivar usuario (solo ADMIN)
    */
   private setupRoutes(): void {
     // POST /login - Inicio de sesión (público)
@@ -89,6 +90,16 @@ export class AuthRoutes {
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.authController.changePassword(req, res).catch(next);
+      },
+    );
+
+    // PATCH /users/:id/deactivate - Desactivar usuario (solo ADMIN)
+    this.router.patch(
+      '/users/:id/deactivate',
+      this.authMiddleware.authenticate.bind(this.authMiddleware),
+      this.authMiddleware.authorize(['ADMIN']),
+      (req: Request, res: Response, next: NextFunction) => {
+        this.authController.deactivateUser(req, res).catch(next);
       },
     );
   }
