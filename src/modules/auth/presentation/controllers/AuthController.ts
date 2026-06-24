@@ -6,6 +6,7 @@ import { RefreshToken } from '../../application/use-cases/RefreshToken';
 import { GetUserProfile } from '../../application/use-cases/GetUserProfile';
 import { UpdateUserProfile } from '../../application/use-cases/UpdateUserProfile';
 import { ChangeUserPassword } from '../../application/use-cases/ChangeUserPassword';
+import { DeactivateUser } from '../../application/use-cases/DeactivateUser';
 import { AuthenticatedRequest } from '../middleware/AuthMiddleware';
 import { RegisterDto } from '../../application/dto/request/RegisterDto';
 import { LoginDto } from '../../application/dto/request/LoginDto';
@@ -27,6 +28,7 @@ export class AuthController {
     private getUserProfile: GetUserProfile,
     private updateUserProfile: UpdateUserProfile,
     private changeUserPassword: ChangeUserPassword,
+    private deactivateUserUseCase: DeactivateUser,
   ) {}
 
   /**
@@ -171,6 +173,34 @@ export class AuthController {
     return res.status(200).json({
       success: true,
       message: 'Password changed successfully',
+    });
+  }
+
+  /**
+   * Desactiva un usuario del sistema
+   * Si el usuario es STYLIST, ejecuta cascada: cancela citas activas y desactiva servicios
+   * @route PATCH /auth/users/:id/deactivate
+   * @param req - Request de Express autenticado con userId del admin
+   * @param res - Response de Express
+   * @returns Promise<Response>
+   * @description Solo accesible por ADMIN. Desactiva usuario y ejecuta cascada si es STYLIST
+   * @responseStatus 200 - Usuario desactivado exitosamente con resumen de cascada
+   * @throws UnauthorizedError si el request no está autenticado
+   * @throws NotFoundError si el usuario no existe
+   * @throws BusinessRuleError si el usuario ya está inactivo
+   */
+  async deactivateUser(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
+    const { id } = req.params;
+    const result = await this.deactivateUserUseCase.execute(id);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+      message: 'User deactivated successfully',
     });
   }
 }
