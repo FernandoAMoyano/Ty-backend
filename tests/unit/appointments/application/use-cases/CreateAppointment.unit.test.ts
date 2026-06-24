@@ -210,6 +210,7 @@ describe('CreateAppointment Use Case', () => {
     mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(stylistService as any);
     mockScheduleRepository.findAll.mockResolvedValue([schedule]);
     mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([]);
+    mockAppointmentRepository.findByClientAndDateRange.mockResolvedValue([]);
     mockAppointmentRepository.save.mockResolvedValue(appointment);
   };
 
@@ -476,6 +477,7 @@ describe('CreateAppointment Use Case', () => {
       mockAppointmentStatusRepository.findByName.mockResolvedValue(pendingStatus);
       mockScheduleRepository.findAll.mockResolvedValue([schedule]);
       mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([]);
+      mockAppointmentRepository.findByClientAndDateRange.mockResolvedValue([]);
       mockAppointmentRepository.save.mockResolvedValue(appointment);
 
       const result = await useCase.execute(validCreateDto, validUserId);
