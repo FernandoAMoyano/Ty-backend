@@ -18,6 +18,9 @@ import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleErr
  * Maneja todas las validaciones de negocio y coordinación entre servicios
  */
 export class CreateAppointment {
+  /** Máximo de citas activas por cliente por día */
+  private static readonly MAX_DAILY_APPOINTMENTS = 3;
+
   constructor(
     private appointmentRepository: IAppointmentRepository,
     private appointmentStatusRepository: IAppointmentStatusRepository,
@@ -90,10 +93,13 @@ export class CreateAppointment {
     // 6. Validar disponibilidad y conflictos
     await this.validateAvailability(createDto, totalDuration);
 
-    // 7. Obtener estado inicial (pendiente)
+    // 7. Validar límite diario de citas por cliente
+    await this.validateDailyAppointmentLimit(clientId, createDto.dateTime);
+
+    // 8. Obtener estado inicial (pendiente)
     const pendingStatus = await this.getPendingStatus();
 
-    // 8. Crear la entidad de cita con el Client.id correcto
+    // 9. Crear la entidad de cita con el Client.id correcto
     const appointment = Appointment.create(
       new Date(createDto.dateTime),
       totalDuration,
@@ -105,10 +111,10 @@ export class CreateAppointment {
       createDto.serviceIds,
     );
 
-    // 9. Guardar en repositorio
+    // 10. Guardar en repositorio
     const savedAppointment = await this.appointmentRepository.save(appointment);
 
-    // 10. Mapear a DTO de respuesta
+    // 11. Mapear a DTO de respuesta
     return this.mapToAppointmentDto(savedAppointment);
   }
 
@@ -254,6 +260,45 @@ export class CreateAppointment {
     }
 
     // TODO: Validar días festivos (ISSUE-12: diferido)
+  }
+
+  /**
+   * Valida que el cliente no exceda el límite diario de citas activas
+   * Solo cuenta citas no canceladas (PENDING, CONFIRMED, COMPLETED)
+   * @param clientId - ID del cliente (Client.id)
+   * @param dateTimeStr - Fecha y hora de la cita en formato ISO string
+   * @throws BusinessRuleError si el cliente alcanzó el límite diario
+   */
+  private async validateDailyAppointmentLimit(clientId: string, dateTimeStr: string): Promise<void> {
+    const appointmentDate = new Date(dateTimeStr);
+
+    // Obtener inicio y fin del día
+    const startOfDay = new Date(appointmentDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(appointmentDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Buscar citas del cliente en ese día
+    const existingAppointments = await this.appointmentRepository.findByClientAndDateRange(
+      clientId,
+      startOfDay,
+      endOfDay,
+    );
+
+    // Obtener estado CANCELLED para excluirlo del conteo
+    const cancelledStatus = await this.appointmentStatusRepository.findByName('CANCELLED');
+
+    // Contar solo citas activas (no canceladas)
+    const activeAppointments = cancelledStatus
+      ? existingAppointments.filter(a => a.statusId !== cancelledStatus.id)
+      : existingAppointments;
+
+    if (activeAppointments.length >= CreateAppointment.MAX_DAILY_APPOINTMENTS) {
+      throw new BusinessRuleError(
+        `Maximum of ${CreateAppointment.MAX_DAILY_APPOINTMENTS} appointments per day has been reached`,
+      );
+    }
   }
 
   /**
