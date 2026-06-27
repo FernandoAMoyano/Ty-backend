@@ -260,7 +260,24 @@ describe('ScheduleRepository Integration Tests', () => {
     let testSchedule: Schedule;
 
     beforeEach(async () => {
-      // Crear horario de prueba para métodos de lógica de negocio
+      // Limpiar en cascada: payments → appointments → schedules de SATURDAY
+      const saturdaySchedules = await testPrisma.schedule.findMany({
+        where: { dayOfWeek: 'SATURDAY' },
+      });
+      if (saturdaySchedules.length > 0) {
+        const saturdayScheduleIds = saturdaySchedules.map(s => s.id);
+        const saturdayAppointments = await testPrisma.appointment.findMany({
+          where: { scheduleId: { in: saturdayScheduleIds } },
+        });
+        if (saturdayAppointments.length > 0) {
+          await testPrisma.payment.deleteMany({
+            where: { appointmentId: { in: saturdayAppointments.map(a => a.id) } },
+          });
+          await testPrisma.appointment.deleteMany({
+            where: { scheduleId: { in: saturdayScheduleIds } },
+          });
+        }
+      }
       await testPrisma.schedule.deleteMany({
         where: { dayOfWeek: 'SATURDAY' },
       });
@@ -342,7 +359,24 @@ describe('ScheduleRepository Integration Tests', () => {
 
   describe('Data Integrity', () => {
     it('should handle appointment references appropriately', async () => {
-      // Crear horario
+      // Limpiar en cascada: payments → appointments → schedules de SATURDAY
+      const saturdaySchedules = await testPrisma.schedule.findMany({
+        where: { dayOfWeek: 'SATURDAY' },
+      });
+      if (saturdaySchedules.length > 0) {
+        const saturdayScheduleIds = saturdaySchedules.map(s => s.id);
+        const saturdayAppointments = await testPrisma.appointment.findMany({
+          where: { scheduleId: { in: saturdayScheduleIds } },
+        });
+        if (saturdayAppointments.length > 0) {
+          await testPrisma.payment.deleteMany({
+            where: { appointmentId: { in: saturdayAppointments.map(a => a.id) } },
+          });
+          await testPrisma.appointment.deleteMany({
+            where: { scheduleId: { in: saturdayScheduleIds } },
+          });
+        }
+      }
       await testPrisma.schedule.deleteMany({
         where: { dayOfWeek: 'SATURDAY' },
       });
