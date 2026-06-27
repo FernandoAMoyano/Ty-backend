@@ -1,17 +1,22 @@
 import { GetAvailableSlots } from '../../../../../src/modules/appointments/application/use-cases/GetAvailableSlots';
-import { AppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/AppointmentRepository';
-import { ScheduleRepository } from '../../../../../src/modules/appointments/domain/repositories/ScheduleRepository';
-import { Schedule, DayOfWeekEnum } from '../../../../../src/modules/appointments/domain/entities/Schedule';
+import { IAppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
+import { IScheduleRepository } from '../../../../../src/modules/appointments/domain/repositories/IScheduleRepository';
+import {
+  Schedule,
+  DayOfWeekEnum,
+} from '../../../../../src/modules/appointments/domain/entities/Schedule';
 import { Appointment } from '../../../../../src/modules/appointments/domain/entities/Appointment';
 import { GetAvailableSlotsDto } from '../../../../../src/modules/appointments/application/dto/request/GetAvailableSlotsDto';
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { BusinessRuleError } from '../../../../../src/shared/exceptions/BusinessRuleError';
+import { ScheduleAvailabilityService } from '../../../../../src/modules/appointments/domain/services/ScheduleAvailabilityService';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('GetAvailableSlots Use Case', () => {
   let useCase: GetAvailableSlots;
-  let mockAppointmentRepository: jest.Mocked<AppointmentRepository>;
-  let mockScheduleRepository: jest.Mocked<ScheduleRepository>;
+  let mockAppointmentRepository: jest.Mocked<IAppointmentRepository>;
+  let mockScheduleRepository: jest.Mocked<IScheduleRepository>;
+  let mockScheduleAvailabilityService: jest.Mocked<ScheduleAvailabilityService>;
 
   // Utilidades de fecha dinámicas
   const getFutureDateString = (daysFromNow: number = 7): string => {
@@ -60,11 +65,28 @@ describe('GetAvailableSlots Use Case', () => {
       endTime,
       createdAt: new Date(),
       updatedAt: new Date(),
-      getAvailableSlots: jest.fn().mockReturnValue([
-        '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-        '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-        '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
-      ]),
+      getAvailableSlots: jest
+        .fn()
+        .mockReturnValue([
+          '09:00',
+          '09:30',
+          '10:00',
+          '10:30',
+          '11:00',
+          '11:30',
+          '12:00',
+          '12:30',
+          '13:00',
+          '13:30',
+          '14:00',
+          '14:30',
+          '15:00',
+          '15:30',
+          '16:00',
+          '16:30',
+          '17:00',
+          '17:30',
+        ]),
       isWithinWorkingHours: jest.fn().mockReturnValue(true),
       validate: jest.fn(),
     } as unknown as Schedule;
@@ -116,6 +138,11 @@ describe('GetAvailableSlots Use Case', () => {
 
     mockScheduleRepository.findByDayOfWeek.mockResolvedValue([schedule]);
     mockAppointmentRepository.findByDate.mockResolvedValue([]);
+    mockScheduleAvailabilityService.getEffectiveSchedule.mockResolvedValue({
+      startTime: '09:00',
+      endTime: '18:00',
+      source: 'regular',
+    });
   };
 
   beforeEach(() => {
@@ -141,7 +168,7 @@ describe('GetAvailableSlots Use Case', () => {
       countByDateRange: jest.fn(),
       findUpcomingAppointments: jest.fn(),
       findPendingConfirmation: jest.fn(),
-    } as unknown as jest.Mocked<AppointmentRepository>;
+    } as unknown as jest.Mocked<IAppointmentRepository>;
 
     // Mock de ScheduleRepository
     mockScheduleRepository = {
@@ -158,9 +185,22 @@ describe('GetAvailableSlots Use Case', () => {
       findAvailableSchedulesForDay: jest.fn(),
       findScheduleByTimeSlot: jest.fn(),
       findConflictingSchedules: jest.fn(),
-    } as unknown as jest.Mocked<ScheduleRepository>;
+    } as unknown as jest.Mocked<IScheduleRepository>;
 
-    useCase = new GetAvailableSlots(mockAppointmentRepository, mockScheduleRepository);
+    mockScheduleAvailabilityService = {
+      getEffectiveSchedule: jest.fn().mockResolvedValue({
+        startTime: '09:00',
+        endTime: '18:00',
+        source: 'regular',
+      }),
+      isDayClosed: jest.fn().mockResolvedValue(false),
+    } as unknown as jest.Mocked<ScheduleAvailabilityService>;
+
+    useCase = new GetAvailableSlots(
+      mockAppointmentRepository,
+      mockScheduleRepository,
+      mockScheduleAvailabilityService,
+    );
   });
 
   afterEach(() => {
@@ -225,7 +265,7 @@ describe('GetAvailableSlots Use Case', () => {
 
       const result = await useCase.execute(dto);
 
-      result.slots.forEach(slot => {
+      result.slots.forEach((slot) => {
         expect(slot.duration).toBe(30);
       });
     });
@@ -238,7 +278,7 @@ describe('GetAvailableSlots Use Case', () => {
 
       const result = await useCase.execute(dto);
 
-      result.slots.forEach(slot => {
+      result.slots.forEach((slot) => {
         expect(slot.duration).toBe(60);
       });
     });
@@ -251,7 +291,7 @@ describe('GetAvailableSlots Use Case', () => {
 
       const result = await useCase.execute(dto);
 
-      result.slots.forEach(slot => {
+      result.slots.forEach((slot) => {
         expect(slot.stylist).toBeDefined();
         expect(slot.stylist!.id).toBe(validStylistId);
       });
@@ -265,7 +305,7 @@ describe('GetAvailableSlots Use Case', () => {
 
       const result = await useCase.execute(dto);
 
-      const availableCount = result.slots.filter(slot => slot.available).length;
+      const availableCount = result.slots.filter((slot) => slot.available).length;
       expect(result.availableSlots).toBe(availableCount);
     });
   });
@@ -276,7 +316,8 @@ describe('GetAvailableSlots Use Case', () => {
       const dateString = getFutureDateString(7);
       const dto = createValidDto({ date: dateString });
 
-      mockScheduleRepository.findByDayOfWeek.mockResolvedValue([]);
+      // Día cerrado: el servicio retorna null
+      mockScheduleAvailabilityService.getEffectiveSchedule.mockResolvedValue(null);
 
       const result = await useCase.execute(dto);
 
@@ -292,7 +333,8 @@ describe('GetAvailableSlots Use Case', () => {
       const dateString = getFutureDateString(7);
       const dto = createValidDto({ date: dateString });
 
-      mockScheduleRepository.findByDayOfWeek.mockResolvedValue([]);
+      // Día cerrado: el servicio retorna null
+      mockScheduleAvailabilityService.getEffectiveSchedule.mockResolvedValue(null);
 
       const result = await useCase.execute(dto);
 
@@ -319,7 +361,7 @@ describe('GetAvailableSlots Use Case', () => {
       const result = await useCase.execute(dto);
 
       // Buscar slot de las 10:00 y verificar que no esté disponible
-      const conflictingSlot = result.slots.find(slot => slot.time === '10:00');
+      const conflictingSlot = result.slots.find((slot) => slot.time === '10:00');
       if (conflictingSlot) {
         expect(conflictingSlot.available).toBe(false);
         expect(conflictingSlot.conflictReason).toBeDefined();
@@ -338,13 +380,17 @@ describe('GetAvailableSlots Use Case', () => {
       // Crear cita de otro estilista - no debería afectar disponibilidad
       const otherStylistId = generateUuid();
       const appointmentDate = new Date(dateString + 'T10:00:00.000Z');
-      const otherStylistAppointment = createMockExistingAppointment(appointmentDate, 60, otherStylistId);
+      const otherStylistAppointment = createMockExistingAppointment(
+        appointmentDate,
+        60,
+        otherStylistId,
+      );
       mockAppointmentRepository.findByDate.mockResolvedValue([otherStylistAppointment]);
 
       const result = await useCase.execute(dto);
 
       // El slot de las 10:00 debería estar disponible porque la cita es de otro estilista
-      const slot = result.slots.find(s => s.time === '10:00');
+      const slot = result.slots.find((s) => s.time === '10:00');
       if (slot) {
         expect(slot.available).toBe(true);
       }
@@ -369,7 +415,7 @@ describe('GetAvailableSlots Use Case', () => {
       const result = await useCase.execute(dto);
 
       // Verificar que hay algunos slots no disponibles
-      const unavailableSlots = result.slots.filter(slot => !slot.available);
+      const unavailableSlots = result.slots.filter((slot) => !slot.available);
       expect(unavailableSlots.length).toBeGreaterThan(0);
     });
   });
@@ -379,18 +425,14 @@ describe('GetAvailableSlots Use Case', () => {
     it('should throw error for empty date', async () => {
       const dto = createValidDto({ date: '' });
 
-      await expect(useCase.execute(dto)).rejects.toThrow(
-        new ValidationError('Date is required'),
-      );
+      await expect(useCase.execute(dto)).rejects.toThrow(new ValidationError('Date is required'));
     });
 
     // Debería lanzar error para fecha solo con espacios
     it('should throw error for whitespace-only date', async () => {
       const dto = createValidDto({ date: '   ' });
 
-      await expect(useCase.execute(dto)).rejects.toThrow(
-        new ValidationError('Date is required'),
-      );
+      await expect(useCase.execute(dto)).rejects.toThrow(new ValidationError('Date is required'));
     });
 
     // Debería lanzar error para formato de fecha inválido
@@ -603,12 +645,12 @@ describe('GetAvailableSlots Use Case', () => {
     it('should call scheduleRepository.findByDayOfWeek with correct day', async () => {
       const dateString = getFutureDateString(7);
       const dto = createValidDto({ date: dateString });
-      const expectedDayOfWeek = getDayOfWeekFromDateString(dateString);
       setupSuccessfulMocks(dateString);
 
       await useCase.execute(dto);
 
-      expect(mockScheduleRepository.findByDayOfWeek).toHaveBeenCalledWith(expectedDayOfWeek);
+      // El servicio de disponibilidad maneja la consulta al scheduleRepository
+      expect(mockScheduleAvailabilityService.getEffectiveSchedule).toHaveBeenCalled();
     });
 
     // Debería llamar a appointmentRepository.findByDate con fecha correcta
@@ -627,7 +669,8 @@ describe('GetAvailableSlots Use Case', () => {
       const dateString = getFutureDateString(7);
       const dto = createValidDto({ date: dateString });
 
-      mockScheduleRepository.findByDayOfWeek.mockResolvedValue([]);
+      // Día cerrado: el servicio retorna null
+      mockScheduleAvailabilityService.getEffectiveSchedule.mockResolvedValue(null);
 
       await useCase.execute(dto);
 
@@ -642,7 +685,7 @@ describe('GetAvailableSlots Use Case', () => {
       const dto = createValidDto({ date: dateString });
       const repositoryError = new Error('Database connection failed');
 
-      mockScheduleRepository.findByDayOfWeek.mockRejectedValue(repositoryError);
+      mockScheduleAvailabilityService.getEffectiveSchedule.mockRejectedValue(repositoryError);
 
       await expect(useCase.execute(dto)).rejects.toThrow(repositoryError);
     });
@@ -653,9 +696,10 @@ describe('GetAvailableSlots Use Case', () => {
       const dto = createValidDto({ date: dateString });
       const repositoryError = new Error('Query timeout');
 
-      const dayOfWeek = getDayOfWeekFromDateString(dateString);
-      const schedule = createMockSchedule(dayOfWeek);
-      mockScheduleRepository.findByDayOfWeek.mockResolvedValue([schedule]);
+      // Configurar servicio para que pase, pero findByDate falle
+      mockScheduleAvailabilityService.getEffectiveSchedule.mockResolvedValue({
+        startTime: '09:00', endTime: '18:00', source: 'regular',
+      });
       mockAppointmentRepository.findByDate.mockRejectedValue(repositoryError);
 
       await expect(useCase.execute(dto)).rejects.toThrow(repositoryError);
