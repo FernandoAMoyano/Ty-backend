@@ -11,6 +11,7 @@ import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
+import { ScheduleAvailabilityService } from '../../domain/services/ScheduleAvailabilityService';
 import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
 
 /**
@@ -29,6 +30,7 @@ export class CreateAppointment {
     private stylistRepository: IStylistRepository,
     private stylistServiceRepository: IStylistServiceRepository,
     private clientRepository: IClientRepository,
+    private scheduleAvailabilityService: ScheduleAvailabilityService,
   ) {}
 
   /**
@@ -84,22 +86,34 @@ export class CreateAppointment {
     // 3. Calcular duración total si no se proporciona
     const totalDuration = await this.calculateTotalDuration(createDto);
 
-    // 4. Obtener horario apropiado para el día
+    // 4. Obtener horario efectivo del día (prioridad: Exception > Holiday > Regular)
+    const effectiveSchedule = await this.scheduleAvailabilityService.getEffectiveSchedule(
+      new Date(createDto.dateTime),
+    );
+
+    // 5. Validar que el día no esté cerrado (feriado sin excepción o sin horario)
+    if (!effectiveSchedule) {
+      throw new BusinessRuleError(
+        'The salon is closed on the selected date (holiday or no schedule available)',
+      );
+    }
+
+    // 6. Validar que la cita esté dentro del horario efectivo del día
+    this.validateWorkingHours(createDto.dateTime, totalDuration, effectiveSchedule);
+
+    // 7. Obtener schedule regular para el scheduleId de la cita
     const schedule = await this.getAppropriateSchedule(createDto.dateTime);
 
-    // 5. Validar que la cita esté dentro del horario laboral
-    this.validateWorkingHours(createDto.dateTime, totalDuration, schedule);
-
-    // 6. Validar disponibilidad y conflictos
+    // 8. Validar disponibilidad y conflictos
     await this.validateAvailability(createDto, totalDuration);
 
-    // 7. Validar límite diario de citas por cliente
+    // 9. Validar límite diario de citas por cliente
     await this.validateDailyAppointmentLimit(clientId, createDto.dateTime);
 
-    // 8. Obtener estado inicial (pendiente)
+    // 10. Obtener estado inicial (pendiente)
     const pendingStatus = await this.getPendingStatus();
 
-    // 9. Crear la entidad de cita con el Client.id correcto
+    // 11. Crear la entidad de cita con el Client.id correcto
     const appointment = Appointment.create(
       new Date(createDto.dateTime),
       totalDuration,
@@ -111,10 +125,10 @@ export class CreateAppointment {
       createDto.serviceIds,
     );
 
-    // 10. Guardar en repositorio
+    // 12. Guardar en repositorio
     const savedAppointment = await this.appointmentRepository.save(appointment);
 
-    // 11. Mapear a DTO de respuesta
+    // 13. Mapear a DTO de respuesta
     return this.mapToAppointmentDto(savedAppointment);
   }
 
@@ -260,6 +274,22 @@ export class CreateAppointment {
     }
 
     // TODO: Validar días festivos (ISSUE-12: diferido)
+  }
+
+  /**
+   * Valida que el día de la cita no esté cerrado por feriado o falta de horario
+   * Usa el servicio de disponibilidad que aplica la prioridad:
+   * ScheduleException > Holiday (cerrado) > Schedule regular
+   * @param dateTimeStr - Fecha y hora de la cita en formato ISO string
+   * @throws BusinessRuleError si el día está cerrado
+   */
+  private async validateDayAvailability(dateTimeStr: string): Promise<void> {
+    const appointmentDate = new Date(dateTimeStr);
+    const isClosed = await this.scheduleAvailabilityService.isDayClosed(appointmentDate);
+
+    if (isClosed) {
+      throw new BusinessRuleError('The salon is closed on the selected date (holiday or no schedule available)');
+    }
   }
 
   /**

@@ -1,5 +1,6 @@
 import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
 import { IScheduleRepository } from '../../domain/repositories/IScheduleRepository';
+import { ScheduleAvailabilityService } from '../../domain/services/ScheduleAvailabilityService';
 import { GetAvailableSlotsDto } from '../dto/request/GetAvailableSlotsDto';
 import { DayAvailabilityDto, AvailableSlotDto } from '../dto/response/AvailableSlotDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
@@ -14,6 +15,7 @@ export class GetAvailableSlots {
   constructor(
     private appointmentRepository: IAppointmentRepository,
     private scheduleRepository: IScheduleRepository,
+    private scheduleAvailabilityService: ScheduleAvailabilityService,
   ) {}
 
   /**
@@ -36,16 +38,21 @@ export class GetAvailableSlots {
     // 4. Obtener día de la semana
     const dayOfWeek = this.getDayOfWeek(targetDate);
 
-    // 5. Obtener horario laboral para el día
-    const schedule = await this.getWorkingSchedule(dayOfWeek);
+    // 5. Obtener horario efectivo (prioridad: Exception > Holiday > Schedule regular)
+    const effectiveSchedule =
+      await this.scheduleAvailabilityService.getEffectiveSchedule(targetDate);
 
-    // 6. Si no hay horario laboral, retornar día no laboral
-    if (!schedule) {
+    // 6. Si el día está cerrado (feriado sin excepción o sin horario), retornar no laboral
+    if (!effectiveSchedule) {
       return this.createNonWorkingDayResponse(request.date, dayOfWeek);
     }
 
-    // 7. Generar slots base según horario laboral
-    const baseSlots = this.generateBaseSlots(schedule, duration);
+    // 7. Generar slots base usando el horario efectivo
+    const baseSlots = this.generateBaseSlotsFromTimes(
+      effectiveSchedule.startTime,
+      effectiveSchedule.endTime,
+      duration,
+    );
 
     // 8. Obtener citas existentes para el día
     const existingAppointments = await this.getExistingAppointments(targetDate, request.stylistId);
@@ -59,8 +66,13 @@ export class GetAvailableSlots {
       request.stylistId,
     );
 
-    // 10. Construir y retornar respuesta
-    return this.buildDayAvailabilityResponse(request.date, dayOfWeek, schedule, availableSlots);
+    // 10. Construir y retornar respuesta con horario efectivo
+    return this.buildDayAvailabilityResponse(
+      request.date,
+      dayOfWeek,
+      { startTime: effectiveSchedule.startTime, endTime: effectiveSchedule.endTime },
+      availableSlots,
+    );
   }
 
   /**
@@ -198,6 +210,34 @@ export class GetAvailableSlots {
   }
 
   /**
+   * Genera slots base a partir de horarios explícitos (startTime/endTime)
+   * @param startTime - Hora de inicio (HH:MM)
+   * @param endTime - Hora de fin (HH:MM)
+   * @param duration - Duración de cada slot en minutos
+   * @returns Array de slots en formato HH:MM
+   */
+  private generateBaseSlotsFromTimes(
+    startTime: string,
+    endTime: string,
+    duration: number,
+  ): string[] {
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+
+    const slots: string[] = [];
+    for (let time = startMinutes; time + duration <= endMinutes; time += 15) {
+      const hours = Math.floor(time / 60);
+      const minutes = time % 60;
+      slots.push(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+    }
+
+    return slots;
+  }
+
+  /**
    * Genera slots base según el horario laboral y duración
    * @param schedule - Horario laboral del día
    * @param duration - Duración requerida en minutos
@@ -305,10 +345,13 @@ export class GetAvailableSlots {
       if (slotStart < appointmentEnd && slotEnd > appointmentStart) {
         return {
           hasConflict: true,
-          reason: `Conflict with existing appointment at ${appointmentStart.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}`,
+          reason: `Conflict with existing appointment at ${appointmentStart.toLocaleTimeString(
+            'en-US',
+            {
+              hour: '2-digit',
+              minute: '2-digit',
+            },
+          )}`,
         };
       }
     }
