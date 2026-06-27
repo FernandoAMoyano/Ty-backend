@@ -23,6 +23,15 @@ import { PrismaStylistRepository } from '../services/infrastructure/persistence/
 import { PrismaStylistServiceRepository } from '../services/infrastructure/persistence/PrismaStylistServiceRepository';
 import { PrismaClientRepository } from '../auth/infrastructure/persistence/PrismaClientRepository';
 
+// Repositorios de módulo holidays (para integración holidays↔appointments)
+import { IHolidayRepository } from '../holidays/domain/repositories/IHolidayRepository';
+import { IScheduleExceptionRepository } from '../holidays/domain/repositories/IScheduleExceptionRepository';
+import { PrismaHolidayRepository } from '../holidays/infrastructure/persistence/PrismaHolidayRepository';
+import { PrismaScheduleExceptionRepository } from '../holidays/infrastructure/persistence/PrismaScheduleExceptionRepository';
+
+// Servicios de dominio
+import { ScheduleAvailabilityService } from './domain/services/ScheduleAvailabilityService';
+
 // Casos de uso
 import { CreateAppointment } from './application/use-cases/CreateAppointment';
 import { GetAppointmentById } from './application/use-cases/GetAppointmentById';
@@ -110,6 +119,17 @@ export class AppointmentContainer {
     this._stylistServiceRepository = new PrismaStylistServiceRepository(this.prisma);
     this._clientRepository = new PrismaClientRepository(this.prisma);
 
+    // Repositorios de módulo holidays
+    const holidayRepository: IHolidayRepository = new PrismaHolidayRepository(this.prisma);
+    const scheduleExceptionRepository: IScheduleExceptionRepository = new PrismaScheduleExceptionRepository(this.prisma);
+
+    // Servicio de dominio de disponibilidad
+    const scheduleAvailabilityService = new ScheduleAvailabilityService(
+      holidayRepository,
+      scheduleExceptionRepository,
+      this._scheduleRepository,
+    );
+
     // Casos de uso implementados
     this._createAppointment = new CreateAppointment(
       this._appointmentRepository,
@@ -119,6 +139,7 @@ export class AppointmentContainer {
       this._stylistRepository,
       this._stylistServiceRepository,
       this._clientRepository,
+      scheduleAvailabilityService,
     );
 
     this._getAppointmentById = new GetAppointmentById(this._appointmentRepository);
@@ -135,6 +156,7 @@ export class AppointmentContainer {
     this._getAvailableSlots = new GetAvailableSlots(
       this._appointmentRepository,
       this._scheduleRepository,
+      scheduleAvailabilityService,
     );
 
     this._confirmAppointment = new ConfirmAppointment(
