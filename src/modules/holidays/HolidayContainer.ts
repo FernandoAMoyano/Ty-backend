@@ -6,6 +6,12 @@ import { IScheduleExceptionRepository } from './domain/repositories/IScheduleExc
 import { PrismaHolidayRepository } from './infrastructure/persistence/PrismaHolidayRepository';
 import { PrismaScheduleExceptionRepository } from './infrastructure/persistence/PrismaScheduleExceptionRepository';
 
+// Repositorios cross-module (para auto-cancel de citas al crear feriado)
+import { IAppointmentRepository } from '../appointments/domain/repositories/IAppointmentRepository';
+import { IAppointmentStatusRepository } from '../appointments/domain/repositories/IAppointmentStatusRepository';
+import { PrismaAppointmentRepository } from '../appointments/infrastructure/persistence/PrismaAppointmentRepository';
+import { PrismaAppointmentStatusRepository } from '../appointments/infrastructure/persistence/PrismaAppointmentStatusRepository';
+
 // Holiday Use Cases
 import { CreateHoliday } from './application/use-cases/CreateHoliday';
 import { GetHolidayById } from './application/use-cases/GetHolidayById';
@@ -100,8 +106,16 @@ export class HolidayContainer {
     this._holidayRepository = new PrismaHolidayRepository(this.prisma);
     this._scheduleExceptionRepository = new PrismaScheduleExceptionRepository(this.prisma);
 
-    // 2. Inicializar Holiday use cases
-    this._createHoliday = new CreateHoliday(this._holidayRepository);
+    // 2. Repositorios cross-module
+    const appointmentRepository: IAppointmentRepository = new PrismaAppointmentRepository(this.prisma);
+    const appointmentStatusRepository: IAppointmentStatusRepository = new PrismaAppointmentStatusRepository(this.prisma);
+
+    // 3. Inicializar Holiday use cases
+    this._createHoliday = new CreateHoliday(
+      this._holidayRepository,
+      appointmentRepository,
+      appointmentStatusRepository,
+    );
     this._getHolidayById = new GetHolidayById(this._holidayRepository);
     this._getHolidays = new GetHolidays(this._holidayRepository);
     this._getHolidaysByYear = new GetHolidaysByYear(this._holidayRepository);

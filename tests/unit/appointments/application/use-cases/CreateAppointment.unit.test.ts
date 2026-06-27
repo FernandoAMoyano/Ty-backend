@@ -17,6 +17,7 @@ import { ValidationError } from '../../../../../src/shared/exceptions/Validation
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../../src/shared/exceptions/ConflictError';
 import { BusinessRuleError } from '../../../../../src/shared/exceptions/BusinessRuleError';
+import { ScheduleAvailabilityService } from '../../../../../src/modules/appointments/domain/services/ScheduleAvailabilityService';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('CreateAppointment Use Case', () => {
@@ -28,6 +29,7 @@ describe('CreateAppointment Use Case', () => {
   let mockStylistRepository: jest.Mocked<StylistRepository>;
   let mockStylistServiceRepository: jest.Mocked<IStylistServiceRepository>;
   let mockClientRepository: jest.Mocked<ClientRepository>;
+  let mockScheduleAvailabilityService: jest.Mocked<ScheduleAvailabilityService>;
 
   // Utilidades de fecha dinámicas y mantenibles
   const getNextMonday = (hoursFromNow: number = 48): Date => {
@@ -212,6 +214,13 @@ describe('CreateAppointment Use Case', () => {
     mockAppointmentRepository.findConflictingAppointments.mockResolvedValue([]);
     mockAppointmentRepository.findByClientAndDateRange.mockResolvedValue([]);
     mockAppointmentRepository.save.mockResolvedValue(appointment);
+
+    // Mock del servicio de disponibilidad — retorna horario regular por defecto
+    mockScheduleAvailabilityService.getEffectiveSchedule.mockResolvedValue({
+      startTime: '09:00',
+      endTime: '18:00',
+      source: 'regular',
+    });
   };
 
   beforeEach(() => {
@@ -315,6 +324,15 @@ describe('CreateAppointment Use Case', () => {
       existsByUserId: jest.fn(),
     } as unknown as jest.Mocked<ClientRepository>;
 
+    mockScheduleAvailabilityService = {
+      getEffectiveSchedule: jest.fn().mockResolvedValue({
+        startTime: '09:00',
+        endTime: '18:00',
+        source: 'regular',
+      }),
+      isDayClosed: jest.fn().mockResolvedValue(false),
+    } as unknown as jest.Mocked<ScheduleAvailabilityService>;
+
     useCase = new CreateAppointment(
       mockAppointmentRepository,
       mockAppointmentStatusRepository,
@@ -323,6 +341,7 @@ describe('CreateAppointment Use Case', () => {
       mockStylistRepository,
       mockStylistServiceRepository,
       mockClientRepository,
+      mockScheduleAvailabilityService,
     );
   });
 

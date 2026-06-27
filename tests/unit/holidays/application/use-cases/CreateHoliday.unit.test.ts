@@ -1,10 +1,14 @@
 import { CreateHoliday } from '../../../../../src/modules/holidays/application/use-cases/CreateHoliday';
 import { IHolidayRepository } from '../../../../../src/modules/holidays/domain/repositories/IHolidayRepository';
+import { IAppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
+import { IAppointmentStatusRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentStatusRepository';
 import { Holiday } from '../../../../../src/modules/holidays/domain/entities/Holiday';
 
 describe('CreateHoliday Use Case', () => {
   let createHoliday: CreateHoliday;
   let mockHolidayRepository: jest.Mocked<IHolidayRepository>;
+  let mockAppointmentRepository: jest.Mocked<IAppointmentRepository>;
+  let mockAppointmentStatusRepository: jest.Mocked<IAppointmentStatusRepository>;
 
   beforeEach(() => {
     mockHolidayRepository = {
@@ -19,9 +23,32 @@ describe('CreateHoliday Use Case', () => {
       delete: jest.fn(),
       existsByDate: jest.fn(),
       isHoliday: jest.fn(),
-    };
+    } as jest.Mocked<IHolidayRepository>;
 
-    createHoliday = new CreateHoliday(mockHolidayRepository);
+    mockAppointmentRepository = {
+      findByDateRange: jest.fn().mockResolvedValue([]),
+      findById: jest.fn(), findAll: jest.fn(), save: jest.fn(), update: jest.fn(),
+      delete: jest.fn(), existsById: jest.fn(), findByClientId: jest.fn(),
+      findByStylistId: jest.fn(), findByUserId: jest.fn(), findByStatusId: jest.fn(),
+      findByClientAndDateRange: jest.fn(), findByStylistAndDateRange: jest.fn(),
+      findConflictingAppointments: jest.fn(), findByScheduleId: jest.fn(),
+      findByDate: jest.fn(), countByStatus: jest.fn(), countByDateRange: jest.fn(),
+      findUpcomingAppointments: jest.fn(), findPendingConfirmation: jest.fn(),
+      existsActiveByServiceId: jest.fn(),
+    } as jest.Mocked<IAppointmentRepository>;
+
+    mockAppointmentStatusRepository = {
+      findByName: jest.fn().mockResolvedValue({ id: 'cancelled-id', name: 'CANCELLED', description: 'Cancelled' }),
+      findById: jest.fn(), findAll: jest.fn(), save: jest.fn(), update: jest.fn(),
+      delete: jest.fn(), existsById: jest.fn(), existsByName: jest.fn(),
+      findTerminalStatuses: jest.fn(), findActiveStatuses: jest.fn(),
+    } as jest.Mocked<IAppointmentStatusRepository>;
+
+    createHoliday = new CreateHoliday(
+      mockHolidayRepository,
+      mockAppointmentRepository,
+      mockAppointmentStatusRepository,
+    );
   });
 
   // Debería crear un feriado exitosamente
