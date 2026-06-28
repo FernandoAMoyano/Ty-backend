@@ -179,20 +179,6 @@ export class GetAvailableSlots {
   }
 
   /**
-   * Obtiene el horario laboral para un día específico
-   * @param dayOfWeek - Día de la semana
-   * @returns Schedule si hay horario laboral, null si es día no laboral
-   */
-  private async getWorkingSchedule(dayOfWeek: DayOfWeekEnum) {
-    // Buscar horario para el día específico
-    const schedules = await this.scheduleRepository.findByDayOfWeek(dayOfWeek);
-
-    // Por simplicidad, tomamos el primer horario disponible
-    // En la implementación más compleja tenemos múltiples horarios por día
-    return schedules.length > 0 ? schedules[0] : null;
-  }
-
-  /**
    * Crea respuesta para días no laborales
    * @param date - Fecha solicitada
    * @param dayOfWeek - Día de la semana
@@ -235,16 +221,6 @@ export class GetAvailableSlots {
     }
 
     return slots;
-  }
-
-  /**
-   * Genera slots base según el horario laboral y duración
-   * @param schedule - Horario laboral del día
-   * @param duration - Duración requerida en minutos
-   * @returns Array de slots base con horarios
-   */
-  private generateBaseSlots(schedule: any, duration: number): string[] {
-    return schedule.getAvailableSlots(duration);
   }
 
   /**

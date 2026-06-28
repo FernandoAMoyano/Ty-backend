@@ -272,24 +272,6 @@ export class CreateAppointment {
     if (conflictingAppointments.length > 0) {
       throw new ConflictError('There are conflicting appointments at this time');
     }
-
-    // TODO: Validar días festivos (ISSUE-12: diferido)
-  }
-
-  /**
-   * Valida que el día de la cita no esté cerrado por feriado o falta de horario
-   * Usa el servicio de disponibilidad que aplica la prioridad:
-   * ScheduleException > Holiday (cerrado) > Schedule regular
-   * @param dateTimeStr - Fecha y hora de la cita en formato ISO string
-   * @throws BusinessRuleError si el día está cerrado
-   */
-  private async validateDayAvailability(dateTimeStr: string): Promise<void> {
-    const appointmentDate = new Date(dateTimeStr);
-    const isClosed = await this.scheduleAvailabilityService.isDayClosed(appointmentDate);
-
-    if (isClosed) {
-      throw new BusinessRuleError('The salon is closed on the selected date (holiday or no schedule available)');
-    }
   }
 
   /**
