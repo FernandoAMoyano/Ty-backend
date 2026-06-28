@@ -279,11 +279,13 @@ export class UpdateAppointment {
 
   /**
    * Actualiza el estilista asignado
+   * @param appointment - La cita a actualizar
+   * @param newStylistId - User.id del nuevo estilista (Appointment.stylistId almacena User.id)
    */
   private async updateStylist(appointment: Appointment, newStylistId: string): Promise<void> {
     if (newStylistId) {
-      // Verificar que el estilista existe
-      const stylist = await this.stylistRepository.findById(newStylistId);
+      // newStylistId es User.id; verificar que existe un estilista con ese userId
+      const stylist = await this.stylistRepository.findByUserId(newStylistId);
       if (!stylist) {
         throw new NotFoundError('Stylist', newStylistId);
       }

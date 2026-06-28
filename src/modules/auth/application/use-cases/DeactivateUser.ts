@@ -111,8 +111,10 @@ export class DeactivateUser {
     }
 
     // Ejecutar ambas cascadas
+    // cancelActiveAppointments recibe User.id porque Appointment.stylistId ahora almacena User.id
+    // deactivateStylistServices recibe Stylist.id porque StylistService.stylistId sigue apuntando a Stylist.id
     const [appointmentsCancelled, servicesDeactivated] = await Promise.all([
-      this.cancelActiveAppointments(stylist.id),
+      this.cancelActiveAppointments(userId),
       this.deactivateStylistServices(stylist.id),
     ]);
 
@@ -121,10 +123,10 @@ export class DeactivateUser {
 
   /**
    * Cancela todas las citas activas (PENDING/CONFIRMED) del estilista
-   * @param stylistId - ID del estilista
+   * @param stylistUserId - ID del usuario estilista (User.id), ya que Appointment.stylistId almacena User.id
    * @returns Cantidad de citas canceladas
    */
-  private async cancelActiveAppointments(stylistId: string): Promise<number> {
+  private async cancelActiveAppointments(stylistUserId: string): Promise<number> {
     // Obtener el estado CANCELLED
     const cancelledStatus = await this.appointmentStatusRepository.findByName(
       AppointmentStatusEnum.CANCELLED,
@@ -146,7 +148,7 @@ export class DeactivateUser {
     }
 
     // Obtener todas las citas del estilista
-    const allAppointments = await this.appointmentRepository.findByStylistId(stylistId);
+    const allAppointments = await this.appointmentRepository.findByStylistId(stylistUserId);
 
     // Filtrar solo las activas (PENDING/CONFIRMED)
     const activeAppointments = allAppointments.filter(a =>

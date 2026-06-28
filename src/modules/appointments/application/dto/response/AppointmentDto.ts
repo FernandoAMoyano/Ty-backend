@@ -17,25 +17,19 @@ export interface AppointmentDto {
   statusId: string;
   serviceIds: string[];
 
-  // Relaciones pobladas (opcionales)
+  // Relaciones pobladas (opcionales — clientId/stylistId apuntan a User.id)
   client?: {
     id: string;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      phone: string;
-    };
+    name: string;
+    email: string;
+    phone: string;
   };
 
   stylist?: {
     id: string;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      phone: string;
-    };
+    name: string;
+    email: string;
+    phone: string;
   };
 
   status?: {

@@ -5,7 +5,6 @@ import { IScheduleRepository } from '../../domain/repositories/IScheduleReposito
 import { IServiceRepository } from '../../../services/domain/repositories/IServiceRepository';
 import { IStylistRepository } from '../../../services/domain/repositories/IStylistRepository';
 import { IStylistServiceRepository } from '../../../services/domain/repositories/IStylistServiceRepository';
-import { IClientRepository } from '../../../auth/domain/repositories/IClientRepository';
 import { CreateAppointmentDto } from '../dto/request/CreateAppointmentDto';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
@@ -29,7 +28,6 @@ export class CreateAppointment {
     private serviceRepository: IServiceRepository,
     private stylistRepository: IStylistRepository,
     private stylistServiceRepository: IStylistServiceRepository,
-    private clientRepository: IClientRepository,
     private scheduleAvailabilityService: ScheduleAvailabilityService,
   ) {}
 
@@ -80,8 +78,8 @@ export class CreateAppointment {
     // 1. Validar datos básicos
     await this.validateBasicData(createDto, userId);
 
-    // 2. Validar que todas las entidades relacionadas existen y obtener Client.id real
-    const clientId = await this.validateRelatedEntitiesAndGetClientId(createDto);
+    // 2. Validar que todas las entidades relacionadas existen
+    await this.validateRelatedEntities(createDto);
 
     // 3. Calcular duración total si no se proporciona
     const totalDuration = await this.calculateTotalDuration(createDto);
@@ -108,17 +106,17 @@ export class CreateAppointment {
     await this.validateAvailability(createDto, totalDuration);
 
     // 9. Validar límite diario de citas por cliente
-    await this.validateDailyAppointmentLimit(clientId, createDto.dateTime);
+    await this.validateDailyAppointmentLimit(createDto.clientId, createDto.dateTime);
 
     // 10. Obtener estado inicial (pendiente)
     const pendingStatus = await this.getPendingStatus();
 
-    // 11. Crear la entidad de cita con el Client.id correcto
+    // 11. Crear la entidad de cita
     const appointment = Appointment.create(
       new Date(createDto.dateTime),
       totalDuration,
       userId,
-      clientId, // Usar el Client.id real, no el userId del DTO
+      createDto.clientId,
       schedule.id,
       pendingStatus.id,
       createDto.stylistId,
@@ -175,28 +173,21 @@ export class CreateAppointment {
   }
 
   /**
-   * Valida que todas las entidades relacionadas existen y retorna el Client.id real
-   * El clientId del DTO siempre se interpreta como User.id (que es lo que el frontend
-   * conoce tras el login). El use case busca el registro Client asociado a ese usuario.
+   * Valida que todas las entidades relacionadas existen
    * @param createDto - Datos de la cita
-   * @returns Promise con el Client.id real
    * @throws NotFoundError si alguna entidad no existe
+   * @throws BusinessRuleError si un servicio está inactivo o el estilista no lo ofrece
    */
-  private async validateRelatedEntitiesAndGetClientId(createDto: CreateAppointmentDto): Promise<string> {
-    // El clientId del DTO es siempre el User.id del cliente
-    // Buscar el registro Client asociado a ese usuario
-    const client = await this.clientRepository.findByUserId(createDto.clientId);
-
-    if (!client) {
-      throw new NotFoundError('Client', createDto.clientId);
-    }
-
+  private async validateRelatedEntities(createDto: CreateAppointmentDto): Promise<void> {
     // Validar que el estilista existe (si se proporciona)
+    // stylistId en el DTO es User.id; se resuelve a Stylist para validar asignaciones de servicio
+    let resolvedStylistId: string | undefined;
     if (createDto.stylistId) {
-      const stylist = await this.stylistRepository.findById(createDto.stylistId);
+      const stylist = await this.stylistRepository.findByUserId(createDto.stylistId);
       if (!stylist) {
         throw new NotFoundError('Stylist', createDto.stylistId);
       }
+      resolvedStylistId = stylist.id;
     }
 
     // Validar que todos los servicios existen y están activos
@@ -211,10 +202,10 @@ export class CreateAppointment {
     }
 
     // Validar que el estilista ofrezca los servicios seleccionados (si se especifica estilista)
-    if (createDto.stylistId) {
+    if (resolvedStylistId) {
       for (const serviceId of createDto.serviceIds) {
         const assignment = await this.stylistServiceRepository.findByStylistAndService(
-          createDto.stylistId,
+          resolvedStylistId,
           serviceId,
         );
         if (!assignment) {
@@ -226,7 +217,7 @@ export class CreateAppointment {
       }
     }
 
-    return client.id;
+    return;
   }
 
   /**
@@ -277,7 +268,7 @@ export class CreateAppointment {
   /**
    * Valida que el cliente no exceda el límite diario de citas activas
    * Solo cuenta citas no canceladas (PENDING, CONFIRMED, COMPLETED)
-   * @param clientId - ID del cliente (Client.id)
+   * @param clientId - ID del usuario cliente (User.id)
    * @param dateTimeStr - Fecha y hora de la cita en formato ISO string
    * @throws BusinessRuleError si el cliente alcanzó el límite diario
    */
