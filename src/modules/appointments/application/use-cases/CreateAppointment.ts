@@ -272,8 +272,6 @@ export class CreateAppointment {
     if (conflictingAppointments.length > 0) {
       throw new ConflictError('There are conflicting appointments at this time');
     }
-
-    // TODO: Validar días festivos (ISSUE-12: diferido)
   }
 
   /**

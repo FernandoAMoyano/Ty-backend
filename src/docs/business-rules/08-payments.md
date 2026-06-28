@@ -1,6 +1,6 @@
 # Pagos - Reglas de Negocio
 
-> Última actualización: 2026-06-15 | Versión: 2.2
+> Última actualización: 2026-06-27 | Versión: 3.0
 
 ---
 
@@ -21,6 +21,7 @@ El módulo de pagos gestiona el procesamiento de cobros asociados a las citas. S
 | amount | number | Monto del pago (float, mayor a 0) |
 | method | PaymentMethodEnum? | Método de pago (null hasta procesarse) |
 | status | PaymentStatusEnum | Estado del pago |
+| refundReason | string? | Razón del reembolso (máx 500 caracteres) |
 | paymentDate | DateTime? | Fecha de procesamiento (null hasta completarse) |
 | createdAt | DateTime | Fecha de creación |
 | updatedAt | DateTime | Última actualización |
@@ -92,11 +93,9 @@ El módulo de pagos gestiona el procesamiento de cobros asociados a las citas. S
 | Regla | Descripción | Código HTTP |
 |-------|-------------|-------------|
 | Solo completados | Solo se pueden reembolsar pagos COMPLETED | 422 |
-| Razón | La API acepta `reason` opcional (máx 500 chars) pero no se almacena en la entidad | - |
-| Estado final | El estado cambia a REFUNDED | - |
+| Razón | La API acepta `reason` opcional (máx 500 chars). Se almacena en el campo `refundReason` de la entidad Payment |
+| Estado final | El estado cambia a REFUNDED |
 | Solo Admin | Solo administradores pueden reembolsar | 403 |
-
-> **Limitación conocida (ISSUE-16):** El campo `reason` de reembolso es aceptado y validado por la API pero no se persiste actualmente. La entidad Payment no tiene campo para almacenar esta información. Será almacenado en una futura iteración.
 
 ### 4.4 Cancelación de Pagos
 
@@ -215,6 +214,4 @@ FAILED (Cancelado/Fallido)
 
 ## 12. Limitaciones Conocidas
 
-| ID | Descripción |
-|----|-------------|
-| ISSUE-16 | El campo `reason` de reembolso es validado por la API pero no se persiste. La entidad Payment no tiene campo para almacenar esta información |
+_No hay limitaciones conocidas pendientes. El issue ISSUE-16 fue resuelto en el plan de intervención v3 (campo `refundReason` agregado a la entidad Payment)._

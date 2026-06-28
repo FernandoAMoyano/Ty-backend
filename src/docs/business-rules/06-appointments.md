@@ -1,6 +1,6 @@
 # Citas (Appointments) - Reglas de Negocio
 
-> Última actualización: 2026-06-15 | Versión: 2.2
+> Última actualización: 2026-06-27 | Versión: 3.0
 
 ---
 
@@ -26,6 +26,9 @@ El módulo de citas es el núcleo del sistema. Gestiona las reservas de servicio
 | stylistId | UUID? | Estilista asignado (opcional) |
 | confirmedAt | DateTime? | Fecha de confirmación (null si no confirmada) |
 | serviceIds | string[] | Lista de IDs de servicios incluidos |
+| cancellationReason | string? | Razón de cancelación (máx 500 caracteres) |
+| cancelledBy | string? | Tipo de cancelación: client, stylist, admin, system |
+| confirmationNotes | string? | Notas de confirmación (máx 500 caracteres) |
 | createdAt | DateTime | Fecha de creación |
 | updatedAt | DateTime | Última actualización |
 
@@ -85,7 +88,7 @@ Todas las rutas de consulta requieren solo `authenticate` (sin `authorize`). Cua
 | Cancelar cita | El creador (`userId`), cliente (`clientId`), o estilista (`stylistId`) | `CancelAppointment` valida participación |
 | Actualizar cita | Cualquier autenticado | Solo `authenticate` |
 
-> **Nota:** No existe actualmente un override de ADMIN que permita confirmar/cancelar cualquier cita. Los permisos son estrictamente por participación en la cita.
+> **Nota:** ADMIN tiene override de autorización: puede confirmar/cancelar cualquier cita sin necesidad de ser participante. Los demás roles requieren ser participantes de la cita (userId, clientId o stylistId).
 
 ---
 
@@ -102,9 +105,11 @@ Todas las rutas de consulta requieren solo `authenticate` (sin `authorize`). Cua
 | Estilista ofrece servicios | Si se especifica `stylistId`, el estilista debe tener asignado cada servicio (`IStylistServiceRepository.findByStylistAndService`) y estar ofreciéndolo (`isOffering = true`) |
 | Cliente válido | El `clientId` del DTO es siempre el `User.id` (el ID que el frontend conoce tras login). El use case busca el Client vía `findByUserId()` y lanza `NotFoundError` si no existe |
 | Estilista válido | Si se especifica, el `stylistId` debe existir |
-| Día laboral | Debe existir un Schedule configurado para el día de la semana |
-| Horario laboral | La hora de la cita debe caer dentro del rango `startTime`-`endTime` del Schedule. La cita completa (inicio + duración) debe terminar antes de `endTime` |
+| Día laboral | El día debe tener horario efectivo (determinado por `ScheduleAvailabilityService`) |
+| Horario laboral | La hora de la cita debe caer dentro del rango `startTime`-`endTime` del horario efectivo. La cita completa (inicio + duración) debe terminar antes de `endTime` |
 | Sin conflictos | No debe haber citas superpuestas en el mismo horario (validado por `findConflictingAppointments`) |
+| Límite diario | Máximo 3 citas activas (no canceladas) por cliente por día. Se valida con `findByClientAndDateRange` excluyendo estado CANCELLED |
+| Disponibilidad del día | Se consulta `ScheduleAvailabilityService.getEffectiveSchedule()` para determinar el horario efectivo del día. Si retorna `null`, el día está cerrado |
 | Estado inicial | Se crea con estado PENDING |
 | Duración auto-calculada | Si no se proporciona `duration`, se calcula sumando la duración de los servicios seleccionados (mínimo 15 min) |
 
@@ -129,9 +134,7 @@ Todas las rutas de consulta requieren solo `authenticate` (sin `authorize`). Cua
 | Tiempo mínimo | Debe confirmarse al menos **1 hora antes** de la cita |
 | Permisos | El creador (`userId`) o el estilista asignado (`stylistId`) pueden confirmar |
 | Registro | Se guarda `confirmedAt` con la fecha de confirmación |
-| Notas | Opcionales, máximo 500 caracteres |
-
-> **Limitación conocida (ISSUE-16):** El campo `notes` de confirmación es aceptado y validado por la API pero no se persiste actualmente. La entidad Appointment no tiene campo para almacenar esta información. Será almacenado en una futura iteración.
+| Notas | Opcionales, máximo 500 caracteres. Se almacenan en `confirmationNotes` |
 
 ### 4.4 Cancelación de Citas
 
@@ -144,9 +147,7 @@ Todas las rutas de consulta requieren solo `authenticate` (sin `authorize`). Cua
 | Permisos | El creador (`userId`), cliente (`clientId`), estilista asignado (`stylistId`) pueden cancelar |
 | Transición válida | Validada vía `canTransitionTo()` |
 | Razón opcional | Se puede incluir motivo de cancelación (máx 500 caracteres) |
-| Tipo de cancelación | `cancelledBy` validado contra valores: `client`, `stylist`, `admin`, `system` |
-
-> **Limitación conocida (ISSUE-16):** Los campos `reason` y `cancelledBy` de cancelación son aceptados y validados por la API pero no se persisten actualmente. La entidad Appointment no tiene campos para almacenar esta información. Serán almacenados en una futura iteración.
+| Tipo de cancelación | `cancelledBy` validado contra valores: `client`, `stylist`, `admin`, `system`. Se almacena en el campo `cancelledBy` |
 
 ### 4.5 Modificación de Citas
 
@@ -237,16 +238,29 @@ NO_SHOW (No Se Presentó)
 - **Stylists**: Las citas pueden asignarse a estilistas (`stylistId`). Se valida que el estilista ofrezca los servicios seleccionados (`isOffering = true`)
 - **Services**: Las citas incluyen uno o más servicios (`serviceIds`). Se valida que estén activos (`isActive = true`)
 - **Schedules**: Determina disponibilidad de horarios y vincula la cita a un horario (`scheduleId`). Se valida que la cita caiga dentro del horario laboral
-- **Holidays**: Los feriados deberían afectar la disponibilidad, pero la integración está diferida (ver ISSUE-12 en INTERVENTION_PLAN.md)
+- **Holidays**: Los feriados afectan la disponibilidad de citas. El sistema consulta `ScheduleAvailabilityService` que implementa la prioridad `ScheduleException > Holiday (día cerrado) > Schedule regular`. Al crear un feriado, se cancelan automáticamente las citas activas en esa fecha
 - **Payments**: Las citas pueden tener pagos asociados. Solo se permiten pagos para citas en estado CONFIRMED o COMPLETED
 - **Notifications**: Se envían notificaciones sobre citas
 
 ---
 
-## 10. Limitaciones Conocidas
+## 10. ScheduleAvailabilityService (Servicio de Dominio)
 
-| ID | Descripción |
-|----|-------------|
-| ISSUE-12 | `GetAvailableSlots` y `CreateAppointment` no consultan feriados ni excepciones de horario. La lógica de prioridad `ScheduleException > Holiday > Schedule regular` está planificada como feature futura |
-| ISSUE-16 | Los campos `reason`, `cancelledBy` (cancelación) y `notes` (confirmación) son validados por la API pero no se persisten. Las entidades no tienen campos para esta información |
-| ISSUE-20 | No existe un límite de citas por cliente por día. La protección contra abuso depende de la validación de conflictos de horario |
+Servicio de dominio que determina el horario efectivo para una fecha específica. Implementa la lógica de prioridad:
+
+1. **ScheduleException** (máxima prioridad): si existe una excepción para la fecha, usa su horario especial
+2. **Holiday** (sin excepción): el día está cerrado (retorna `null`)
+3. **Schedule regular** (fallback): usa el horario configurado para el día de la semana
+
+| Método | Retorno | Descripción |
+|--------|---------|-------------|
+| `getEffectiveSchedule(date)` | `EffectiveSchedule \| null` | Horario efectivo del día con `startTime`, `endTime` y `source` ('exception' \| 'regular'). `null` si cerrado |
+| `isDayClosed(date)` | `boolean` | `true` si el día está cerrado (feriado sin excepción o sin horario regular) |
+
+Integrado en: `CreateAppointment` (pasos 4-6), `GetAvailableSlots` (pasos 5-6), `CreateHoliday` (auto-cancel).
+
+---
+
+## 11. Limitaciones Conocidas
+
+_No hay limitaciones conocidas pendientes. Los issues ISSUE-12, ISSUE-16 e ISSUE-20 fueron resueltos en el plan de intervención v3._

@@ -1,6 +1,6 @@
 # Autenticación y Usuarios - Reglas de Negocio
 
-> Última actualización: 2026-06-16 | Versión: 2.2
+> Última actualización: 2026-06-27 | Versión: 3.0
 
 ---
 
@@ -59,6 +59,7 @@ El módulo de autenticación gestiona el registro, login y sesiones de usuarios 
 | Get Profile | ✅ | ✅ | ✅ | ❌ |
 | Update Profile | ✅ | ✅ | ✅ | ❌ |
 | Change Password | ✅ | ✅ | ✅ | ❌ |
+| Deactivate User | ✅ | ❌ | ❌ | ❌ |
 | Refresh Token | ✅ | ✅ | ✅ | ✅ |
 
 ---
@@ -110,6 +111,18 @@ El módulo de autenticación gestiona el registro, login y sesiones de usuarios 
 | Contraseña actual | Debe proporcionarse y ser correcta para autorizar el cambio |
 | Nueva contraseña | Debe cumplir los mismos requisitos de seguridad que en registro (8+ chars, mayúscula, minúscula, número) |
 
+### 4.6 Desactivación de Usuarios
+
+| Regla | Descripción |
+|-------|-------------|
+| Solo ADMIN | Solo usuarios con rol ADMIN pueden desactivar otros usuarios |
+| Usuario activo | No se puede desactivar un usuario que ya está inactivo (`BusinessRuleError`) |
+| UUID válido | El `userId` debe ser un UUID válido |
+| Cascada STYLIST | Si el usuario tiene rol STYLIST, se ejecutan acciones en cascada: (1) Cancelar todas las citas activas (PENDING/CONFIRMED) con `cancellationReason: 'Stylist deactivated'` y `cancelledBy: 'system'`, (2) Desactivar todas las asignaciones StylistService activas (`isOffering = false`) |
+| Sin cascada otros roles | Para CLIENT y ADMIN no se ejecuta cascada |
+| Graceful degradation | Si el usuario tiene rol STYLIST pero no tiene registro en la tabla Stylist, la cascada retorna conteos en 0 sin lanzar error |
+| Response | Retorna `DeactivateUserResponseDto` con `userId`, `email`, `name`, `cascadeApplied` (boolean) y `cascadeSummary` (conteo de citas canceladas y servicios desactivados) |
+
 ---
 
 ## 5. Endpoints REST
@@ -122,6 +135,7 @@ El módulo de autenticación gestiona el registro, login y sesiones de usuarios 
 | GET | /api/v1/auth/profile | Obtener perfil | Autenticado |
 | PUT | /api/v1/auth/profile | Actualizar perfil | Autenticado |
 | PUT | /api/v1/auth/change-password | Cambiar contraseña | Autenticado |
+| PATCH | /api/v1/auth/users/:id/deactivate | Desactivar usuario | Admin |
 
 ---
 
@@ -149,15 +163,13 @@ El `AuthMiddleware` protege las rutas que requieren autenticación. Expone dos m
 
 ## 8. Relaciones con Otros Módulos
 
-- **Appointments**: El `userId` se usa para identificar quién crea las citas
+- **Appointments**: El `userId` se usa para identificar quién crea las citas. Al desactivar un estilista, sus citas activas se cancelan automáticamente
 - **Notifications**: Las notificaciones se envían a usuarios específicos
 - **Payments**: Los pagos están asociados a citas de usuarios
-- **Stylists**: Los usuarios con rol STYLIST tienen un perfil Stylist asociado automáticamente
+- **Stylists**: Los usuarios con rol STYLIST tienen un perfil Stylist asociado. Al desactivar un estilista, sus asignaciones StylistService se desactivan (`isOffering = false`)
 
 ---
 
 ## 9. Limitaciones Conocidas
 
-| ID | Descripción |
-|----|-------------|
-| ISSUE-17 | La desactivación de un usuario (`isActive = false`) no tiene efecto cascada sobre sus entidades asociadas. Si el usuario es un estilista, sus asignaciones de servicios (StylistService) permanecen activas, sus citas pendientes/confirmadas siguen vigentes, y sigue apareciendo en consultas de estilistas por servicio. Se recomienda cancelar manualmente las citas pendientes y desactivar las asignaciones antes de desactivar un estilista |
+_No hay limitaciones conocidas pendientes. El issue ISSUE-17 fue resuelto en el plan de intervención v3._
