@@ -3,13 +3,15 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?logo=typescript&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-5.x-000000.svg?logo=express&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1.svg?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/Tests-1066%2B%20passing-brightgreen.svg)
+![Tests](https://img.shields.io/badge/Tests-1127%2B%20passing-brightgreen.svg)
 
 # 💇‍♀️ Turnity Backend
 
 Backend API para sistema de gestión de salones de belleza construido con **Node.js**, **TypeScript**, **Express** y **Prisma ORM**.
 
-Implementa **Clean Architecture**, **DDD táctico** y **Arquitectura Hexagonal** (Ports & Adapters) con 7 módulos de negocio, 1066+ tests automatizados y documentación Swagger interactiva.
+Implementa **Clean Architecture**, **DDD táctico** y **Arquitectura Hexagonal** (Ports & Adapters) con 7 módulos de negocio, 1127+ tests automatizados y documentación Swagger interactiva.
+
+---
 
 ## Índice
 
@@ -142,6 +144,56 @@ npm run prisma:format             # Formatear schema.prisma
 
 El proyecto sigue **Clean Architecture** con **DDD táctico** y **Arquitectura Hexagonal**:
 
+### Diagrama de módulos y dependencias
+
+```mermaid
+graph TB
+    subgraph Presentation["Presentation Layer"]
+        Routes[Routes & Middleware]
+        Controllers[Controllers]
+    end
+
+    subgraph Application["Application Layer"]
+        UseCases[Use Cases]
+        DTOs[DTOs]
+    end
+
+    subgraph Domain["Domain Layer"]
+        Entities[Entities]
+        Ports[Repository Interfaces - Ports]
+        DomainServices[Domain Services]
+    end
+
+    subgraph Infrastructure["Infrastructure Layer"]
+        Adapters[Prisma Repositories - Adapters]
+        DB[(PostgreSQL)]
+    end
+
+    Routes --> Controllers
+    Controllers --> UseCases
+    UseCases --> Ports
+    UseCases --> DomainServices
+    DomainServices --> Ports
+    Adapters -.->|implements| Ports
+    Adapters --> DB
+
+    subgraph Modules["Business Modules"]
+        Auth["auth\nLogin, JWT, Roles\nDesactivación + cascada"]
+        Services["services\nCategorías, Servicios\nEstilistas, Asignaciones"]
+        Appointments["appointments\nCitas, Schedules, Slots\nConfirmación, Cancelación"]
+        Holidays["holidays\nFeriados, Excepciones\nAuto-cancel de citas"]
+        Payments["payments\nPagos, Reembolsos\nEstadísticas"]
+        Notifications["notifications\nAlertas del sistema"]
+    end
+
+    Holidays -->|ScheduleAvailabilityService| Appointments
+    Auth -->|DeactivateUser cascade| Appointments
+    Auth -->|DeactivateUser cascade| Services
+    Payments -->|verifica estado| Appointments
+```
+
+### Estructura de un módulo
+
 ```
 src/modules/[module]/
 ├── domain/           # Entidades, interfaces de repositorios (ports)
@@ -170,23 +222,23 @@ src/modules/[module]/
 
 ### Documentación interactiva
 
-| Recurso | URL | Descripción |
-|---------|-----|-------------|
-| **Swagger UI** | http://localhost:3000/api/docs | Documentación interactiva completa |
-| **API Info** | http://localhost:3000/api/info | Información básica de la API |
+| Recurso          | URL                                 | Descripción                            |
+| ---------------- | ----------------------------------- | -------------------------------------- |
+| **Swagger UI**   | http://localhost:3000/api/docs      | Documentación interactiva completa     |
+| **API Info**     | http://localhost:3000/api/info      | Información básica de la API           |
 | **OpenAPI JSON** | http://localhost:3000/api/docs.json | Especificación OpenAPI en formato JSON |
-| **Health Check** | http://localhost:3000/health | Estado de salud del servicio |
+| **Health Check** | http://localhost:3000/health        | Estado de salud del servicio           |
 
 ### Colecciones Postman
 
-| Módulo | Archivo |
-|--------|---------|
-| Authentication | `src/docs/auth_postman_collection.json` |
-| Services | `src/docs/services_postman_collection.json` |
-| Appointments | `src/docs/appointments_postman_collection.json` |
-| Holidays | `src/docs/holidays_postman_collection.json` |
-| Notifications | `src/docs/notifications_postman_collection.json` |
-| Payments | `src/docs/payments_postman_collection.json` |
+| Módulo         | Archivo                                                  |
+| -------------- | -------------------------------------------------------- |
+| Authentication | `src/docs/postman/auth_postman_collection.json`          |
+| Services       | `src/docs/postman/services_postman_collection.json`      |
+| Appointments   | `src/docs/postman/appointments_postman_collection.json`  |
+| Holidays       | `src/docs/postman/holidays_postman_collection.json`      |
+| Notifications  | `src/docs/postman/notifications_postman_collection.json` |
+| Payments       | `src/docs/postman/payments_postman_collection.json`      |
 
 ### Documentación de reglas de negocio
 
@@ -222,6 +274,7 @@ POST   /auth/refresh-token         # Renovar token
 GET    /auth/profile               # Obtener perfil (autenticado)
 PUT    /auth/profile               # Actualizar perfil (autenticado)
 PUT    /auth/change-password       # Cambiar contraseña (autenticado)
+PATCH  /auth/users/:id/deactivate  # Desactivar usuario (ADMIN)
 ```
 
 ### Categories
@@ -336,16 +389,16 @@ PATCH  /notifications/:id/read                # Marcar una como leída (autentic
 
 [Índice](#índice)
 
-El proyecto cuenta con **1066+ tests** organizados en tres niveles:
+El proyecto cuenta con **1127+ tests** organizados en tres niveles:
 
 ### Estructura de tests
 
 ```
 tests/
 ├── unit/                  # Tests unitarios (entidades y use cases)
-│   ├── auth/              # 5 tests: User, Role, AuthService, BcryptHash, JwtToken
+│   ├── auth/              # 6 tests: User, Role, AuthService, BcryptHash, JwtToken, DeactivateUser
 │   ├── services/          # 7 tests: Category, Service, Stylist, StylistService + UseCases
-│   ├── appointments/      # 11 tests: 3 entidades + 8 use cases
+│   ├── appointments/      # 12 tests: 3 entidades + 8 use cases + ScheduleAvailabilityService
 │   ├── holidays/          # 12 tests: 2 entidades + 10 use cases
 │   ├── notifications/     # 7 tests: 2 entidades + 5 use cases
 │   ├── payments/          # 9 tests: 1 entidad + 8 use cases
@@ -397,23 +450,23 @@ Los tests utilizan la misma base de datos de desarrollo con limpieza selectiva p
 
 ### Entidades
 
-| Entidad | Módulo | Descripción |
-|---------|--------|-------------|
-| **User** | auth | Usuarios del sistema con roles diferenciados |
-| **Role** | auth | Roles del sistema (ADMIN, CLIENT, STYLIST) |
-| **Category** | services | Categorías de servicios (ej: Corte, Coloración) |
-| **Service** | services | Servicios ofrecidos con precios y duración |
-| **StylistService** | services | Relación estilista-servicio con precios personalizados |
-| **Client** | services | Perfil extendido para clientes |
-| **Stylist** | services | Perfil extendido para estilistas |
-| **Appointment** | appointments | Citas entre clientes y estilistas |
-| **AppointmentStatus** | appointments | Estados de citas (Pendiente, Confirmada, Completada, Cancelada) |
-| **Schedule** | appointments | Horarios de disponibilidad por día de semana |
-| **Holiday** | holidays | Días festivos y fechas especiales |
-| **ScheduleException** | holidays | Excepciones de horario para fechas específicas |
-| **Payment** | payments | Pagos de citas con múltiples métodos y estados |
-| **Notification** | notifications | Notificaciones del sistema (citas, promociones, sistema) |
-| **NotificationStatus** | notifications | Estados de notificaciones (Enviada, Leída) |
+| Entidad                | Módulo        | Descripción                                                     |
+| ---------------------- | ------------- | --------------------------------------------------------------- |
+| **User**               | auth          | Usuarios del sistema con roles diferenciados                    |
+| **Role**               | auth          | Roles del sistema (ADMIN, CLIENT, STYLIST)                      |
+| **Category**           | services      | Categorías de servicios (ej: Corte, Coloración)                 |
+| **Service**            | services      | Servicios ofrecidos con precios y duración                      |
+| **StylistService**     | services      | Relación estilista-servicio con precios personalizados          |
+| **Client**             | services      | Perfil extendido para clientes                                  |
+| **Stylist**            | services      | Perfil extendido para estilistas                                |
+| **Appointment**        | appointments  | Citas entre clientes y estilistas                               |
+| **AppointmentStatus**  | appointments  | Estados de citas (Pendiente, Confirmada, Completada, Cancelada) |
+| **Schedule**           | appointments  | Horarios de disponibilidad por día de semana                    |
+| **Holiday**            | holidays      | Días festivos y fechas especiales                               |
+| **ScheduleException**  | holidays      | Excepciones de horario para fechas específicas                  |
+| **Payment**            | payments      | Pagos de citas con múltiples métodos y estados                  |
+| **Notification**       | notifications | Notificaciones del sistema (citas, promociones, sistema)        |
+| **NotificationStatus** | notifications | Estados de notificaciones (Enviada, Leída)                      |
 
 ### Comandos útiles
 
@@ -460,19 +513,19 @@ La API estará disponible en **http://localhost:3000** con la documentación Swa
 
 [Índice](#índice)
 
-| Categoría | Tecnología |
-|-----------|------------|
-| **Runtime** | Node.js 18+ · TypeScript 5.x |
-| **Framework** | Express 5.x |
-| **Base de datos** | PostgreSQL 14+ · Prisma ORM |
-| **Autenticación** | JWT (access + refresh tokens) · bcrypt |
-| **Validación** | express-validator |
-| **Documentación** | Swagger/OpenAPI 3.0 · swagger-ui-express |
-| **Testing** | Jest · Supertest |
-| **Containerización** | Docker · Docker Compose |
-| **Seguridad** | Helmet · CORS |
-| **Utilidades** | date-fns · uuid · morgan · nodemailer |
-| **Arquitectura** | Clean Architecture · DDD táctico · Hexagonal |
+| Categoría            | Tecnología                                   |
+| -------------------- | -------------------------------------------- |
+| **Runtime**          | Node.js 18+ · TypeScript 5.x                 |
+| **Framework**        | Express 5.x                                  |
+| **Base de datos**    | PostgreSQL 14+ · Prisma ORM                  |
+| **Autenticación**    | JWT (access + refresh tokens) · bcrypt       |
+| **Validación**       | express-validator                            |
+| **Documentación**    | Swagger/OpenAPI 3.0 · swagger-ui-express     |
+| **Testing**          | Jest · Supertest                             |
+| **Containerización** | Docker · Docker Compose                      |
+| **Seguridad**        | Helmet · CORS                                |
+| **Utilidades**       | date-fns · uuid · morgan · nodemailer        |
+| **Arquitectura**     | Clean Architecture · DDD táctico · Hexagonal |
 
 ---
 
