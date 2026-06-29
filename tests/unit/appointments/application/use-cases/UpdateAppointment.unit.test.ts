@@ -225,7 +225,7 @@ describe('UpdateAppointment Use Case', () => {
       jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
       jest.spyOn(appointment, 'isConfirmed').mockReturnValue(true);
       setupBasicSuccessfulMocks(appointment);
-      mockStylistRepository.findById.mockResolvedValue(createMockStylist(validNewStylistId));
+      mockStylistRepository.findByUserId.mockResolvedValue(createMockStylist(validNewStylistId));
       mockServiceRepository.findById.mockResolvedValue(createMockService(validNewServiceId));
 
       const result = await useCase.execute(
@@ -255,7 +255,7 @@ describe('UpdateAppointment Use Case', () => {
       );
 
       expect(result.id).toBe(appointment.id);
-      expect(mockStylistRepository.findById).not.toHaveBeenCalled();
+      expect(mockStylistRepository.findByUserId).not.toHaveBeenCalled();
     });
 
     it('should allow update by assigned stylist', async () => {
@@ -442,7 +442,7 @@ describe('UpdateAppointment Use Case', () => {
       jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
       setupBasicSuccessfulMocks(appointment);
       const invalidStylistDto: UpdateAppointmentDto = { stylistId: validNewStylistId };
-      mockStylistRepository.findById.mockResolvedValue(null);
+      mockStylistRepository.findByUserId.mockResolvedValue(null);
 
       await expect(
         useCase.execute(validAppointmentId, invalidStylistDto, validRequesterId, adminRole),
