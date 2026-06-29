@@ -22,24 +22,26 @@ describe('AppointmentRepository Integration Tests', () => {
     const clientUser = await createTestUser('CLIENT');
     const clientUserId = clientUser.user?.id || clientUser.id;
     
-    // Crear el registro Client asociado al usuario
-    const client = await testPrisma.client.create({
+    // Crear el registro Client asociado al usuario (necesario para integridad de DB)
+    await testPrisma.client.create({
       data: {
         userId: clientUserId,
       },
     });
-    testClientId = client.id;
+    // Appointment.clientId almacena User.id, no Client.id
+    testClientId = clientUserId;
 
     const stylistUser = await createTestUser('STYLIST');
     const stylistUserId = stylistUser.user?.id || stylistUser.id;
     
-    // Crear el registro Stylist asociado al usuario
-    const stylist = await testPrisma.stylist.create({
+    // Crear el registro Stylist asociado al usuario (necesario para integridad de DB)
+    await testPrisma.stylist.create({
       data: {
         userId: stylistUserId,
       },
     });
-    testStylistId = stylist.id;
+    // Appointment.stylistId almacena User.id, no Stylist.id
+    testStylistId = stylistUserId;
 
     // Obtener schedule y status del seed
     const schedule = await testPrisma.schedule.findFirst();
