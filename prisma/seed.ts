@@ -382,8 +382,8 @@ async function main() {
   const appointment1 = await prisma.appointment.create({
     data: {
       userId: client1.id,
-      clientId: client1.client!.id,
-      stylistId: stylist1.stylist!.id,
+      clientId: client1.id,
+      stylistId: stylist1.id,
       statusId: confirmedStatus.id,
       scheduleId: schedules[0].id,
       dateTime: futureDateAt10,
@@ -401,8 +401,8 @@ async function main() {
   const appointment2 = await prisma.appointment.create({
     data: {
       userId: client2.id,
-      clientId: client2.client!.id,
-      stylistId: stylist2.stylist!.id,
+      clientId: client2.id,
+      stylistId: stylist2.id,
       statusId: completedStatus.id,
       scheduleId: schedules[2].id,
       dateTime: pastDateAt15,

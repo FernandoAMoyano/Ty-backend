@@ -117,8 +117,8 @@ async function getOrCreateBaseData() {
 
   return {
     userId,
-    clientId: client.id,  // Ahora usa Client.id correcto
-    stylistId: stylist.id, // Ahora usa Stylist.id correcto
+    clientId: clientUserId,   // User.id del cliente (Appointment.clientId almacena User.id)
+    stylistId: stylistUserId, // User.id del estilista (Appointment.stylistId almacena User.id)
     scheduleId: schedule.id,
     statusId: status.id
   };
@@ -256,22 +256,13 @@ export async function cleanupTestAppointments(): Promise<void> {
   const testUserIds = testUsers.map(user => user.id);
 
   if (testUserIds.length > 0) {
-    // Obtener Client IDs asociados a los usuarios de prueba
-    const testClients = await testPrisma.client.findMany({
-      where: {
-        userId: { in: testUserIds }
-      },
-      select: { id: true }
-    });
-
-    const testClientIds = testClients.map(client => client.id);
-
-    // Obtener IDs de appointments de prueba
+    // Appointment.clientId ahora almacena User.id, no Client.id
+    // Buscar appointments por userId o clientId (ambos son User.id)
     const testAppointments = await testPrisma.appointment.findMany({
       where: {
         OR: [
           { userId: { in: testUserIds } },
-          { clientId: { in: testClientIds } }
+          { clientId: { in: testUserIds } }
         ]
       },
       select: { id: true }
@@ -293,7 +284,7 @@ export async function cleanupTestAppointments(): Promise<void> {
       where: {
         OR: [
           { userId: { in: testUserIds } },
-          { clientId: { in: testClientIds } }
+          { clientId: { in: testUserIds } }
         ]
       }
     });

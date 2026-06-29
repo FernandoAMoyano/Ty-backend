@@ -104,10 +104,9 @@
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('jwt_token', response.data.token);",
-                  "    if (response.data.user.client) {",
-                  "        pm.collectionVariables.set('client_id', response.data.user.client.id);",
-                  "        console.log('✅ Client ID guardado:', response.data.user.client.id);",
-                  "    }",
+                  "    // Appointment.clientId almacena User.id, no Client.id",
+                  "    pm.collectionVariables.set('client_id', response.data.user.id);",
+                  "    console.log('✅ Client User.id guardado:', response.data.user.id);",
                   "    console.log('✅ Cliente María login exitoso');",
                   "}"
                 ]
@@ -144,10 +143,9 @@
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('jwt_token', response.data.token);",
-                  "    if (response.data.user.stylist) {",
-                  "        pm.collectionVariables.set('stylist_id', response.data.user.stylist.id);",
-                  "        console.log('✅ Stylist ID guardado:', response.data.user.stylist.id);",
-                  "    }",
+                  "    // Appointment.stylistId almacena User.id, no Stylist.id",
+                  "    pm.collectionVariables.set('stylist_id', response.data.user.id);",
+                  "    console.log('✅ Stylist User.id guardado:', response.data.user.id);",
                   "    console.log('✅ Estilista Lucía login exitoso');",
                   "}"
                 ]

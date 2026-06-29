@@ -17,11 +17,9 @@ import { PrismaScheduleRepository } from './infrastructure/persistence/PrismaSch
 import { IServiceRepository } from '../services/domain/repositories/IServiceRepository';
 import { IStylistRepository } from '../services/domain/repositories/IStylistRepository';
 import { IStylistServiceRepository } from '../services/domain/repositories/IStylistServiceRepository';
-import { IClientRepository } from '../auth/domain/repositories/IClientRepository';
 import { PrismaServiceRepository } from '../services/infrastructure/persistence/PrismaServiceRepository';
 import { PrismaStylistRepository } from '../services/infrastructure/persistence/PrismaStylistRepository';
 import { PrismaStylistServiceRepository } from '../services/infrastructure/persistence/PrismaStylistServiceRepository';
-import { PrismaClientRepository } from '../auth/infrastructure/persistence/PrismaClientRepository';
 
 // Repositorios de módulo holidays (para integración holidays↔appointments)
 import { IHolidayRepository } from '../holidays/domain/repositories/IHolidayRepository';
@@ -73,7 +71,6 @@ export class AppointmentContainer {
   private _serviceRepository: IServiceRepository;
   private _stylistRepository: IStylistRepository;
   private _stylistServiceRepository: IStylistServiceRepository;
-  private _clientRepository: IClientRepository;
 
   /**
    * Constructor privado que inicializa todas las dependencias del módulo
@@ -117,7 +114,6 @@ export class AppointmentContainer {
     this._serviceRepository = new PrismaServiceRepository(this.prisma);
     this._stylistRepository = new PrismaStylistRepository(this.prisma);
     this._stylistServiceRepository = new PrismaStylistServiceRepository(this.prisma);
-    this._clientRepository = new PrismaClientRepository(this.prisma);
 
     // Repositorios de módulo holidays
     const holidayRepository: IHolidayRepository = new PrismaHolidayRepository(this.prisma);
@@ -138,7 +134,6 @@ export class AppointmentContainer {
       this._serviceRepository,
       this._stylistRepository,
       this._stylistServiceRepository,
-      this._clientRepository,
       scheduleAvailabilityService,
     );
 
@@ -313,13 +308,5 @@ export class AppointmentContainer {
    */
   get stylistRepository(): IStylistRepository {
     return this._stylistRepository;
-  }
-
-  /**
-   * Obtiene el repositorio de clientes configurado
-   * @returns Instancia de ClientRepository para uso directo o testing
-   */
-  get clientRepository(): IClientRepository {
-    return this._clientRepository;
   }
 }
