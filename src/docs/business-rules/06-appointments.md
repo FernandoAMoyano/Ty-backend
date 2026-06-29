@@ -1,6 +1,6 @@
 # Citas (Appointments) - Reglas de Negocio
 
-> Última actualización: 2026-06-27 | Versión: 3.0
+> Última actualización: 2026-06-29 | Versión: 4.0
 
 ---
 
@@ -19,11 +19,11 @@ El módulo de citas es el núcleo del sistema. Gestiona las reservas de servicio
 | id | UUID | Identificador único |
 | dateTime | DateTime | Fecha y hora de la cita |
 | duration | number | Duración total en minutos (15-480, múltiplos de 15) |
-| userId | UUID | Usuario que creó la cita |
-| clientId | UUID | Cliente asociado a la cita |
+| userId | UUID | ID del usuario (User.id) que creó la cita (auditoría) |
+| clientId | UUID | ID del usuario (User.id) que es el cliente de la cita |
 | scheduleId | UUID | Horario del día asociado |
 | statusId | UUID | Referencia al estado actual (AppointmentStatus) |
-| stylistId | UUID? | Estilista asignado (opcional) |
+| stylistId | UUID? | ID del usuario (User.id) que es el estilista asignado (opcional) |
 | confirmedAt | DateTime? | Fecha de confirmación (null si no confirmada) |
 | serviceIds | string[] | Lista de IDs de servicios incluidos |
 | cancellationReason | string? | Razón de cancelación (máx 500 caracteres) |
@@ -88,6 +88,8 @@ Todas las rutas de consulta requieren solo `authenticate` (sin `authorize`). Cua
 | Cancelar cita | El creador (`userId`), cliente (`clientId`), o estilista (`stylistId`) | `CancelAppointment` valida participación |
 | Actualizar cita | Cualquier autenticado | Solo `authenticate` |
 
+> **Nota sobre ownership:** Los campos `userId`, `clientId` y `stylistId` en Appointment almacenan `User.id`. Esto permite que las comparaciones de ownership (`appointment.clientId === requesterId`) funcionen correctamente, ya que `requesterId` del JWT también es `User.id`.
+
 > **Nota:** ADMIN tiene override de autorización: puede confirmar/cancelar cualquier cita sin necesidad de ser participante. Los demás roles requieren ser participantes de la cita (userId, clientId o stylistId).
 
 ---
@@ -103,8 +105,8 @@ Todas las rutas de consulta requieren solo `authenticate` (sin `authorize`). Cua
 | Servicio requerido | Al menos un `serviceId` debe proporcionarse |
 | Servicios activos | Todos los servicios deben tener `isActive = true`. Se lanza `BusinessRuleError` si algún servicio está inactivo |
 | Estilista ofrece servicios | Si se especifica `stylistId`, el estilista debe tener asignado cada servicio (`IStylistServiceRepository.findByStylistAndService`) y estar ofreciéndolo (`isOffering = true`) |
-| Cliente válido | El `clientId` del DTO es siempre el `User.id` (el ID que el frontend conoce tras login). El use case busca el Client vía `findByUserId()` y lanza `NotFoundError` si no existe |
-| Estilista válido | Si se especifica, el `stylistId` debe existir |
+| Cliente válido | El `clientId` del DTO es el `User.id` del cliente. Se almacena directamente en `Appointment.clientId` sin resolución intermedia |
+| Estilista válido | Si se especifica, el `stylistId` (User.id) se resuelve a `Stylist` via `findByUserId()`. El `Stylist.id` resultante se usa para validar asignaciones de servicio (`StylistService`), pero `Appointment.stylistId` almacena `User.id` |
 | Día laboral | El día debe tener horario efectivo (determinado por `ScheduleAvailabilityService`) |
 | Horario laboral | La hora de la cita debe caer dentro del rango `startTime`-`endTime` del horario efectivo. La cita completa (inicio + duración) debe terminar antes de `endTime` |
 | Sin conflictos | No debe haber citas superpuestas en el mismo horario (validado por `findConflictingAppointments`) |
@@ -233,9 +235,9 @@ NO_SHOW (No Se Presentó)
 
 ## 9. Relaciones con Otros Módulos
 
-- **Auth**: El `userId` identifica quién creó la cita. El `clientId` del DTO es siempre el `User.id`
-- **Clients**: Cada cita está asociada a un cliente (`clientId`). El use case resuelve el Client vía `findByUserId()`
-- **Stylists**: Las citas pueden asignarse a estilistas (`stylistId`). Se valida que el estilista ofrezca los servicios seleccionados (`isOffering = true`)
+- **Auth**: El `userId` identifica quién creó la cita. Los campos `clientId` y `stylistId` también almacenan `User.id`, lo que permite comparaciones directas de ownership contra el `requesterId` del JWT
+- **Clients**: Cada cita está asociada a un cliente via `clientId` (User.id). Las tablas `Client` y `Stylist` siguen existiendo como registros de perfil, pero `Appointment` referencia directamente a `User`
+- **Stylists**: Las citas pueden asignarse a estilistas via `stylistId` (User.id). Para validar asignaciones de servicio, el use case resuelve `User.id → Stylist.id` via `findByUserId()` y usa el `Stylist.id` para consultar `StylistService`
 - **Services**: Las citas incluyen uno o más servicios (`serviceIds`). Se valida que estén activos (`isActive = true`)
 - **Schedules**: Determina disponibilidad de horarios y vincula la cita a un horario (`scheduleId`). Se valida que la cita caiga dentro del horario laboral
 - **Holidays**: Los feriados afectan la disponibilidad de citas. El sistema consulta `ScheduleAvailabilityService` que implementa la prioridad `ScheduleException > Holiday (día cerrado) > Schedule regular`. Al crear un feriado, se cancelan automáticamente las citas activas en esa fecha
@@ -263,4 +265,4 @@ Integrado en: `CreateAppointment` (pasos 4-6), `GetAvailableSlots` (pasos 5-6), 
 
 ## 11. Limitaciones Conocidas
 
-_No hay limitaciones conocidas pendientes. Los issues ISSUE-12, ISSUE-16 e ISSUE-20 fueron resueltos en el plan de intervención v3._
+- **Asimetría de IDs (D9):** `Appointment.stylistId` almacena `User.id`, pero `StylistService.stylistId` sigue almacenando `Stylist.id`. El application layer resuelve esta diferencia via `stylistRepository.findByUserId()`. La migración completa de `StylistService.stylistId` a `User.id` es una mejora futura.
