@@ -23,35 +23,16 @@ model User {
   password       String
   isActive       Boolean        @default(true)
   profilePicture String?
+  preferences    String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   roleId         String
   createdAppointments  Appointment[] @relation("AppointmentCreator")
   clientAppointments   Appointment[] @relation("AppointmentClient")
   stylistAppointments  Appointment[] @relation("AppointmentStylist")
-  client         Client?
   notifications  Notification[]
-  stylist        Stylist?
-  role           Role           @relation(fields: [roleId], references: [id])
-}
-
-model Client {
-  id           String        @id @default(uuid())
-  preferences  String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  userId       String        @unique
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Stylist {
-  id           String        @id @default(uuid())
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  userId       String        @unique
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   stylistServices StylistService[]
- 
+  role           Role           @relation(fields: [roleId], references: [id])
 }
 
 model Category {
@@ -91,7 +72,7 @@ model StylistService {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  stylist      Stylist  @relation(fields: [stylistId], references: [id], onDelete: Cascade)
+  stylist      User     @relation(fields: [stylistId], references: [id], onDelete: Cascade)
   service      Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@unique([stylistId, serviceId])
