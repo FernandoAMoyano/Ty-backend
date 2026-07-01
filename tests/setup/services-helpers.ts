@@ -140,7 +140,7 @@ export const createTestStylist = async (): Promise<{
       email: `stylist${Date.now()}@test.com`,
       phone: '+1234567890',
       password: 'TestPass123!',
-      roleName: 'STYLIST', // Usar roleName según RegisterDto
+      roleName: 'STYLIST',
     });
 
   if (userResponse.status !== 201) {
@@ -149,16 +149,10 @@ export const createTestStylist = async (): Promise<{
 
   const user = userResponse.body.data;
 
-  // Crear el registro de Stylist manualmente
-  const stylist = await testPrisma.stylist.create({
-    data: {
-      userId: user.id,
-    },
-  });
-
+  // StylistService.stylistId ahora es User.id directamente, no se necesita tabla Stylist
   return {
     userId: user.id,
-    stylistId: stylist.id,
+    stylistId: user.id,
     user,
   };
 };
@@ -172,23 +166,14 @@ export const cleanupTestData = async (): Promise<void> => {
     await testPrisma.stylistService.deleteMany({
       where: {
         OR: [
-          { stylist: { user: { email: { contains: 'test' } } } },
+          { stylist: { email: { contains: 'test' } } },
           { service: { name: { contains: 'Test' } } },
           { service: { category: { name: { contains: 'Test' } } } },
         ],
       },
     });
 
-    // 2. Eliminar Stylists de test
-    await testPrisma.stylist.deleteMany({
-      where: {
-        user: {
-          email: { contains: 'test' },
-        },
-      },
-    });
-
-    // 3. Eliminar Services de test
+    // 2. Eliminar Services de test
     await testPrisma.service.deleteMany({
       where: {
         OR: [
@@ -202,7 +187,7 @@ export const cleanupTestData = async (): Promise<void> => {
       },
     });
 
-    // 4. Eliminar Categories de test
+    // 3. Eliminar Categories de test
     await testPrisma.category.deleteMany({
       where: {
         OR: [
@@ -218,7 +203,7 @@ export const cleanupTestData = async (): Promise<void> => {
       },
     });
 
-    // 5. Eliminar Users de test
+    // 4. Eliminar Users de test
     await testPrisma.user.deleteMany({
       where: {
         email: { contains: 'test' },

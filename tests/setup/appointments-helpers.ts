@@ -58,31 +58,8 @@ async function getOrCreateBaseData() {
   const clientUserId = clientUser.user?.id || clientUser.id;
   const stylistUserId = stylistUser.user?.id || stylistUser.id;
 
-  // Obtener o crear Client asociado al User
-  let client = await testPrisma.client.findFirst({
-    where: { userId: clientUserId },
-  });
-
-  if (!client) {
-    client = await testPrisma.client.create({
-      data: {
-        userId: clientUserId,
-      },
-    });
-  }
-
-  // Obtener o crear Stylist asociado al User
-  let stylist = await testPrisma.stylist.findFirst({
-    where: { userId: stylistUserId },
-  });
-
-  if (!stylist) {
-    stylist = await testPrisma.stylist.create({
-      data: {
-        userId: stylistUserId,
-      },
-    });
-  }
+  // No se necesitan tablas intermedias Client/Stylist
+  // Appointment.clientId y Appointment.stylistId almacenan User.id directamente
 
   // Obtener o crear schedule
   let schedule = await testPrisma.schedule.findFirst();
