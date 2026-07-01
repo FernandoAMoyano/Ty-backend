@@ -38,6 +38,7 @@ export class GetUserProfile {
       phone: user.phone,
       isActive: user.isActive,
       profilePicture: user.profilePicture,
+      preferences: user.preferences,
       role: {
         id: role.id,
         name: role.name,

@@ -38,13 +38,11 @@ import { GetAvailableServicesForClient } from './application/use-cases/GetAvaila
 import { ICategoryRepository } from './domain/repositories/ICategoryRepository';
 import { IServiceRepository } from './domain/repositories/IServiceRepository';
 import { IStylistServiceRepository } from './domain/repositories/IStylistServiceRepository';
-import { IStylistRepository } from './domain/repositories/IStylistRepository';
 
 // Repositorios de infraestructura (implementaciones)
 import { PrismaCategoryRepository } from './infrastructure/persistence/PrismaCategoryRepository';
 import { PrismaServiceRepository } from './infrastructure/persistence/PrismaServiceRepository';
 import { PrismaStylistServiceRepository } from './infrastructure/persistence/PrismaStylistServiceRepository';
-import { PrismaStylistRepository } from './infrastructure/persistence/PrismaStylistRepository';
 
 // Importar userRepository desde el módulo de autenticación
 import { IUserRepository } from '../auth/domain/repositories/IUserRepository';
@@ -136,10 +134,13 @@ export class ServicesContainer {
     // 1. Repositorios
     const categoryRepository: ICategoryRepository = new PrismaCategoryRepository(this.prisma);
     const serviceRepository: IServiceRepository = new PrismaServiceRepository(this.prisma);
-    const stylistServiceRepository: IStylistServiceRepository = new PrismaStylistServiceRepository(this.prisma);
-    const stylistRepository: IStylistRepository = new PrismaStylistRepository(this.prisma);
+    const stylistServiceRepository: IStylistServiceRepository = new PrismaStylistServiceRepository(
+      this.prisma,
+    );
     const userRepository: IUserRepository = new PrismaUserRepository(this.prisma);
-    const appointmentRepository: IAppointmentRepository = new PrismaAppointmentRepository(this.prisma);
+    const appointmentRepository: IAppointmentRepository = new PrismaAppointmentRepository(
+      this.prisma,
+    );
 
     // 2. Use cases — Categorías
     this._createCategory = new CreateCategory(categoryRepository);
@@ -158,21 +159,49 @@ export class ServicesContainer {
     this._getAllServices = new GetAllServices(serviceRepository, categoryRepository);
     this._getActiveServices = new GetActiveServices(serviceRepository, categoryRepository);
     this._getServicesByCategory = new GetServicesByCategory(serviceRepository, categoryRepository);
-    this._getActiveServicesByCategory = new GetActiveServicesByCategory(serviceRepository, categoryRepository);
+    this._getActiveServicesByCategory = new GetActiveServicesByCategory(
+      serviceRepository,
+      categoryRepository,
+    );
     this._activateService = new ActivateService(serviceRepository, categoryRepository);
     this._deactivateService = new DeactivateService(serviceRepository, categoryRepository);
     this._deleteService = new DeleteService(serviceRepository, appointmentRepository);
 
     // 4. Use cases — StylistService
-    this._assignServiceToStylist = new AssignServiceToStylist(stylistServiceRepository, serviceRepository, userRepository, stylistRepository);
-    this._updateStylistService = new UpdateStylistService(stylistServiceRepository, serviceRepository, stylistRepository);
+    this._assignServiceToStylist = new AssignServiceToStylist(
+      stylistServiceRepository,
+      serviceRepository,
+      userRepository,
+    );
+    this._updateStylistService = new UpdateStylistService(
+      stylistServiceRepository,
+      serviceRepository,
+    );
     this._removeServiceFromStylist = new RemoveServiceFromStylist(stylistServiceRepository);
-    this._getStylistServices = new GetStylistServices(stylistServiceRepository, serviceRepository, stylistRepository);
-    this._getActiveOfferings = new GetActiveOfferings(stylistServiceRepository, serviceRepository, stylistRepository);
-    this._getStylistWithServices = new GetStylistWithServices(stylistServiceRepository, serviceRepository, stylistRepository, userRepository);
+    this._getStylistServices = new GetStylistServices(
+      stylistServiceRepository,
+      serviceRepository,
+      userRepository,
+    );
+    this._getActiveOfferings = new GetActiveOfferings(
+      stylistServiceRepository,
+      serviceRepository,
+      userRepository,
+    );
+    this._getStylistWithServices = new GetStylistWithServices(
+      stylistServiceRepository,
+      serviceRepository,
+      userRepository,
+    );
     this._getServiceStylists = new GetServiceStylists(stylistServiceRepository, serviceRepository);
-    this._getStylistsOfferingService = new GetStylistsOfferingService(stylistServiceRepository, serviceRepository);
-    this._getServiceWithStylists = new GetServiceWithStylists(stylistServiceRepository, serviceRepository);
+    this._getStylistsOfferingService = new GetStylistsOfferingService(
+      stylistServiceRepository,
+      serviceRepository,
+    );
+    this._getServiceWithStylists = new GetServiceWithStylists(
+      stylistServiceRepository,
+      serviceRepository,
+    );
     this._getAvailableServicesForClient = new GetAvailableServicesForClient(
       this._getActiveServices,
       this._getStylistsOfferingService,
@@ -225,42 +254,106 @@ export class ServicesContainer {
   }
 
   // Getters — Use cases Categorías
-  get createCategory(): CreateCategory { return this._createCategory; }
-  get updateCategory(): UpdateCategory { return this._updateCategory; }
-  get getCategoryById(): GetCategoryById { return this._getCategoryById; }
-  get getAllCategories(): GetAllCategories { return this._getAllCategories; }
-  get getActiveCategories(): GetActiveCategories { return this._getActiveCategories; }
-  get activateCategory(): ActivateCategory { return this._activateCategory; }
-  get deactivateCategory(): DeactivateCategory { return this._deactivateCategory; }
-  get deleteCategory(): DeleteCategory { return this._deleteCategory; }
+  get createCategory(): CreateCategory {
+    return this._createCategory;
+  }
+  get updateCategory(): UpdateCategory {
+    return this._updateCategory;
+  }
+  get getCategoryById(): GetCategoryById {
+    return this._getCategoryById;
+  }
+  get getAllCategories(): GetAllCategories {
+    return this._getAllCategories;
+  }
+  get getActiveCategories(): GetActiveCategories {
+    return this._getActiveCategories;
+  }
+  get activateCategory(): ActivateCategory {
+    return this._activateCategory;
+  }
+  get deactivateCategory(): DeactivateCategory {
+    return this._deactivateCategory;
+  }
+  get deleteCategory(): DeleteCategory {
+    return this._deleteCategory;
+  }
 
   // Getters — Use cases Servicios
-  get createService(): CreateService { return this._createService; }
-  get updateService(): UpdateService { return this._updateService; }
-  get getServiceById(): GetServiceById { return this._getServiceById; }
-  get getAllServices(): GetAllServices { return this._getAllServices; }
-  get getActiveServices(): GetActiveServices { return this._getActiveServices; }
-  get getServicesByCategory(): GetServicesByCategory { return this._getServicesByCategory; }
-  get getActiveServicesByCategory(): GetActiveServicesByCategory { return this._getActiveServicesByCategory; }
-  get activateService(): ActivateService { return this._activateService; }
-  get deactivateService(): DeactivateService { return this._deactivateService; }
-  get deleteService(): DeleteService { return this._deleteService; }
+  get createService(): CreateService {
+    return this._createService;
+  }
+  get updateService(): UpdateService {
+    return this._updateService;
+  }
+  get getServiceById(): GetServiceById {
+    return this._getServiceById;
+  }
+  get getAllServices(): GetAllServices {
+    return this._getAllServices;
+  }
+  get getActiveServices(): GetActiveServices {
+    return this._getActiveServices;
+  }
+  get getServicesByCategory(): GetServicesByCategory {
+    return this._getServicesByCategory;
+  }
+  get getActiveServicesByCategory(): GetActiveServicesByCategory {
+    return this._getActiveServicesByCategory;
+  }
+  get activateService(): ActivateService {
+    return this._activateService;
+  }
+  get deactivateService(): DeactivateService {
+    return this._deactivateService;
+  }
+  get deleteService(): DeleteService {
+    return this._deleteService;
+  }
 
   // Getters — Use cases StylistService
-  get assignServiceToStylist(): AssignServiceToStylist { return this._assignServiceToStylist; }
-  get updateStylistService(): UpdateStylistService { return this._updateStylistService; }
-  get removeServiceFromStylist(): RemoveServiceFromStylist { return this._removeServiceFromStylist; }
-  get getStylistServices(): GetStylistServices { return this._getStylistServices; }
-  get getActiveOfferings(): GetActiveOfferings { return this._getActiveOfferings; }
-  get getStylistWithServices(): GetStylistWithServices { return this._getStylistWithServices; }
-  get getServiceStylists(): GetServiceStylists { return this._getServiceStylists; }
-  get getStylistsOfferingService(): GetStylistsOfferingService { return this._getStylistsOfferingService; }
-  get getServiceWithStylists(): GetServiceWithStylists { return this._getServiceWithStylists; }
-  get getAvailableServicesForClient(): GetAvailableServicesForClient { return this._getAvailableServicesForClient; }
+  get assignServiceToStylist(): AssignServiceToStylist {
+    return this._assignServiceToStylist;
+  }
+  get updateStylistService(): UpdateStylistService {
+    return this._updateStylistService;
+  }
+  get removeServiceFromStylist(): RemoveServiceFromStylist {
+    return this._removeServiceFromStylist;
+  }
+  get getStylistServices(): GetStylistServices {
+    return this._getStylistServices;
+  }
+  get getActiveOfferings(): GetActiveOfferings {
+    return this._getActiveOfferings;
+  }
+  get getStylistWithServices(): GetStylistWithServices {
+    return this._getStylistWithServices;
+  }
+  get getServiceStylists(): GetServiceStylists {
+    return this._getServiceStylists;
+  }
+  get getStylistsOfferingService(): GetStylistsOfferingService {
+    return this._getStylistsOfferingService;
+  }
+  get getServiceWithStylists(): GetServiceWithStylists {
+    return this._getServiceWithStylists;
+  }
+  get getAvailableServicesForClient(): GetAvailableServicesForClient {
+    return this._getAvailableServicesForClient;
+  }
 
   // Getters — Presentación
-  get categoryController(): CategoryController { return this._categoryController; }
-  get serviceController(): ServiceController { return this._serviceController; }
-  get stylistServiceController(): StylistServiceController { return this._stylistServiceController; }
-  get servicesRoutes(): ServicesRoutes { return this._servicesRoutes; }
+  get categoryController(): CategoryController {
+    return this._categoryController;
+  }
+  get serviceController(): ServiceController {
+    return this._serviceController;
+  }
+  get stylistServiceController(): StylistServiceController {
+    return this._stylistServiceController;
+  }
+  get servicesRoutes(): ServicesRoutes {
+    return this._servicesRoutes;
+  }
 }

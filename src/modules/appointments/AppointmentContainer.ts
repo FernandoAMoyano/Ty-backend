@@ -15,11 +15,11 @@ import { PrismaScheduleRepository } from './infrastructure/persistence/PrismaSch
 
 // Repositorios de módulos externos
 import { IServiceRepository } from '../services/domain/repositories/IServiceRepository';
-import { IStylistRepository } from '../services/domain/repositories/IStylistRepository';
 import { IStylistServiceRepository } from '../services/domain/repositories/IStylistServiceRepository';
 import { PrismaServiceRepository } from '../services/infrastructure/persistence/PrismaServiceRepository';
-import { PrismaStylistRepository } from '../services/infrastructure/persistence/PrismaStylistRepository';
 import { PrismaStylistServiceRepository } from '../services/infrastructure/persistence/PrismaStylistServiceRepository';
+import { IUserRepository } from '../auth/domain/repositories/IUserRepository';
+import { PrismaUserRepository } from '../auth/infrastructure/persistence/PrismaUserRepository';
 
 // Repositorios de módulo holidays (para integración holidays↔appointments)
 import { IHolidayRepository } from '../holidays/domain/repositories/IHolidayRepository';
@@ -69,7 +69,7 @@ export class AppointmentContainer {
 
   // Repositorios - Módulos externos
   private _serviceRepository: IServiceRepository;
-  private _stylistRepository: IStylistRepository;
+  private _userRepository: IUserRepository;
   private _stylistServiceRepository: IStylistServiceRepository;
 
   /**
@@ -112,7 +112,7 @@ export class AppointmentContainer {
 
     // Repositorios de módulos externos
     this._serviceRepository = new PrismaServiceRepository(this.prisma);
-    this._stylistRepository = new PrismaStylistRepository(this.prisma);
+    this._userRepository = new PrismaUserRepository(this.prisma);
     this._stylistServiceRepository = new PrismaStylistServiceRepository(this.prisma);
 
     // Repositorios de módulo holidays
@@ -132,7 +132,7 @@ export class AppointmentContainer {
       this._appointmentStatusRepository,
       this._scheduleRepository,
       this._serviceRepository,
-      this._stylistRepository,
+      this._userRepository,
       this._stylistServiceRepository,
       scheduleAvailabilityService,
     );
@@ -163,7 +163,7 @@ export class AppointmentContainer {
       this._appointmentRepository,
       this._appointmentStatusRepository,
       this._serviceRepository,
-      this._stylistRepository,
+      this._userRepository,
     );
 
     // HTTP Layer - Inyectamos los casos de uso implementados
@@ -303,10 +303,10 @@ export class AppointmentContainer {
   }
 
   /**
-   * Obtiene el repositorio de estilistas configurado
-   * @returns Instancia de IStylistRepository para uso directo o testing
+   * Obtiene el repositorio de usuarios configurado
+   * @returns Instancia de IUserRepository para uso directo o testing
    */
-  get stylistRepository(): IStylistRepository {
-    return this._stylistRepository;
+  get userRepository(): IUserRepository {
+    return this._userRepository;
   }
 }

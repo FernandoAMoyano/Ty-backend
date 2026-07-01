@@ -2,7 +2,7 @@ import { Appointment } from '../../domain/entities/Appointment';
 import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
 import { IAppointmentStatusRepository } from '../../domain/repositories/IAppointmentStatusRepository';
 import { IServiceRepository } from '../../../services/domain/repositories/IServiceRepository';
-import { IStylistRepository } from '../../../services/domain/repositories/IStylistRepository';
+import { IUserRepository } from '../../../auth/domain/repositories/IUserRepository';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { UpdateAppointmentDto } from '../dto/request/UpdateAppointmentDto';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
@@ -20,7 +20,7 @@ export class UpdateAppointment {
     private appointmentRepository: IAppointmentRepository,
     private appointmentStatusRepository: IAppointmentStatusRepository,
     private serviceRepository: IServiceRepository,
-    private stylistRepository: IStylistRepository,
+    private userRepository: IUserRepository,
   ) {}
 
   /**
@@ -280,14 +280,17 @@ export class UpdateAppointment {
   /**
    * Actualiza el estilista asignado
    * @param appointment - La cita a actualizar
-   * @param newStylistId - User.id del nuevo estilista (Appointment.stylistId almacena User.id)
+   * @param newStylistId - User.id del nuevo estilista
    */
   private async updateStylist(appointment: Appointment, newStylistId: string): Promise<void> {
     if (newStylistId) {
-      // newStylistId es User.id; verificar que existe un estilista con ese userId
-      const stylist = await this.stylistRepository.findByUserId(newStylistId);
-      if (!stylist) {
+      // newStylistId es User.id; verificar que existe y tiene rol STYLIST
+      const userWithRole = await this.userRepository.findByIdWithRole(newStylistId);
+      if (!userWithRole) {
         throw new NotFoundError('Stylist', newStylistId);
+      }
+      if (!userWithRole.role || userWithRole.role.name !== 'STYLIST') {
+        throw new BusinessRuleError('The specified user is not a stylist');
       }
       
       appointment.updateStylist(newStylistId);

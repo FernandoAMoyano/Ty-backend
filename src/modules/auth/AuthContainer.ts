@@ -11,13 +11,11 @@ import { ChangeUserPassword } from './application/use-cases/ChangeUserPassword';
 import { DeactivateUser } from './application/use-cases/DeactivateUser';
 import { PrismaUserRepository } from './infrastructure/persistence/PrismaUserRepository';
 import { PrismaRoleRepository } from './infrastructure/persistence/PrismaRolRepository';
-import { PrismaStylistRepository } from '../services/infrastructure/persistence/PrismaStylistRepository';
 import { PrismaStylistServiceRepository } from '../services/infrastructure/persistence/PrismaStylistServiceRepository';
 import { PrismaAppointmentRepository } from '../appointments/infrastructure/persistence/PrismaAppointmentRepository';
 import { PrismaAppointmentStatusRepository } from '../appointments/infrastructure/persistence/PrismaAppointmentStatusRepository';
 import { IUserRepository } from './domain/repositories/IUserRepository';
 import { IRoleRepository } from './domain/repositories/IRoleRepository';
-import { IStylistRepository } from '../services/domain/repositories/IStylistRepository';
 import { IStylistServiceRepository } from '../services/domain/repositories/IStylistServiceRepository';
 import { IAppointmentRepository } from '../appointments/domain/repositories/IAppointmentRepository';
 import { IAppointmentStatusRepository } from '../appointments/domain/repositories/IAppointmentStatusRepository';
@@ -79,7 +77,6 @@ export class AuthContainer {
     const roleRepository: IRoleRepository = new PrismaRoleRepository(this.prisma);
 
     // Repositories - Cross-module (para cascada en desactivación)
-    const stylistRepository: IStylistRepository = new PrismaStylistRepository(this.prisma);
     const stylistServiceRepository: IStylistServiceRepository = new PrismaStylistServiceRepository(this.prisma);
     const appointmentRepository: IAppointmentRepository = new PrismaAppointmentRepository(this.prisma);
     const appointmentStatusRepository: IAppointmentStatusRepository = new PrismaAppointmentStatusRepository(this.prisma);
@@ -98,7 +95,6 @@ export class AuthContainer {
     this._deactivateUser = new DeactivateUser(
       userRepository,
       roleRepository,
-      stylistRepository,
       stylistServiceRepository,
       appointmentRepository,
       appointmentStatusRepository,
