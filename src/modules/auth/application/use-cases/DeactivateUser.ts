@@ -1,6 +1,5 @@
 import { IUserRepository } from '../../domain/repositories/IUserRepository';
 import { IRoleRepository } from '../../domain/repositories/IRoleRepository';
-import { IStylistRepository } from '../../../services/domain/repositories/IStylistRepository';
 import { IStylistServiceRepository } from '../../../services/domain/repositories/IStylistServiceRepository';
 import { IAppointmentRepository } from '../../../appointments/domain/repositories/IAppointmentRepository';
 import { IAppointmentStatusRepository } from '../../../appointments/domain/repositories/IAppointmentStatusRepository';
@@ -20,7 +19,6 @@ export class DeactivateUser {
   constructor(
     private userRepository: IUserRepository,
     private roleRepository: IRoleRepository,
-    private stylistRepository: IStylistRepository,
     private stylistServiceRepository: IStylistServiceRepository,
     private appointmentRepository: IAppointmentRepository,
     private appointmentStatusRepository: IAppointmentStatusRepository,
@@ -94,28 +92,17 @@ export class DeactivateUser {
 
   /**
    * Ejecuta las acciones en cascada para un estilista desactivado
-   * - Cancela citas activas (PENDING/CONFIRMED)
-   * - Desactiva asignaciones StylistService
-   * @param userId - ID del usuario estilista
+   * StylistService.stylistId ahora almacena User.id directamente,
+   * por lo que userId se usa tanto para citas como para asignaciones de servicio
+   * @param userId - ID del usuario estilista (User.id)
    * @returns Resumen con conteo de citas canceladas y servicios desactivados
    */
   private async executeStylistCascade(
     userId: string,
   ): Promise<{ appointmentsCancelled: number; servicesDeactivated: number }> {
-    // Buscar estilista por userId
-    const stylist = await this.stylistRepository.findByUserId(userId);
-    if (!stylist) {
-      // El usuario tiene rol STYLIST pero no tiene registro en la tabla Stylist
-      // No hay cascada que ejecutar
-      return { appointmentsCancelled: 0, servicesDeactivated: 0 };
-    }
-
-    // Ejecutar ambas cascadas
-    // cancelActiveAppointments recibe User.id porque Appointment.stylistId ahora almacena User.id
-    // deactivateStylistServices recibe Stylist.id porque StylistService.stylistId sigue apuntando a Stylist.id
     const [appointmentsCancelled, servicesDeactivated] = await Promise.all([
       this.cancelActiveAppointments(userId),
-      this.deactivateStylistServices(stylist.id),
+      this.deactivateStylistServices(userId),
     ]);
 
     return { appointmentsCancelled, servicesDeactivated };
@@ -123,7 +110,7 @@ export class DeactivateUser {
 
   /**
    * Cancela todas las citas activas (PENDING/CONFIRMED) del estilista
-   * @param stylistUserId - ID del usuario estilista (User.id), ya que Appointment.stylistId almacena User.id
+   * @param stylistUserId - ID del usuario estilista (User.id)
    * @returns Cantidad de citas canceladas
    */
   private async cancelActiveAppointments(stylistUserId: string): Promise<number> {
@@ -170,7 +157,7 @@ export class DeactivateUser {
 
   /**
    * Desactiva todas las asignaciones StylistService del estilista
-   * @param stylistId - ID del estilista
+   * @param stylistId - ID del usuario estilista (User.id), que ahora es directamente StylistService.stylistId
    * @returns Cantidad de asignaciones desactivadas
    */
   private async deactivateStylistServices(stylistId: string): Promise<number> {

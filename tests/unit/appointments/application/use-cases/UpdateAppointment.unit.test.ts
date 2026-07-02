@@ -2,14 +2,13 @@ import { UpdateAppointment } from '../../../../../src/modules/appointments/appli
 import { IAppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
 import { IAppointmentStatusRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentStatusRepository';
 import { IServiceRepository } from '../../../../../src/modules/services/domain/repositories/IServiceRepository';
-import { IStylistRepository } from '../../../../../src/modules/services/domain/repositories/IStylistRepository';
+import { IUserRepository } from '../../../../../src/modules/auth/domain/repositories/IUserRepository';
 import { Appointment } from '../../../../../src/modules/appointments/domain/entities/Appointment';
 import {
   AppointmentStatus,
   AppointmentStatusEnum,
 } from '../../../../../src/modules/appointments/domain/entities/AppointmentStatus';
 import { Service } from '../../../../../src/modules/services/domain/entities/Service';
-import { Stylist } from '../../../../../src/modules/services/domain/entities/Stylist';
 import { UpdateAppointmentDto } from '../../../../../src/modules/appointments/application/dto/request/UpdateAppointmentDto';
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
@@ -22,7 +21,7 @@ describe('UpdateAppointment Use Case', () => {
   let mockAppointmentRepository: jest.Mocked<IAppointmentRepository>;
   let mockAppointmentStatusRepository: jest.Mocked<IAppointmentStatusRepository>;
   let mockServiceRepository: jest.Mocked<IServiceRepository>;
-  let mockStylistRepository: jest.Mocked<IStylistRepository>;
+  let mockUserRepository: jest.Mocked<IUserRepository>;
 
   const getFutureDate = (hoursFromNow: number = 48): Date => {
     const future = new Date();
@@ -113,16 +112,17 @@ describe('UpdateAppointment Use Case', () => {
     } as unknown as Service;
   };
 
-  const createMockStylist = (id: string = generateUuid()): Stylist => {
+  const createMockStylistUser = (id: string = generateUuid()): any => {
     return {
       id,
-      userId: generateUuid(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      validate: jest.fn(),
-      updateInfo: jest.fn(),
-      toPersistence: jest.fn(),
-    } as unknown as Stylist;
+      roleId: 'stylist-role-id',
+      name: 'Test Stylist',
+      email: 'stylist@test.com',
+      phone: '+1234567890',
+      password: 'hashed',
+      isActive: true,
+      role: { id: 'stylist-role-id', name: 'STYLIST', description: 'Estilista' },
+    };
   };
 
   const setupBasicSuccessfulMocks = (appointment: Appointment) => {
@@ -185,21 +185,24 @@ describe('UpdateAppointment Use Case', () => {
       existsById: jest.fn(),
       existsByName: jest.fn(),
     } as unknown as jest.Mocked<IServiceRepository>;
-    mockStylistRepository = {
+    mockUserRepository = {
       findById: jest.fn(),
-      findByUserId: jest.fn(),
-      findAll: jest.fn(),
+      findByIdWithRole: jest.fn(),
+      findByEmail: jest.fn(),
+      findByEmailWithRole: jest.fn(),
+      existsByEmail: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
-      existsById: jest.fn(),
-    } as unknown as jest.Mocked<IStylistRepository>;
+      findAll: jest.fn(),
+      findByRole: jest.fn(),
+    } as unknown as jest.Mocked<IUserRepository>;
 
     useCase = new UpdateAppointment(
       mockAppointmentRepository,
       mockAppointmentStatusRepository,
       mockServiceRepository,
-      mockStylistRepository,
+      mockUserRepository,
     );
   });
 
@@ -225,7 +228,7 @@ describe('UpdateAppointment Use Case', () => {
       jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
       jest.spyOn(appointment, 'isConfirmed').mockReturnValue(true);
       setupBasicSuccessfulMocks(appointment);
-      mockStylistRepository.findByUserId.mockResolvedValue(createMockStylist(validNewStylistId));
+      mockUserRepository.findByIdWithRole.mockResolvedValue(createMockStylistUser(validNewStylistId));
       mockServiceRepository.findById.mockResolvedValue(createMockService(validNewServiceId));
 
       const result = await useCase.execute(
@@ -255,7 +258,7 @@ describe('UpdateAppointment Use Case', () => {
       );
 
       expect(result.id).toBe(appointment.id);
-      expect(mockStylistRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockUserRepository.findByIdWithRole).not.toHaveBeenCalled();
     });
 
     it('should allow update by assigned stylist', async () => {
@@ -442,7 +445,7 @@ describe('UpdateAppointment Use Case', () => {
       jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
       setupBasicSuccessfulMocks(appointment);
       const invalidStylistDto: UpdateAppointmentDto = { stylistId: validNewStylistId };
-      mockStylistRepository.findByUserId.mockResolvedValue(null);
+      mockUserRepository.findByIdWithRole.mockResolvedValue(null);
 
       await expect(
         useCase.execute(validAppointmentId, invalidStylistDto, validRequesterId, adminRole),

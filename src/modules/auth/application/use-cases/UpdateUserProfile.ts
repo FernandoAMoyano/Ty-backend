@@ -54,6 +54,7 @@ export class UpdateUserProfile {
       phone: updatedUser.phone,
       isActive: updatedUser.isActive,
       profilePicture: updatedUser.profilePicture,
+      preferences: updatedUser.preferences,
       role: {
         id: role!.id,
         name: role!.name,

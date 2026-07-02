@@ -1,7 +1,6 @@
 import { StylistService } from '../../domain/entities/StylistService';
 import { IStylistServiceRepository } from '../../domain/repositories/IStylistServiceRepository';
 import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
-import { IStylistRepository } from '../../domain/repositories/IStylistRepository';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { UpdateStylistServiceDto } from '../dto/request/UpdateStylistServiceDto';
@@ -15,7 +14,6 @@ export class UpdateStylistService {
   constructor(
     private stylistServiceRepository: IStylistServiceRepository,
     private serviceRepository: IServiceRepository,
-    private stylistRepository: IStylistRepository,
   ) {}
 
   /**

@@ -35,6 +35,7 @@ export class PrismaUserRepository implements IUserRepository {
       userData.password,
       userData.isActive,
       userData.profilePicture || undefined,
+      userData.preferences || undefined,
       userData.createdAt,
       userData.updatedAt,
     );
@@ -62,6 +63,7 @@ export class PrismaUserRepository implements IUserRepository {
       userData.password,
       userData.isActive,
       userData.profilePicture || undefined,
+      userData.preferences || undefined,
       userData.createdAt,
       userData.updatedAt,
     );
@@ -77,7 +79,7 @@ export class PrismaUserRepository implements IUserRepository {
     const userData = await this.prisma.user.findUnique({
       where: { email: email.toLowerCase() },
       include: {
-        role: true, // Incluir la relación con el rol
+        role: true,
       },
     });
 
@@ -94,13 +96,12 @@ export class PrismaUserRepository implements IUserRepository {
     const userData = await this.prisma.user.findUnique({
       where: { id },
       include: {
-        role: true, // Incluir la relación con el rol
+        role: true,
       },
     });
 
     if (!userData) return null;
 
-    // Crear el objeto User con el rol incluido
     const user = new User(
       userData.id,
       userData.roleId,
@@ -110,11 +111,11 @@ export class PrismaUserRepository implements IUserRepository {
       userData.password,
       userData.isActive,
       userData.profilePicture || undefined,
+      userData.preferences || undefined,
       userData.createdAt,
       userData.updatedAt,
     );
 
-    // Agregar el rol como propiedad adicional
     return {
       ...user,
       role: userData.role,
@@ -151,6 +152,7 @@ export class PrismaUserRepository implements IUserRepository {
         password: user.password,
         isActive: user.isActive,
         profilePicture: user.profilePicture,
+        preferences: user.preferences,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -165,6 +167,7 @@ export class PrismaUserRepository implements IUserRepository {
       userData.password,
       userData.isActive,
       userData.profilePicture || undefined,
+      userData.preferences || undefined,
       userData.createdAt,
       userData.updatedAt,
     );
@@ -185,6 +188,7 @@ export class PrismaUserRepository implements IUserRepository {
         password: user.password,
         isActive: user.isActive,
         profilePicture: user.profilePicture,
+        preferences: user.preferences,
         updatedAt: user.updatedAt,
       },
     });
@@ -198,6 +202,7 @@ export class PrismaUserRepository implements IUserRepository {
       userData.password,
       userData.isActive,
       userData.profilePicture || undefined,
+      userData.preferences || undefined,
       userData.createdAt,
       userData.updatedAt,
     );
@@ -235,6 +240,7 @@ export class PrismaUserRepository implements IUserRepository {
           userData.password,
           userData.isActive,
           userData.profilePicture || undefined,
+          userData.preferences || undefined,
           userData.createdAt,
           userData.updatedAt,
         ),
@@ -264,6 +270,7 @@ export class PrismaUserRepository implements IUserRepository {
           userData.password,
           userData.isActive,
           userData.profilePicture || undefined,
+          userData.preferences || undefined,
           userData.createdAt,
           userData.updatedAt,
         ),

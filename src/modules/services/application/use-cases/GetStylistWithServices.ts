@@ -1,7 +1,6 @@
 import { StylistService } from '../../domain/entities/StylistService';
 import { IStylistServiceRepository } from '../../domain/repositories/IStylistServiceRepository';
 import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
-import { IStylistRepository } from '../../domain/repositories/IStylistRepository';
 import { IUserRepository } from '../../../auth/domain/repositories/IUserRepository';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { StylistServiceDto } from '../dto/response/StylistServiceDto';
@@ -14,32 +13,26 @@ export class GetStylistWithServices {
   constructor(
     private stylistServiceRepository: IStylistServiceRepository,
     private serviceRepository: IServiceRepository,
-    private stylistRepository: IStylistRepository,
     private userRepository: IUserRepository,
   ) {}
 
   /**
    * Ejecuta la obtención del estilista con sus servicios
-   * @param stylistId - ID único del estilista
+   * @param stylistId - ID del usuario estilista (User.id)
    * @returns Promise con datos completos del estilista y sus servicios
-   * @throws NotFoundError si el estilista o usuario asociado no existen
+   * @throws NotFoundError si el usuario no existe
    */
   async execute(stylistId: string): Promise<StylistWithServicesDto> {
-    const stylist = await this.stylistRepository.findById(stylistId);
-    if (!stylist) {
-      throw new NotFoundError('Stylist', stylistId);
-    }
-
-    const user = await this.userRepository.findById(stylist.userId);
+    const user = await this.userRepository.findById(stylistId);
     if (!user) {
-      throw new NotFoundError('User', stylist.userId);
+      throw new NotFoundError('Stylist', stylistId);
     }
 
     const assignments = await this.stylistServiceRepository.findByStylist(stylistId);
     const services = await this.mapAssignmentsWithServiceInfo(assignments);
 
     return {
-      stylistId: stylist.id,
+      stylistId: user.id,
       stylistName: user.name,
       stylistEmail: user.email,
       services,

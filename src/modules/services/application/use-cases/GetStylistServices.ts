@@ -1,7 +1,7 @@
 import { StylistService } from '../../domain/entities/StylistService';
 import { IStylistServiceRepository } from '../../domain/repositories/IStylistServiceRepository';
 import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
-import { IStylistRepository } from '../../domain/repositories/IStylistRepository';
+import { IUserRepository } from '../../../auth/domain/repositories/IUserRepository';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { StylistServiceDto } from '../dto/response/StylistServiceDto';
 
@@ -12,18 +12,18 @@ export class GetStylistServices {
   constructor(
     private stylistServiceRepository: IStylistServiceRepository,
     private serviceRepository: IServiceRepository,
-    private stylistRepository: IStylistRepository,
+    private userRepository: IUserRepository,
   ) {}
 
   /**
    * Ejecuta la obtención de servicios del estilista
-   * @param stylistId - ID único del estilista
+   * @param stylistId - ID del usuario estilista (User.id)
    * @returns Promise con la lista de servicios asignados al estilista
-   * @throws NotFoundError si el estilista no existe
+   * @throws NotFoundError si el usuario no existe
    */
   async execute(stylistId: string): Promise<StylistServiceDto[]> {
-    const stylist = await this.stylistRepository.findById(stylistId);
-    if (!stylist) {
+    const user = await this.userRepository.findById(stylistId);
+    if (!user) {
       throw new NotFoundError('Stylist', stylistId);
     }
 
@@ -33,8 +33,6 @@ export class GetStylistServices {
 
   /**
    * Mapea asignaciones con información de servicios de forma eficiente
-   * @param assignments - Lista de asignaciones a mapear
-   * @returns Promise con la lista de DTOs
    */
   private async mapAssignmentsWithServiceInfo(assignments: StylistService[]): Promise<StylistServiceDto[]> {
     const serviceIds = [...new Set(assignments.map((a) => a.serviceId))];

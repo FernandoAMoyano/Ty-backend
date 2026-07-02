@@ -5,17 +5,17 @@ import { addDays, subDays, addHours, format, setHours, setMinutes } from 'date-f
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Iniciando el sembrado de la base de datos...');
+  console.log('Iniciando el sembrado de la base de datos...');
 
   const existingUsers = await prisma.user.count();
 
   if (existingUsers > 0) {
-    console.log(`⚠️  Ya existen ${existingUsers} usuarios en la base de datos.`);
-    console.log('¿Deseas continuar? Esto eliminará TODOS los datos existentes.');
+    console.log(`Ya existen ${existingUsers} usuarios en la base de datos.`);
+    console.log('Esto eliminara TODOS los datos existentes.');
   }
 
   // Limpiar datos existentes
-  console.log('🧹 Limpiando datos existentes...');
+  console.log('Limpiando datos existentes...');
   await prisma.payment.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.notificationStatus.deleteMany();
@@ -23,16 +23,15 @@ async function main() {
   await prisma.holiday.deleteMany();
   await prisma.appointment.deleteMany();
   await prisma.appointmentStatus.deleteMany();
+  await prisma.stylistService.deleteMany();
   await prisma.service.deleteMany();
   await prisma.category.deleteMany();
-  await prisma.stylist.deleteMany();
-  await prisma.client.deleteMany();
   await prisma.user.deleteMany();
   await prisma.role.deleteMany();
   await prisma.schedule.deleteMany();
 
-  // Creación de roles
-  console.log('👥 Creando roles...');
+  // Creacion de roles
+  console.log('Creando roles...');
   const adminRole = await prisma.role.create({
     data: {
       name: RoleName.ADMIN,
@@ -54,8 +53,8 @@ async function main() {
     },
   });
 
-  // Creación de usuarios
-  console.log('👤 Creando usuarios...');
+  // Creacion de usuarios
+  console.log('Creando usuarios...');
 
   // Admin
   const adminPassword = await bcrypt.hash('admin123', 10);
@@ -69,86 +68,60 @@ async function main() {
       profilePicture: 'https://randomuser.me/api/portraits/men/1.jpg',
     },
   });
-  console.log(`✅ Admin creado: ${adminUser.email}`);
+  console.log(`Admin creado: ${adminUser.email}`);
 
-  // Clientes
+  // Clientes - preferences directo en User
   const clientPassword = await bcrypt.hash('client123', 10);
   const client1 = await prisma.user.create({
     data: {
-      name: 'María García',
+      name: 'Maria Garcia',
       email: 'maria@example.com',
       phone: '612345678',
       password: clientPassword,
       roleId: clientRole.id,
       profilePicture: 'https://randomuser.me/api/portraits/women/2.jpg',
-      client: {
-        create: {
-          preferences: 'Prefiere citas por la tarde, le gusta el estilo moderno',
-        },
-      },
-    },
-    include: {
-      client: true,
+      preferences: 'Prefiere citas por la tarde, le gusta el estilo moderno',
     },
   });
 
   const client2 = await prisma.user.create({
     data: {
-      name: 'Juan Pérez',
+      name: 'Juan Perez',
       email: 'juan@example.com',
       phone: '623456789',
       password: clientPassword,
       roleId: clientRole.id,
       profilePicture: 'https://randomuser.me/api/portraits/men/3.jpg',
-      client: {
-        create: {
-          preferences: 'Prefiere citas por la mañana, estilo clásico',
-        },
-      },
-    },
-    include: {
-      client: true,
+      preferences: 'Prefiere citas por la manana, estilo clasico',
     },
   });
 
-  // Estilistas
+  // Estilistas - sin tabla Stylist, User.id se usa directamente
   const stylistPassword = await bcrypt.hash('stylist123', 10);
   const stylist1 = await prisma.user.create({
     data: {
-      name: 'Lucía Rodríguez',
+      name: 'Lucia Rodriguez',
       email: 'lucia@turnity.com',
       phone: '634567890',
       password: stylistPassword,
       roleId: stylistRole.id,
       profilePicture: 'https://randomuser.me/api/portraits/women/4.jpg',
-      stylist: {
-        create: {},
-      },
-    },
-    include: {
-      stylist: true,
     },
   });
 
   const stylist2 = await prisma.user.create({
     data: {
-      name: 'Carlos Sánchez',
+      name: 'Carlos Sanchez',
       email: 'carlos@turnity.com',
       phone: '645678901',
       password: stylistPassword,
       roleId: stylistRole.id,
       profilePicture: 'https://randomuser.me/api/portraits/men/5.jpg',
-      stylist: {
-        create: {},
-      },
-    },
-    include: {
-      stylist: true,
     },
   });
 
-  // Creación de categorías de servicios
-  console.log('🏷️Creando categorías de servicios...');
+  // Creacion de categorias de servicios
+  console.log('Creando categorias de servicios...');
   const hairCategory = await prisma.category.create({
     data: {
       name: 'Cabello',
@@ -165,18 +138,18 @@ async function main() {
 
   const nailsCategory = await prisma.category.create({
     data: {
-      name: 'Uñas',
+      name: 'Unas',
       description: 'Servicios de manicura y pedicura',
     },
   });
 
-  // Creación de servicios
-  console.log('💇 Creando servicios...');
+  // Creacion de servicios
+  console.log('Creando servicios...');
   const services = await Promise.all([
     prisma.service.create({
       data: {
         name: 'Corte de cabello',
-        description: 'Corte y estilo según preferencias',
+        description: 'Corte y estilo segun preferencias',
         duration: 30,
         durationVariation: 15,
         price: 25.0,
@@ -186,7 +159,7 @@ async function main() {
     prisma.service.create({
       data: {
         name: 'Tinte de cabello',
-        description: 'Coloración completa',
+        description: 'Coloracion completa',
         duration: 90,
         durationVariation: 30,
         price: 60.0,
@@ -196,7 +169,7 @@ async function main() {
     prisma.service.create({
       data: {
         name: 'Tratamiento facial',
-        description: 'Limpieza e hidratación facial',
+        description: 'Limpieza e hidratacion facial',
         duration: 45,
         durationVariation: 15,
         price: 40.0,
@@ -206,7 +179,7 @@ async function main() {
     prisma.service.create({
       data: {
         name: 'Manicura',
-        description: 'Cuidado y pintado de uñas',
+        description: 'Cuidado y pintado de unas',
         duration: 45,
         durationVariation: 15,
         price: 20.0,
@@ -215,29 +188,29 @@ async function main() {
     }),
   ]);
 
-  // Asignación de servicios a estilistas
-  console.log('🔄 Asignando servicios a estilistas...');
+  // Asignacion de servicios a estilistas - stylistId es User.id directamente
+  console.log('Asignando servicios a estilistas...');
   await prisma.stylistService.createMany({
     data: [
-      { stylistId: stylist1.stylist!.id, serviceId: services[0].id }, // Corte
-      { stylistId: stylist1.stylist!.id, serviceId: services[1].id }, // Tinte
-      { stylistId: stylist1.stylist!.id, serviceId: services[2].id }, // Facial
+      { stylistId: stylist1.id, serviceId: services[0].id }, // Corte
+      { stylistId: stylist1.id, serviceId: services[1].id }, // Tinte
+      { stylistId: stylist1.id, serviceId: services[2].id }, // Facial
     ],
   });
 
   await prisma.stylistService.createMany({
     data: [
-      { stylistId: stylist2.stylist!.id, serviceId: services[0].id }, // Corte
-      { stylistId: stylist2.stylist!.id, serviceId: services[3].id }, // Manicura
+      { stylistId: stylist2.id, serviceId: services[0].id }, // Corte
+      { stylistId: stylist2.id, serviceId: services[3].id }, // Manicura
     ],
   });
 
-  // Creación de estados de citas
-  console.log('📋 Creando estados de citas...');
+  // Creacion de estados de citas
+  console.log('Creando estados de citas...');
   const pendingStatus = await prisma.appointmentStatus.create({
     data: {
       name: 'PENDING',
-      description: 'Cita agendada pero pendiente de confirmación',
+      description: 'Cita agendada pero pendiente de confirmacion',
     },
   });
 
@@ -251,7 +224,7 @@ async function main() {
   const completedStatus = await prisma.appointmentStatus.create({
     data: {
       name: 'COMPLETED',
-      description: 'Cita realizada con éxito',
+      description: 'Cita realizada con exito',
     },
   });
 
@@ -262,8 +235,8 @@ async function main() {
     },
   });
 
-  // Creación de horarios
-  console.log('🕒 Creando horarios...');
+  // Creacion de horarios
+  console.log('Creando horarios...');
   const schedules = await Promise.all([
     prisma.schedule.create({
       data: {
@@ -309,8 +282,8 @@ async function main() {
     }),
   ]);
 
-  // Creación de días festivos
-  console.log('🎉 Creando días festivos...');
+  // Creacion de dias festivos
+  console.log('Creando dias festivos...');
   const christmasDate = new Date(2025, 11, 25);
   const christmasHoliday = await prisma.holiday.create({
     data: {
@@ -320,18 +293,17 @@ async function main() {
     },
   });
 
-  // Conservamos para uso futuro
   const newYearDate = new Date(2026, 0, 1);
   const newYearHoliday = await prisma.holiday.create({
     data: {
-      name: 'Año Nuevo',
+      name: 'Ano Nuevo',
       date: newYearDate,
-      description: 'Cerrado por Año Nuevo',
+      description: 'Cerrado por Ano Nuevo',
     },
   });
 
-  // Creación de excepciones de horario
-  console.log('⚠️ Creando excepciones de horario...');
+  // Creacion de excepciones de horario
+  console.log('Creando excepciones de horario...');
   const christmasEveDate = new Date(2025, 11, 24);
   await prisma.scheduleException.create({
     data: {
@@ -343,38 +315,38 @@ async function main() {
     },
   });
 
-  // Creación de estados de notificaciones
-  console.log('🔔 Creando estados de notificaciones...');
+  // Creacion de estados de notificaciones
+  console.log('Creando estados de notificaciones...');
   const pendingNotifStatus = await prisma.notificationStatus.create({
     data: {
       name: 'PENDING',
-      description: 'Notificación pendiente de envío',
+      description: 'Notificacion pendiente de envio',
     },
   });
 
   const sentNotifStatus = await prisma.notificationStatus.create({
     data: {
       name: 'SENT',
-      description: 'Notificación enviada exitosamente',
+      description: 'Notificacion enviada exitosamente',
     },
   });
 
   const readNotifStatus = await prisma.notificationStatus.create({
     data: {
       name: 'READ',
-      description: 'Notificación leída por el usuario',
+      description: 'Notificacion leida por el usuario',
     },
   });
 
   const failedNotifStatus = await prisma.notificationStatus.create({
     data: {
       name: 'FAILED',
-      description: 'Error al enviar la notificación',
+      description: 'Error al enviar la notificacion',
     },
   });
 
-  // Creación de citas de ejemplo
-  console.log('📅 Creando citas de ejemplo...');
+  // Creacion de citas de ejemplo
+  console.log('Creando citas de ejemplo...');
   const today = new Date();
   const futureDate = addDays(today, 7);
   const futureDateAt10 = setMinutes(setHours(futureDate, 10), 0);
@@ -414,8 +386,8 @@ async function main() {
     },
   });
 
-  // Creación de pagos
-  console.log('💰 Creando pagos...');
+  // Creacion de pagos
+  console.log('Creando pagos...');
   await prisma.payment.create({
     data: {
       appointmentId: appointment2.id,
@@ -426,8 +398,8 @@ async function main() {
     },
   });
 
-  // Creación de notificaciones
-  console.log('📩 Creando notificaciones...');
+  // Creacion de notificaciones
+  console.log('Creando notificaciones...');
   await prisma.notification.create({
     data: {
       userId: client1.id,
@@ -443,7 +415,7 @@ async function main() {
       userId: client1.id,
       statusId: pendingNotifStatus.id,
       type: 'APPOINTMENT_REMINDER',
-      message: `Recordatorio: Tienes una cita mañana ${format(futureDateAt10, 'dd/MM/yyyy')} a las ${format(futureDateAt10, 'HH:mm')}.`,
+      message: `Recordatorio: Tienes una cita manana ${format(futureDateAt10, 'dd/MM/yyyy')} a las ${format(futureDateAt10, 'HH:mm')}.`,
       sentAt: null,
     },
   });
@@ -453,22 +425,22 @@ async function main() {
       userId: client2.id,
       statusId: sentNotifStatus.id,
       type: 'APPOINTMENT_CONFIRMATION',
-      message: `¡Gracias por visitarnos! Tu cita del ${format(pastDateAt15, 'dd/MM/yyyy')} ha sido completada exitosamente.`,
+      message: `Gracias por visitarnos! Tu cita del ${format(pastDateAt15, 'dd/MM/yyyy')} ha sido completada exitosamente.`,
       sentAt: addHours(pastDateAt15, 2),
     },
   });
 
   // Resumen final
   const finalUserCount = await prisma.user.count();
-  console.log(`✅ Sembrado completado con éxito!`);
-  console.log(`📊 Total de usuarios creados: ${finalUserCount}`);
-  console.log(`👤 Credenciales de prueba:`);
-  console.log(`🧔🏻‍♂️ Admin: admin@turnity.com / admin123`);
-  console.log(`👩🏻‍🦰 Cliente: maria@example.com / client123`);
-  console.log(`👱🏻‍♀️ Estilista: lucia@turnity.com / stylist123`);
+  console.log(`Sembrado completado con exito!`);
+  console.log(`Total de usuarios creados: ${finalUserCount}`);
+  console.log(`Credenciales de prueba:`);
+  console.log(`  Admin: admin@turnity.com / admin123`);
+  console.log(`  Cliente: maria@example.com / client123`);
+  console.log(`  Estilista: lucia@turnity.com / stylist123`);
 
   // Log de variables no utilizadas (para debugging)
-  console.log(`🔧 Variables disponibles para uso futuro:`, {
+  console.log(`Variables disponibles para uso futuro:`, {
     adminUserId: adminUser.id,
     pendingStatusId: pendingStatus.id,
     cancelledStatusId: cancelledStatus.id,
@@ -481,7 +453,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error('❌ Error durante el sembrado:', e);
+    console.error('Error durante el sembrado:', e);
     process.exit(1);
   })
   .finally(async () => {

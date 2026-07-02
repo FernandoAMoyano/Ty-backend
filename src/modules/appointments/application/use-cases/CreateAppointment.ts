@@ -3,7 +3,7 @@ import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRe
 import { IAppointmentStatusRepository } from '../../domain/repositories/IAppointmentStatusRepository';
 import { IScheduleRepository } from '../../domain/repositories/IScheduleRepository';
 import { IServiceRepository } from '../../../services/domain/repositories/IServiceRepository';
-import { IStylistRepository } from '../../../services/domain/repositories/IStylistRepository';
+import { IUserRepository } from '../../../auth/domain/repositories/IUserRepository';
 import { IStylistServiceRepository } from '../../../services/domain/repositories/IStylistServiceRepository';
 import { CreateAppointmentDto } from '../dto/request/CreateAppointmentDto';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
@@ -26,7 +26,7 @@ export class CreateAppointment {
     private appointmentStatusRepository: IAppointmentStatusRepository,
     private scheduleRepository: IScheduleRepository,
     private serviceRepository: IServiceRepository,
-    private stylistRepository: IStylistRepository,
+    private userRepository: IUserRepository,
     private stylistServiceRepository: IStylistServiceRepository,
     private scheduleAvailabilityService: ScheduleAvailabilityService,
   ) {}
@@ -180,14 +180,15 @@ export class CreateAppointment {
    */
   private async validateRelatedEntities(createDto: CreateAppointmentDto): Promise<void> {
     // Validar que el estilista existe (si se proporciona)
-    // stylistId en el DTO es User.id; se resuelve a Stylist para validar asignaciones de servicio
-    let resolvedStylistId: string | undefined;
+    // stylistId en el DTO es User.id; StylistService.stylistId también almacena User.id
     if (createDto.stylistId) {
-      const stylist = await this.stylistRepository.findByUserId(createDto.stylistId);
-      if (!stylist) {
+      const userWithRole = await this.userRepository.findByIdWithRole(createDto.stylistId);
+      if (!userWithRole) {
         throw new NotFoundError('Stylist', createDto.stylistId);
       }
-      resolvedStylistId = stylist.id;
+      if (!userWithRole.role || userWithRole.role.name !== 'STYLIST') {
+        throw new BusinessRuleError('The specified user is not a stylist');
+      }
     }
 
     // Validar que todos los servicios existen y están activos
@@ -202,10 +203,11 @@ export class CreateAppointment {
     }
 
     // Validar que el estilista ofrezca los servicios seleccionados (si se especifica estilista)
-    if (resolvedStylistId) {
+    // StylistService.stylistId = User.id, por lo que usamos createDto.stylistId directamente
+    if (createDto.stylistId) {
       for (const serviceId of createDto.serviceIds) {
         const assignment = await this.stylistServiceRepository.findByStylistAndService(
-          resolvedStylistId,
+          createDto.stylistId,
           serviceId,
         );
         if (!assignment) {

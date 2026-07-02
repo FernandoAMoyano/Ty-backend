@@ -1,7 +1,6 @@
 import { DeactivateUser } from '../../../src/modules/auth/application/use-cases/DeactivateUser';
 import { IUserRepository } from '../../../src/modules/auth/domain/repositories/IUserRepository';
 import { IRoleRepository } from '../../../src/modules/auth/domain/repositories/IRoleRepository';
-import { IStylistRepository } from '../../../src/modules/services/domain/repositories/IStylistRepository';
 import { IStylistServiceRepository } from '../../../src/modules/services/domain/repositories/IStylistServiceRepository';
 import { IAppointmentRepository } from '../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
 import { IAppointmentStatusRepository } from '../../../src/modules/appointments/domain/repositories/IAppointmentStatusRepository';
@@ -11,7 +10,6 @@ import {
 } from '../../../src/modules/appointments/domain/entities/AppointmentStatus';
 import { User } from '../../../src/modules/auth/domain/entities/User';
 import { Role } from '../../../src/modules/auth/domain/entities/Role';
-import { Stylist } from '../../../src/modules/services/domain/entities/Stylist';
 import { StylistService } from '../../../src/modules/services/domain/entities/StylistService';
 import { Appointment } from '../../../src/modules/appointments/domain/entities/Appointment';
 import { ValidationError } from '../../../src/shared/exceptions/ValidationError';
@@ -23,14 +21,12 @@ describe('DeactivateUser Use Case', () => {
   let useCase: DeactivateUser;
   let mockUserRepository: jest.Mocked<IUserRepository>;
   let mockRoleRepository: jest.Mocked<IRoleRepository>;
-  let mockStylistRepository: jest.Mocked<IStylistRepository>;
   let mockStylistServiceRepository: jest.Mocked<IStylistServiceRepository>;
   let mockAppointmentRepository: jest.Mocked<IAppointmentRepository>;
   let mockAppointmentStatusRepository: jest.Mocked<IAppointmentStatusRepository>;
 
   const validUserId = generateUuid();
   const validRoleId = generateUuid();
-  const validStylistId = generateUuid();
   const pendingStatusId = generateUuid();
   const confirmedStatusId = generateUuid();
   const cancelledStatusId = generateUuid();
@@ -68,7 +64,7 @@ describe('DeactivateUser Use Case', () => {
       generateUuid(),
       generateUuid(),
       statusId,
-      validStylistId,
+      validUserId,
       undefined,
       [generateUuid()],
     );
@@ -76,7 +72,7 @@ describe('DeactivateUser Use Case', () => {
 
   const createMockStylistService = (isOffering: boolean): StylistService => {
     return StylistService.fromPersistence(
-      validStylistId,
+      validUserId,
       generateUuid(),
       undefined,
       isOffering,
@@ -104,16 +100,6 @@ describe('DeactivateUser Use Case', () => {
       save: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
-    };
-
-    mockStylistRepository = {
-      findById: jest.fn(),
-      findByUserId: jest.fn(),
-      findAll: jest.fn(),
-      save: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      existsById: jest.fn(),
     };
 
     mockStylistServiceRepository = {
@@ -168,7 +154,6 @@ describe('DeactivateUser Use Case', () => {
     useCase = new DeactivateUser(
       mockUserRepository,
       mockRoleRepository,
-      mockStylistRepository,
       mockStylistServiceRepository,
       mockAppointmentRepository,
       mockAppointmentStatusRepository,
@@ -242,8 +227,7 @@ describe('DeactivateUser Use Case', () => {
       expect(result.cascadeSummary).toBeUndefined();
       expect(mockUserRepository.update).toHaveBeenCalledWith(user);
       expect(user.isActive).toBe(false);
-      // No debería consultar repositorios de estilista
-      expect(mockStylistRepository.findByUserId).not.toHaveBeenCalled();
+      // No debería consultar repositorios de citas para no-estilistas
       expect(mockAppointmentRepository.findByStylistId).not.toHaveBeenCalled();
     });
   });
@@ -262,7 +246,7 @@ describe('DeactivateUser Use Case', () => {
 
       expect(result.cascadeApplied).toBe(false);
       expect(result.cascadeSummary).toBeUndefined();
-      expect(mockStylistRepository.findByUserId).not.toHaveBeenCalled();
+      expect(mockAppointmentRepository.findByStylistId).not.toHaveBeenCalled();
     });
   });
 
@@ -271,7 +255,6 @@ describe('DeactivateUser Use Case', () => {
     it('should cancel active appointments and deactivate stylist services', async () => {
       const user = createMockUser();
       const role = createMockRole('STYLIST');
-      const stylist = Stylist.fromPersistence(validStylistId, validUserId);
 
       const pendingAppointment = createMockAppointment(pendingStatusId);
       const confirmedAppointment = createMockAppointment(confirmedStatusId);
@@ -284,7 +267,6 @@ describe('DeactivateUser Use Case', () => {
       mockUserRepository.findById.mockResolvedValue(user);
       mockUserRepository.update.mockResolvedValue(user);
       mockRoleRepository.findById.mockResolvedValue(role);
-      mockStylistRepository.findByUserId.mockResolvedValue(stylist);
 
       // Statuses
       mockAppointmentStatusRepository.findByName.mockImplementation(async (name: string) => {
@@ -336,12 +318,10 @@ describe('DeactivateUser Use Case', () => {
     it('should handle stylist with no active appointments or services', async () => {
       const user = createMockUser();
       const role = createMockRole('STYLIST');
-      const stylist = Stylist.fromPersistence(validStylistId, validUserId);
 
       mockUserRepository.findById.mockResolvedValue(user);
       mockUserRepository.update.mockResolvedValue(user);
       mockRoleRepository.findById.mockResolvedValue(role);
-      mockStylistRepository.findByUserId.mockResolvedValue(stylist);
 
       mockAppointmentStatusRepository.findByName.mockImplementation(async (name: string) => {
         if (name === AppointmentStatusEnum.CANCELLED) return new AppointmentStatus(cancelledStatusId, name);
@@ -358,29 +338,6 @@ describe('DeactivateUser Use Case', () => {
       expect(result.cascadeApplied).toBe(true);
       expect(result.cascadeSummary!.appointmentsCancelled).toBe(0);
       expect(result.cascadeSummary!.servicesDeactivated).toBe(0);
-    });
-  });
-
-  describe('Graceful Degradation — STYLIST Without Stylist Record', () => {
-    // Usuario con rol STYLIST pero sin registro en tabla Stylist = cascada vacía sin error
-    it('should deactivate user with empty cascade when no Stylist record exists', async () => {
-      const user = createMockUser();
-      const role = createMockRole('STYLIST');
-
-      mockUserRepository.findById.mockResolvedValue(user);
-      mockUserRepository.update.mockResolvedValue(user);
-      mockRoleRepository.findById.mockResolvedValue(role);
-      mockStylistRepository.findByUserId.mockResolvedValue(null);
-
-      const result = await useCase.execute(validUserId);
-
-      expect(result.cascadeApplied).toBe(true);
-      expect(result.cascadeSummary).toBeDefined();
-      expect(result.cascadeSummary!.appointmentsCancelled).toBe(0);
-      expect(result.cascadeSummary!.servicesDeactivated).toBe(0);
-      // No debería consultar citas ni servicios
-      expect(mockAppointmentRepository.findByStylistId).not.toHaveBeenCalled();
-      expect(mockStylistServiceRepository.findByStylist).not.toHaveBeenCalled();
     });
   });
 

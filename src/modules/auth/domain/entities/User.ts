@@ -14,6 +14,7 @@ export class User {
   public password: string;
   public isActive: boolean;
   public profilePicture?: string;
+  public preferences?: string;
   public readonly createdAt: Date;
   public updatedAt: Date;
 
@@ -27,6 +28,7 @@ export class User {
    * @param password - Contraseña hasheada del usuario
    * @param isActive - Estado de activación de la cuenta
    * @param profilePicture - URL de foto de perfil (opcional)
+   * @param preferences - Preferencias del usuario (opcional, solo para clientes)
    * @param createdAt - Fecha de creación (opcional, default: now)
    * @param updatedAt - Fecha de actualización (opcional, default: now)
    * @throws Error si los datos no cumplen las validaciones de negocio
@@ -40,6 +42,7 @@ export class User {
     password: string,
     isActive: boolean,
     profilePicture?: string,
+    preferences?: string,
     createdAt?: Date,
     updatedAt?: Date,
   ) {
@@ -64,6 +67,7 @@ export class User {
     this.password = password;
     this.isActive = isActive;
     this.profilePicture = profilePicture;
+    this.preferences = preferences;
     this.createdAt = createdAt || new Date();
     this.updatedAt = updatedAt || new Date();
   }
@@ -76,6 +80,7 @@ export class User {
    * @param phone - Número de teléfono
    * @param password - Contraseña hasheada
    * @param profilePicture - URL de foto de perfil (opcional)
+   * @param preferences - Preferencias del usuario (opcional)
    * @returns Nueva instancia de User con ID generado y estado activo
    * @throws Error si los datos no son válidos
    */
@@ -86,6 +91,7 @@ export class User {
     phone: string,
     password: string,
     profilePicture?: string,
+    preferences?: string,
   ): User {
     return new User(
       generateUuid(),
@@ -96,6 +102,7 @@ export class User {
       password,
       true, // Active by default
       profilePicture,
+      preferences,
     );
   }
 
@@ -151,6 +158,15 @@ export class User {
   }
 
   /**
+   * Actualiza las preferencias del usuario
+   * @param preferences - Nuevas preferencias (null para eliminar)
+   */
+  updatePreferences(preferences: string | null): void {
+    this.preferences = preferences ?? undefined;
+    this.updatedAt = new Date();
+  }
+
+  /**
    * Actualiza la contraseña del usuario
    * @param hashedPassword - Nueva contraseña ya hasheada
    * @description Actualiza la contraseña y la fecha de modificación
@@ -175,6 +191,7 @@ export class User {
       password: this.password,
       isActive: this.isActive,
       profilePicture: this.profilePicture,
+      preferences: this.preferences,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
