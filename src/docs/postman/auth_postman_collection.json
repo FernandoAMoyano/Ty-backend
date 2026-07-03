@@ -56,6 +56,7 @@
                   "    pm.test('Usuario registrado correctamente', function () {",
                   "        pm.expect(response.success).to.be.true;",
                   "        pm.expect(response.data.role.name).to.eql('CLIENT');",
+                  "        pm.expect(response.data).to.have.property('preferences');",
                   "    });",
                   "}"
                 ]
@@ -262,6 +263,7 @@
                   "        pm.expect(response.success).to.be.true;",
                   "        pm.expect(response.data).to.have.property('id');",
                   "        pm.expect(response.data).to.have.property('role');",
+                  "        pm.expect(response.data).to.have.property('preferences');",
                   "    });",
                   "}"
                 ]
@@ -748,6 +750,9 @@
           "request": {
             "method": "GET",
             "header": [],
+            "auth": {
+              "type": "noauth"
+            },
             "url": {
               "raw": "{{base_url}}/auth/profile",
               "host": ["{{base_url}}"],
@@ -780,6 +785,9 @@
                 "type": "text"
               }
             ],
+            "auth": {
+              "type": "noauth"
+            },
             "url": {
               "raw": "{{base_url}}/auth/profile",
               "host": ["{{base_url}}"],
