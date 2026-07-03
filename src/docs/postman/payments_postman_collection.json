@@ -48,42 +48,6 @@
       "description": "Setup de autenticación para testing",
       "item": [
         {
-          "name": "Login Admin (Setup)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
-                  "    console.log('✅ Admin login exitoso');",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@turnity.com\",\n  \"password\": \"admin123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "login"]
-            },
-            "description": "Login con admin. Guarda token automáticamente."
-          }
-        },
-        {
           "name": "Login Stylist Lucía (Setup)",
           "event": [
             {
@@ -93,9 +57,8 @@
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('jwt_token', response.data.token);",
-                  "    if (response.data.user.stylist) {",
-                  "        pm.collectionVariables.set('stylist_id', response.data.user.stylist.id);",
-                  "    }",
+                  "    // stylist_id es el User.id del estilista (no un Stylist.id separado)",
+                  "    pm.collectionVariables.set('stylist_id', response.data.user.id);",
                   "    console.log('✅ Estilista Lucía login exitosa');",
                   "}"
                 ]
@@ -168,8 +131,11 @@
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
                   "    if (response.data && response.data.length > 0) {",
-                  "        pm.collectionVariables.set('appointment_id', response.data[0].id);",
-                  "        console.log('✅ Appointment ID guardado:', response.data[0].id);",
+                  "        // Preferir una cita CONFIRMED/COMPLETED (confirmedAt seteado, no cancelada), ya que CreatePayment lo exige",
+                  "        const validAppointment = response.data.find(apt => apt.confirmedAt && !apt.cancelledBy);",
+                  "        const chosen = validAppointment || response.data[0];",
+                  "        pm.collectionVariables.set('appointment_id', chosen.id);",
+                  "        console.log('✅ Appointment ID guardado:', chosen.id, validAppointment ? '(confirmada)' : '(sin confirmar, puede fallar en Create Payment)');",
                   "    } else {",
                   "        console.log('⚠️ No hay citas disponibles');",
                   "    }",
@@ -193,6 +159,42 @@
               "path": ["appointments", "stylist", "{{stylist_id}}"]
             },
             "description": "Obtiene citas del estilista logueado para usar su appointment_id en los tests de pagos. Alternativa: setear appointment_id manualmente."
+          }
+        },
+        {
+          "name": "Login Admin (Setup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    console.log('✅ Admin login exitoso');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@turnity.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login con admin. Guarda token automáticamente. Se ejecuta al final a proposito, para dejar el token de Admin activo antes de las carpetas Payment CRUD y Payment Queries (requieren rol ADMIN o ADMIN/STYLIST)."
           }
         }
       ]
@@ -1353,6 +1355,9 @@
           "request": {
             "method": "GET",
             "header": [],
+            "auth": {
+              "type": "noauth"
+            },
             "url": {
               "raw": "{{base_url}}/payments",
               "host": ["{{base_url}}"],
@@ -1385,6 +1390,9 @@
                 "type": "text"
               }
             ],
+            "auth": {
+              "type": "noauth"
+            },
             "url": {
               "raw": "{{base_url}}/payments",
               "host": ["{{base_url}}"],

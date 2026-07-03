@@ -6,35 +6,25 @@
 
 ## 1. Descripción General
 
-El módulo gestiona la relación entre estilistas y los servicios que ofrecen. Los estilistas se crean automáticamente al registrar un usuario con rol STYLIST. La funcionalidad principal es la asignación de servicios específicos que cada estilista ofrece, con posibilidad de precios personalizados en centavos.
+El módulo gestiona la relación entre estilistas y los servicios que ofrecen. Los estilistas son simplemente usuarios (`User`) con rol STYLIST; no existe un registro ni una creación automática de un perfil separado. La funcionalidad principal es la asignación de servicios específicos que cada estilista ofrece, con posibilidad de precios personalizados en centavos.
 
 ---
 
 ## 2. Entidades
 
-### Stylist
-
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | UUID | Identificador único |
-| userId | UUID | Referencia al User |
-| createdAt | DateTime | Fecha de creación |
-| updatedAt | DateTime | Última actualización |
-
-> **Nota**: La entidad Stylist es un perfil mínimo vinculado al User. No tiene campos adicionales como bio o specialties.
-
 ### StylistService (Asignación de servicios)
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
-| stylistId | UUID | Referencia al Stylist (clave compuesta) |
-| serviceId | UUID | Referencia al Service (clave compuesta) |
+| id | UUID | Identificador único |
+| stylistId | UUID | Referencia al User (User.id de un usuario con rol STYLIST) |
+| serviceId | UUID | Referencia al Service |
 | customPrice | number? | Precio personalizado en centavos (opcional) |
 | isOffering | boolean | Si actualmente ofrece el servicio (default: true) |
 | createdAt | DateTime | Fecha de creación |
 | updatedAt | DateTime | Última actualización |
 
-> **Nota**: StylistService no tiene campo `id` propio. Usa clave compuesta (`stylistId` + `serviceId`).
+> **Nota**: StylistService SÍ tiene campo `id` propio (UUID). `stylistId` y `serviceId` no son clave compuesta.
 
 ---
 
@@ -59,7 +49,7 @@ El módulo gestiona la relación entre estilistas y los servicios que ofrecen. L
 | Regla | Descripción |
 |-------|-------------|
 | Usuario STYLIST | El User asociado al estilista debe tener rol STYLIST (validado en use case) |
-| Estilista válido | El `stylistId` debe existir en la base de datos |
+| Estilista válido | El `stylistId` (User.id) se valida via `IUserRepository.findByIdWithRole()`, verificando que el usuario exista y tenga rol STYLIST |
 | Servicio válido | El `serviceId` debe existir en la base de datos |
 | Relación única | Un estilista solo puede tener una asignación por servicio (ConflictError si duplica) |
 | Estado inicial | Se crea con `isOffering = true` por defecto |
@@ -141,7 +131,7 @@ Todos los endpoints están bajo el prefijo `/api/v1/services`.
 
 ## 7. Relaciones con Otros Módulos
 
-- **Auth**: Cada estilista tiene un User con rol STYLIST
+- **Auth**: Un estilista no es una entidad separada, es un `User` con rol STYLIST. No existe un "perfil Stylist"; toda validación de rol se hace via `IUserRepository.findByIdWithRole()`
 - **Services**: Los estilistas asignan servicios que ofrecen. Solo se pueden asignar servicios activos (`isActive = true`)
 - **Appointments**: Las citas se asignan a estilistas específicos. `CreateAppointment` valida que el estilista ofrezca los servicios seleccionados (`isOffering = true`)
 - **Schedules**: Cada estilista puede tener su propio horario
@@ -150,6 +140,4 @@ Todos los endpoints están bajo el prefijo `/api/v1/services`.
 
 ## 8. Limitaciones Conocidas
 
-| ID | Descripción |
-|----|-------------|
-| ISSUE-17 | La desactivación de un usuario con rol STYLIST (`isActive = false`) no tiene efecto cascada sobre las entidades del estilista. Sus asignaciones StylistService permanecen activas, sus citas pendientes/confirmadas siguen vigentes, y sigue apareciendo en consultas de estilistas por servicio. Se recomienda cancelar manualmente las citas pendientes y desactivar las asignaciones antes de desactivar un estilista |
+_No hay limitaciones conocidas pendientes. El issue ISSUE-17 fue resuelto: la desactivación de un usuario con rol STYLIST ahora ejecuta la cascada completa (cancelación de citas activas y desactivación de asignaciones StylistService)._

@@ -3,7 +3,7 @@ import { NotificationRepository } from '../../../../../src/modules/notifications
 import { Notification, NotificationTypeEnum } from '../../../../../src/modules/notifications/domain/entities/Notification';
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
-import { BusinessRuleError } from '../../../../../src/shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../../../src/shared/exceptions/ForbiddenError';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('GetNotificationById Use Case', () => {
@@ -156,15 +156,15 @@ describe('GetNotificationById Use Case', () => {
   });
 
   describe('Permission Validation', () => {
-    // Debería lanzar BusinessRuleError si el usuario no es propietario
-    it('should throw BusinessRuleError if user is not owner', async () => {
+    // Debería lanzar ForbiddenError si el usuario no es propietario
+    it('should throw ForbiddenError if user is not owner', async () => {
       // Arrange
       const otherUserId = generateUuid();
       const notification = createMockNotification({ userId: otherUserId });
       mockNotificationRepository.findById.mockResolvedValue(notification);
 
       // Act & Assert
-      await expect(useCase.execute(validNotificationId, validUserId)).rejects.toThrow(BusinessRuleError);
+      await expect(useCase.execute(validNotificationId, validUserId)).rejects.toThrow(ForbiddenError);
       await expect(useCase.execute(validNotificationId, validUserId)).rejects.toThrow('You do not have permission to access this notification');
     });
 

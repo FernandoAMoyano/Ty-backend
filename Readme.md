@@ -3,13 +3,13 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?logo=typescript&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-5.x-000000.svg?logo=express&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1.svg?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/Tests-1127%2B%20passing-brightgreen.svg)
+![Tests](https://img.shields.io/badge/Tests-1118%2B%20passing-brightgreen.svg)
 
 # 💇‍♀️ Turnity Backend
 
 Backend API para sistema de gestión de salones de belleza construido con **Node.js**, **TypeScript**, **Express** y **Prisma ORM**.
 
-Implementa **Clean Architecture**, **DDD táctico** y **Arquitectura Hexagonal** (Ports & Adapters) con 7 módulos de negocio, 1127+ tests automatizados y documentación Swagger interactiva.
+Implementa **Clean Architecture**, **DDD táctico** y **Arquitectura Hexagonal** (Ports & Adapters) con 7 módulos de negocio, 1118+ tests automatizados y documentación Swagger interactiva.
 
 ---
 
@@ -301,7 +301,7 @@ GET    /services/category/:categoryId/active   # Servicios activos por categorí
 POST   /services                               # Crear servicio (ADMIN)
 PUT    /services/:id                           # Actualizar servicio (ADMIN)
 PATCH  /services/:id/activate                  # Activar servicio (ADMIN)
-PATCH  /services/:id/deactivate               # Desactivar servicio (ADMIN)
+PATCH  /services/:id/deactivate                # Desactivar servicio (ADMIN)
 DELETE /services/:id                           # Eliminar servicio (ADMIN)
 ```
 
@@ -322,14 +322,14 @@ DELETE /services/stylists/:stylistId/services/:serviceId   # Remover asignación
 ### Appointments
 
 ```
-POST   /appointments                          # Crear nueva cita (autenticado)
+POST   /appointments                           # Crear nueva cita (autenticado)
 GET    /appointments/available-slots           # Obtener slots disponibles (público)
 GET    /appointments/client/:clientId          # Citas de un cliente (autenticado)
 GET    /appointments/stylist/:stylistId        # Citas de un estilista (autenticado)
 GET    /appointments/:id                       # Obtener cita por ID (autenticado)
 PUT    /appointments/:id                       # Actualizar cita (autenticado)
-POST   /appointments/:id/confirm              # Confirmar cita (autenticado)
-POST   /appointments/:id/cancel               # Cancelar cita (autenticado)
+POST   /appointments/:id/confirm               # Confirmar cita (autenticado)
+POST   /appointments/:id/cancel                # Cancelar cita (autenticado)
 ```
 
 ### Payments
@@ -338,12 +338,12 @@ POST   /appointments/:id/cancel               # Cancelar cita (autenticado)
 GET    /payments                               # Listar pagos paginados (ADMIN)
 POST   /payments                               # Crear pago (ADMIN/STYLIST)
 GET    /payments/statistics                    # Estadísticas de pagos (ADMIN)
-GET    /payments/appointment/:appointmentId    # Pagos de una cita (autenticado)
-GET    /payments/:id                           # Obtener pago por ID (autenticado)
+GET    /payments/appointment/:appointmentId    # Pagos de una cita (ADMIN/STYLIST)
+GET    /payments/:id                           # Obtener pago por ID (ADMIN/STYLIST)
 PUT    /payments/:id                           # Actualizar monto (ADMIN)
-POST   /payments/:id/process                  # Procesar pago (ADMIN/STYLIST)
-POST   /payments/:id/refund                   # Reembolsar pago (ADMIN)
-POST   /payments/:id/cancel                   # Cancelar pago (ADMIN/STYLIST)
+POST   /payments/:id/process                   # Procesar pago (ADMIN/STYLIST)
+POST   /payments/:id/refund                    # Reembolsar pago (ADMIN)
+POST   /payments/:id/cancel                    # Cancelar pago (ADMIN/STYLIST)
 ```
 
 ### Holidays
@@ -377,10 +377,10 @@ GET    /holidays/:holidayId/exceptions         # Excepciones de un feriado (púb
 GET    /notifications                          # Notificaciones del usuario (autenticado)
 POST   /notifications                          # Crear notificación (ADMIN)
 GET    /notifications/unread-count             # Conteo de no leídas (autenticado)
-POST   /notifications/mark-read               # Marcar como leídas (autenticado)
-POST   /notifications/mark-all-read           # Marcar todas como leídas (autenticado)
+POST   /notifications/mark-read                # Marcar como leídas (autenticado)
+POST   /notifications/mark-all-read            # Marcar todas como leídas (autenticado)
 GET    /notifications/:id                      # Obtener por ID (autenticado)
-PATCH  /notifications/:id/read                # Marcar una como leída (autenticado)
+PATCH  /notifications/:id/read                 # Marcar una como leída (autenticado)
 ```
 
 ---
@@ -389,7 +389,7 @@ PATCH  /notifications/:id/read                # Marcar una como leída (autentic
 
 [Índice](#índice)
 
-El proyecto cuenta con **1127+ tests** organizados en tres niveles:
+El proyecto cuenta con **1118+ tests** organizados en tres niveles:
 
 ### Estructura de tests
 
@@ -397,7 +397,7 @@ El proyecto cuenta con **1127+ tests** organizados en tres niveles:
 tests/
 ├── unit/                  # Tests unitarios (entidades y use cases)
 │   ├── auth/              # 6 tests: User, Role, AuthService, BcryptHash, JwtToken, DeactivateUser
-│   ├── services/          # 7 tests: Category, Service, Stylist, StylistService + UseCases
+│   ├── services/          # 6 tests: Category, Service, StylistService + UseCases
 │   ├── appointments/      # 12 tests: 3 entidades + 8 use cases + ScheduleAvailabilityService
 │   ├── holidays/          # 12 tests: 2 entidades + 10 use cases
 │   ├── notifications/     # 7 tests: 2 entidades + 5 use cases
@@ -450,23 +450,21 @@ Los tests utilizan la misma base de datos de desarrollo con limpieza selectiva p
 
 ### Entidades
 
-| Entidad                | Módulo        | Descripción                                                     |
-| ---------------------- | ------------- | --------------------------------------------------------------- |
-| **User**               | auth          | Usuarios del sistema con roles diferenciados                    |
-| **Role**               | auth          | Roles del sistema (ADMIN, CLIENT, STYLIST)                      |
-| **Category**           | services      | Categorías de servicios (ej: Corte, Coloración)                 |
-| **Service**            | services      | Servicios ofrecidos con precios y duración                      |
-| **StylistService**     | services      | Relación estilista-servicio con precios personalizados          |
-| **Client**             | services      | Perfil extendido para clientes                                  |
-| **Stylist**            | services      | Perfil extendido para estilistas                                |
-| **Appointment**        | appointments  | Citas entre clientes y estilistas                               |
-| **AppointmentStatus**  | appointments  | Estados de citas (Pendiente, Confirmada, Completada, Cancelada) |
-| **Schedule**           | appointments  | Horarios de disponibilidad por día de semana                    |
-| **Holiday**            | holidays      | Días festivos y fechas especiales                               |
-| **ScheduleException**  | holidays      | Excepciones de horario para fechas específicas                  |
-| **Payment**            | payments      | Pagos de citas con múltiples métodos y estados                  |
-| **Notification**       | notifications | Notificaciones del sistema (citas, promociones, sistema)        |
-| **NotificationStatus** | notifications | Estados de notificaciones (Enviada, Leída)                      |
+| Entidad                | Módulo        | Descripción                                                                             |
+| ---------------------- | ------------- | --------------------------------------------------------------------------------------- |
+| **User**               | auth          | Usuarios del sistema con roles diferenciados (incluye `preferences` opcional)           |
+| **Role**               | auth          | Roles del sistema (ADMIN, CLIENT, STYLIST)                                              |
+| **Category**           | services      | Categorías de servicios (ej: Corte, Coloración)                                         |
+| **Service**            | services      | Servicios ofrecidos con precios y duración                                              |
+| **StylistService**     | services      | Relación estilista-servicio con precios personalizados (`stylistId` apunta a `User.id`) |
+| **Appointment**        | appointments  | Citas entre clientes y estilistas                                                       |
+| **AppointmentStatus**  | appointments  | Estados de citas (Pendiente, Confirmada, Completada, Cancelada)                         |
+| **Schedule**           | appointments  | Horarios de disponibilidad por día de semana                                            |
+| **Holiday**            | holidays      | Días festivos y fechas especiales                                                       |
+| **ScheduleException**  | holidays      | Excepciones de horario para fechas específicas                                          |
+| **Payment**            | payments      | Pagos de citas con múltiples métodos y estados                                          |
+| **Notification**       | notifications | Notificaciones del sistema (citas, promociones, sistema)                                |
+| **NotificationStatus** | notifications | Estados de notificaciones (Enviada, Leída)                                              |
 
 ### Comandos útiles
 

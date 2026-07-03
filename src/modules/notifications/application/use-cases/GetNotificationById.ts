@@ -2,7 +2,7 @@ import { INotificationRepository } from '../../domain/repositories/INotification
 import { NotificationDto } from '../dto/response/NotificationDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
-import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 
 /**
  * Caso de uso para obtener una notificación por su ID
@@ -18,7 +18,7 @@ export class GetNotificationById {
    * @returns Promise con el DTO de la notificación
    * @throws ValidationError si los IDs no son válidos
    * @throws NotFoundError si la notificación no existe
-   * @throws BusinessRuleError si el usuario no tiene permiso
+   * @throws ForbiddenError si el usuario no tiene permiso
    */
   async execute(notificationId: string, requesterId: string): Promise<NotificationDto> {
     // 1. Validar IDs
@@ -34,7 +34,7 @@ export class GetNotificationById {
 
     // 3. Validar permisos (solo el propietario puede ver su notificación)
     if (notification.userId !== requesterId) {
-      throw new BusinessRuleError('You do not have permission to access this notification');
+      throw new ForbiddenError('You do not have permission to access this notification');
     }
 
     // 4. Mapear a DTO

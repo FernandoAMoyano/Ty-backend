@@ -24,6 +24,7 @@ El módulo de autenticación gestiona el registro, login y sesiones de usuarios 
 | isActive | boolean | Estado del usuario |
 | profilePicture | string? | URL de foto de perfil |
 | roleId | UUID | Rol asignado |
+| preferences | string? | Preferencias del usuario (opcional, relevante para clientes) |
 | createdAt | DateTime | Fecha de creación |
 | updatedAt | DateTime | Última actualización |
 
@@ -35,18 +36,6 @@ El módulo de autenticación gestiona el registro, login y sesiones de usuarios 
 | name | RoleName | ADMIN, STYLIST, CLIENT |
 | description | string? | Descripción del rol (opcional) |
 | createdAt | DateTime | Fecha de creación |
-
-### Client (extensión de User)
-
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | UUID | Identificador único |
-| userId | UUID | Referencia al User |
-| preferences | string? | Preferencias del cliente (texto serializado) |
-| createdAt | DateTime | Fecha de creación |
-| updatedAt | DateTime | Última actualización |
-
-> **Nota:** La entidad Stylist pertenece al módulo `services`. Ver `04-stylists.md`.
 
 ---
 
@@ -120,7 +109,6 @@ El módulo de autenticación gestiona el registro, login y sesiones de usuarios 
 | UUID válido | El `userId` debe ser un UUID válido |
 | Cascada STYLIST | Si el usuario tiene rol STYLIST, se ejecutan acciones en cascada: (1) Cancelar todas las citas activas (PENDING/CONFIRMED) con `cancellationReason: 'Stylist deactivated'` y `cancelledBy: 'system'`, (2) Desactivar todas las asignaciones StylistService activas (`isOffering = false`) |
 | Sin cascada otros roles | Para CLIENT y ADMIN no se ejecuta cascada |
-| Graceful degradation | Si el usuario tiene rol STYLIST pero no tiene registro en la tabla Stylist, la cascada retorna conteos en 0 sin lanzar error |
 | Response | Retorna `DeactivateUserResponseDto` con `userId`, `email`, `name`, `cascadeApplied` (boolean) y `cascadeSummary` (conteo de citas canceladas y servicios desactivados) |
 
 ---
@@ -166,7 +154,7 @@ El `AuthMiddleware` protege las rutas que requieren autenticación. Expone dos m
 - **Appointments**: El `userId` se usa para identificar quién crea las citas. Al desactivar un estilista, sus citas activas se cancelan automáticamente
 - **Notifications**: Las notificaciones se envían a usuarios específicos
 - **Payments**: Los pagos están asociados a citas de usuarios
-- **Stylists**: Los usuarios con rol STYLIST tienen un perfil Stylist asociado. Al desactivar un estilista, sus asignaciones StylistService se desactivan (`isOffering = false`)
+- **Stylists**: Los usuarios con rol STYLIST no tienen un perfil separado; el propio `User.id` se usa como `stylistId`. Al desactivar un estilista, la cascada opera directamente sobre `StylistService` y `Appointment` usando `User.id`, desactivando sus asignaciones (`isOffering = false`)
 
 ---
 

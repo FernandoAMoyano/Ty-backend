@@ -5,7 +5,7 @@ import { Notification, NotificationTypeEnum } from '../../../../../src/modules/n
 import { NotificationStatus, NotificationStatusEnum } from '../../../../../src/modules/notifications/domain/entities/NotificationStatus';
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
-import { BusinessRuleError } from '../../../../../src/shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../../../src/shared/exceptions/ForbiddenError';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('MarkNotificationAsRead Use Case', () => {
@@ -201,8 +201,8 @@ describe('MarkNotificationAsRead Use Case', () => {
   });
 
   describe('Permission Validation', () => {
-    // Debería lanzar BusinessRuleError si usuario no es propietario
-    it('should throw BusinessRuleError if user is not owner', async () => {
+    // Debería lanzar ForbiddenError si usuario no es propietario
+    it('should throw ForbiddenError if user is not owner', async () => {
       // Arrange
       const otherUserId = generateUuid();
       const notification = createMockNotification({ userId: otherUserId });
@@ -211,11 +211,11 @@ describe('MarkNotificationAsRead Use Case', () => {
 
       // Act & Assert
       await expect(useCase.execute({ notificationId: validNotificationId }, validUserId))
-        .rejects.toThrow(BusinessRuleError);
+        .rejects.toThrow(ForbiddenError);
     });
 
-    // Debería lanzar BusinessRuleError en executeSingle si usuario no es propietario
-    it('should throw BusinessRuleError in executeSingle if user is not owner', async () => {
+    // Debería lanzar ForbiddenError en executeSingle si usuario no es propietario
+    it('should throw ForbiddenError in executeSingle if user is not owner', async () => {
       // Arrange
       const otherUserId = generateUuid();
       const notification = createMockNotification({ userId: otherUserId });
@@ -224,7 +224,7 @@ describe('MarkNotificationAsRead Use Case', () => {
 
       // Act & Assert
       await expect(useCase.executeSingle(validNotificationId, validUserId))
-        .rejects.toThrow(BusinessRuleError);
+        .rejects.toThrow(ForbiddenError);
     });
   });
 

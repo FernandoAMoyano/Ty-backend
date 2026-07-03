@@ -416,10 +416,15 @@
               "listen": "prerequest",
               "script": {
                 "exec": [
-                  "// Generar fecha/hora 7 días en el futuro a las 10:00",
+                  "// Generar fecha/hora en UTC (coincide con como el servidor valida horario laboral), evitando fines de semana",
                   "const futureDate = new Date();",
-                  "futureDate.setDate(futureDate.getDate() + 7);",
-                  "futureDate.setHours(10, 0, 0, 0);",
+                  "const randomDayOffset = Math.floor(Math.random() * 10) + 7; // 7-16 dias en el futuro",
+                  "futureDate.setUTCDate(futureDate.getUTCDate() + randomDayOffset);",
+                  "const utcDay = futureDate.getUTCDay();",
+                  "if (utcDay === 6) futureDate.setUTCDate(futureDate.getUTCDate() + 2); // sabado -> lunes",
+                  "if (utcDay === 0) futureDate.setUTCDate(futureDate.getUTCDate() + 1); // domingo -> lunes",
+                  "const randomHourUTC = Math.floor(Math.random() * 6) + 10; // 10:00-15:00 UTC, margen seguro dentro de 09:00-18:00",
+                  "futureDate.setUTCHours(randomHourUTC, 0, 0, 0);",
                   "pm.collectionVariables.set('appointment_datetime', futureDate.toISOString());",
                   "console.log('📅 DateTime para cita:', futureDate.toISOString());"
                 ]
@@ -478,10 +483,15 @@
               "listen": "prerequest",
               "script": {
                 "exec": [
-                  "// Generar fecha/hora 8 días en el futuro a las 14:00",
+                  "// Generar fecha/hora en UTC (rango distinto al de Create Appointment), evitando fines de semana",
                   "const futureDate = new Date();",
-                  "futureDate.setDate(futureDate.getDate() + 8);",
-                  "futureDate.setHours(14, 0, 0, 0);",
+                  "const randomDayOffset = Math.floor(Math.random() * 10) + 18; // 18-27 dias en el futuro",
+                  "futureDate.setUTCDate(futureDate.getUTCDate() + randomDayOffset);",
+                  "const utcDay = futureDate.getUTCDay();",
+                  "if (utcDay === 6) futureDate.setUTCDate(futureDate.getUTCDate() + 2); // sabado -> lunes",
+                  "if (utcDay === 0) futureDate.setUTCDate(futureDate.getUTCDate() + 1); // domingo -> lunes",
+                  "const randomHourUTC = Math.floor(Math.random() * 6) + 10; // 10:00-15:00 UTC",
+                  "futureDate.setUTCHours(randomHourUTC, 0, 0, 0);",
                   "pm.collectionVariables.set('appointment_datetime_2', futureDate.toISOString());"
                 ]
               }
@@ -567,10 +577,15 @@
               "listen": "prerequest",
               "script": {
                 "exec": [
-                  "// Nueva fecha/hora 9 días en el futuro a las 11:00",
+                  "// Nueva fecha/hora en UTC (rango distinto a las Create), evitando fines de semana",
                   "const newDate = new Date();",
-                  "newDate.setDate(newDate.getDate() + 9);",
-                  "newDate.setHours(11, 0, 0, 0);",
+                  "const randomDayOffset = Math.floor(Math.random() * 10) + 28; // 28-37 dias en el futuro",
+                  "newDate.setUTCDate(newDate.getUTCDate() + randomDayOffset);",
+                  "const utcDay = newDate.getUTCDay();",
+                  "if (utcDay === 6) newDate.setUTCDate(newDate.getUTCDate() + 2); // sabado -> lunes",
+                  "if (utcDay === 0) newDate.setUTCDate(newDate.getUTCDate() + 1); // domingo -> lunes",
+                  "const randomHourUTC = Math.floor(Math.random() * 6) + 10; // 10:00-15:00 UTC",
+                  "newDate.setUTCHours(randomHourUTC, 0, 0, 0);",
                   "pm.collectionVariables.set('new_appointment_datetime', newDate.toISOString());"
                 ]
               }
@@ -993,6 +1008,9 @@
           "request": {
             "method": "GET",
             "header": [],
+            "auth": {
+              "type": "noauth"
+            },
             "url": {
               "raw": "{{base_url}}/appointments/{{appointment_id}}",
               "host": ["{{base_url}}"],
@@ -1025,6 +1043,9 @@
                 "type": "text"
               }
             ],
+            "auth": {
+              "type": "noauth"
+            },
             "url": {
               "raw": "{{base_url}}/appointments/{{appointment_id}}",
               "host": ["{{base_url}}"],
