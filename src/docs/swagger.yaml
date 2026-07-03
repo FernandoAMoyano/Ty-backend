@@ -115,6 +115,21 @@ paths:
                           email:
                             type: string
                             example: "ana.lopez@example.com"
+                          role:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                example: "123e4567-e89b-12d3-a456-426614174000"
+                              name:
+                                type: string
+                                enum: [ADMIN, CLIENT, STYLIST]
+                                example: "CLIENT"
+                          preferences:
+                            type: string
+                            nullable: true
+                            example: null
+                            description: "Preferencias del usuario (opcional, relevante para clientes)"
         '401':
           $ref: '#/components/responses/Error401'
 
@@ -754,12 +769,7 @@ paths:
       summary: Servicios de un estilista
       security: []
       parameters:
-        - name: stylistId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/StylistIdParam'
       responses:
         '200':
           description: Servicios del estilista obtenidos exitosamente
@@ -785,12 +795,7 @@ paths:
       tags: [Stylist Services]
       summary: Asignar servicio a estilista
       parameters:
-        - name: stylistId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/StylistIdParam'
       requestBody:
         required: true
         content:
@@ -827,12 +832,7 @@ paths:
       summary: Servicios que ofrece activamente
       security: []
       parameters:
-        - name: stylistId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/StylistIdParam'
       responses:
         '200':
           description: Servicios activos del estilista obtenidos exitosamente
@@ -860,12 +860,7 @@ paths:
       summary: Estilista con servicios detallados
       security: []
       parameters:
-        - name: stylistId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/StylistIdParam'
       responses:
         '200':
           description: Estilista con servicios obtenido exitosamente
@@ -881,12 +876,7 @@ paths:
       tags: [Stylist Services]
       summary: Actualizar relación estilista-servicio
       parameters:
-        - name: stylistId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/StylistIdParam'
         - name: serviceId
           in: path
           required: true
@@ -926,12 +916,7 @@ paths:
       tags: [Stylist Services]
       summary: Remover servicio de estilista
       parameters:
-        - name: stylistId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/StylistIdParam'
         - name: serviceId
           in: path
           required: true
@@ -1065,6 +1050,7 @@ paths:
                 stylistId:
                   type: string
                   example: "123e4567-e89b-12d3-a456-426614174000"
+                  description: "ID del estilista asignado (User.id de un usuario con rol STYLIST, opcional)"
                 serviceIds:
                   type: array
                   items:
@@ -1109,6 +1095,7 @@ paths:
         - name: stylistId
           in: query
           required: false
+          description: "ID del estilista para filtrar (User.id de un usuario con rol STYLIST)"
           schema:
             type: string
             example: "123e4567-e89b-12d3-a456-426614174000"
@@ -1148,12 +1135,7 @@ paths:
       tags: [Appointments]
       summary: Obtener citas de un estilista
       parameters:
-        - name: stylistId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "123e4567-e89b-12d3-a456-426614174000"
+        - $ref: '#/components/parameters/StylistIdParam'
       responses:
         '200':
           description: Citas del estilista obtenidas exitosamente
@@ -1213,6 +1195,7 @@ paths:
                 stylistId:
                   type: string
                   example: "123e4567-e89b-12d3-a456-426614174000"
+                  description: "ID del estilista asignado (User.id de un usuario con rol STYLIST, opcional)"
                 serviceIds:
                   type: array
                   items:
@@ -2516,6 +2499,16 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
+  parameters:
+    StylistIdParam:
+      name: stylistId
+      in: path
+      required: true
+      description: "ID del estilista (User.id de un usuario con rol STYLIST, no una entidad Stylist separada)"
+      schema:
+        type: string
+        example: "123e4567-e89b-12d3-a456-426614174000"
+
   schemas:
     SuccessResponse:
       type: object
@@ -2613,6 +2606,7 @@ components:
         stylistId:
           type: string
           example: "123e4567-e89b-12d3-a456-426614174000"
+          description: "ID del estilista (User.id de un usuario con rol STYLIST, no una entidad Stylist separada)"
         serviceId:
           type: string
           example: "123e4567-e89b-12d3-a456-426614174000"
@@ -2675,7 +2669,7 @@ components:
         stylistId:
           type: string
           example: "123e4567-e89b-12d3-a456-426614174000"
-          description: "ID del estilista asignado (opcional)"
+          description: "ID del estilista asignado (User.id de un usuario con rol STYLIST, opcional). No es una entidad Stylist separada."
         scheduleId:
           type: string
           example: "123e4567-e89b-12d3-a456-426614174000"
@@ -2773,7 +2767,7 @@ components:
         stylistId:
           type: string
           example: "123e4567-e89b-12d3-a456-426614174000"
-          description: "ID del estilista para este slot (opcional)"
+          description: "ID del estilista para este slot (User.id de un usuario con rol STYLIST, opcional)"
 
     Payment:
       type: object
