@@ -5,7 +5,7 @@ import { MarkAsReadDto } from '../dto/request/MarkAsReadDto';
 import { NotificationDto } from '../dto/response/NotificationDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
-import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 
 /**
  * Caso de uso para marcar notificaciones como leídas
@@ -24,7 +24,7 @@ export class MarkNotificationAsRead {
    * @returns Promise con el número de notificaciones actualizadas
    * @throws ValidationError si los datos no son válidos
    * @throws NotFoundError si la notificación o estado no existe
-   * @throws BusinessRuleError si el usuario no tiene permiso
+   * @throws ForbiddenError si el usuario no tiene permiso
    */
   async execute(dto: MarkAsReadDto, requesterId: string): Promise<{ updatedCount: number }> {
     // 1. Validar datos de entrada
@@ -67,7 +67,7 @@ export class MarkNotificationAsRead {
 
     // 3. Validar que la notificación pertenece al usuario
     if (notification.userId !== requesterId) {
-      throw new BusinessRuleError('You do not have permission to access this notification');
+      throw new ForbiddenError('You do not have permission to access this notification');
     }
 
     // 4. Obtener el estado READ
@@ -169,7 +169,7 @@ export class MarkNotificationAsRead {
    * @param notificationIds - IDs de notificaciones a validar
    * @param userId - ID del usuario propietario esperado
    * @throws NotFoundError si alguna notificación no existe
-   * @throws BusinessRuleError si alguna notificación no pertenece al usuario
+   * @throws ForbiddenError si alguna notificación no pertenece al usuario
    */
   private async validateNotificationsOwnership(
     notificationIds: string[],
@@ -183,7 +183,7 @@ export class MarkNotificationAsRead {
       }
       
       if (notification.userId !== userId) {
-        throw new BusinessRuleError(
+        throw new ForbiddenError(
           `You do not have permission to access notification ${id}`,
         );
       }
