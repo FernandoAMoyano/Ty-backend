@@ -1,0 +1,647 @@
+{
+  "info": {
+    "_postman_id": "holidays-collection-v1",
+    "name": "Turnity - Holidays & Schedule Exceptions",
+    "description": "Colección de endpoints para el módulo de feriados y excepciones de horario de Turnity Backend.\n\n## Permisos\n- **Consultas (GET)**: Públicas\n- **Creación, actualización, eliminación**: Solo ADMIN\n\n## Entidades\n- **Holiday**: Días feriados donde el salón no opera\n- **ScheduleException**: Excepciones puntuales de horario (horarios reducidos, especiales, etc.)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1"
+    },
+    {
+      "key": "jwt_token",
+      "value": ""
+    },
+    {
+      "key": "holiday_id",
+      "value": ""
+    },
+    {
+      "key": "exception_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication Setup",
+      "description": "Autenticación requerida para operaciones de escritura",
+      "item": [
+        {
+          "name": "Login as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', jsonData.data.token);",
+                  "    console.log('Token saved successfully');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@turnity.com\",\n    \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Autentica como admin para obtener el JWT token necesario para crear, actualizar y eliminar feriados."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Holiday CRUD",
+      "description": "Operaciones CRUD para feriados",
+      "item": [
+        {
+          "name": "Create Holiday",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('holiday_id', jsonData.data.id);",
+                  "    console.log('Holiday ID saved:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Navidad\",\n    \"date\": \"2025-12-25\",\n    \"description\": \"Día de Navidad - Salón cerrado\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/holidays",
+              "host": ["{{base_url}}"],
+              "path": ["holidays"]
+            },
+            "description": "Crea un nuevo feriado (solo Admin)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Holidays",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/holidays?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["holidays"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "10"},
+                {"key": "year", "value": "", "disabled": true},
+                {"key": "month", "value": "", "disabled": true},
+                {"key": "name", "value": "", "disabled": true}
+              ]
+            },
+            "description": "Lista todos los feriados con paginación y filtros opcionales. Endpoint público."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Holiday by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/holidays/{{holiday_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "{{holiday_id}}"]
+            },
+            "description": "Obtiene un feriado específico por su ID. Endpoint público."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Upcoming Holidays",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/holidays/upcoming?limit=5",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "upcoming"],
+              "query": [
+                {"key": "limit", "value": "5"}
+              ]
+            },
+            "description": "Obtiene los próximos feriados (futuros). Endpoint público."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Holidays by Year",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/holidays/year/2025",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "year", "2025"]
+            },
+            "description": "Obtiene todos los feriados de un año específico. Endpoint público."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Is Holiday",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/holidays/check/2025-12-25",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "check", "2025-12-25"]
+            },
+            "description": "Verifica si una fecha específica es feriado. Retorna isHoliday true/false y los datos del feriado si existe."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Holiday",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Navidad Actualizada\",\n    \"description\": \"Nueva descripción de Navidad\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/holidays/{{holiday_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "{{holiday_id}}"]
+            },
+            "description": "Actualiza un feriado existente (solo Admin)."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Holiday",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/holidays/{{holiday_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "{{holiday_id}}"]
+            },
+            "description": "Elimina un feriado y todas sus excepciones asociadas (solo Admin)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Schedule Exceptions",
+      "description": "Operaciones para excepciones de horario",
+      "item": [
+        {
+          "name": "Create Schedule Exception",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('exception_id', jsonData.data.id);",
+                  "    console.log('Exception ID saved:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"exceptionDate\": \"2025-12-24\",\n    \"startTimeException\": \"09:00\",\n    \"endTimeException\": \"14:00\",\n    \"reason\": \"Horario reducido de Nochebuena\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/holidays/exceptions",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "exceptions"]
+            },
+            "description": "Crea una nueva excepción de horario (solo Admin)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Exception with Holiday",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"exceptionDate\": \"2025-12-25\",\n    \"startTimeException\": \"00:00\",\n    \"endTimeException\": \"23:59\",\n    \"reason\": \"Salón cerrado por Navidad\",\n    \"holidayId\": \"{{holiday_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/holidays/exceptions",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "exceptions"]
+            },
+            "description": "Crea una excepción asociada a un feriado específico."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Exceptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/holidays/exceptions?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "exceptions"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "10"},
+                {"key": "startDate", "value": "", "disabled": true},
+                {"key": "endDate", "value": "", "disabled": true},
+                {"key": "holidayId", "value": "", "disabled": true}
+              ]
+            },
+            "description": "Lista todas las excepciones de horario con paginación y filtros. Endpoint público."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Exception by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/holidays/exceptions/{{exception_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "exceptions", "{{exception_id}}"]
+            },
+            "description": "Obtiene una excepción específica por su ID. Endpoint público."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Upcoming Exceptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/holidays/exceptions/upcoming?limit=5",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "exceptions", "upcoming"],
+              "query": [
+                {"key": "limit", "value": "5"}
+              ]
+            },
+            "description": "Obtiene las próximas excepciones de horario. Endpoint público."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Exceptions by Holiday",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/holidays/{{holiday_id}}/exceptions",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "{{holiday_id}}", "exceptions"]
+            },
+            "description": "Obtiene todas las excepciones asociadas a un feriado específico. Endpoint público."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Exception",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"startTimeException\": \"10:00\",\n    \"endTimeException\": \"15:00\",\n    \"reason\": \"Horario actualizado\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/holidays/exceptions/{{exception_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "exceptions", "{{exception_id}}"]
+            },
+            "description": "Actualiza una excepción de horario (solo Admin)."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Exception",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/holidays/exceptions/{{exception_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "exceptions", "{{exception_id}}"]
+            },
+            "description": "Elimina una excepción de horario (solo Admin)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Complete Flow",
+      "description": "Flujo completo de prueba",
+      "item": [
+        {
+          "name": "Step 1 - Create Holiday",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Holiday created successfully', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('holiday_id', jsonData.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{jwt_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test Holiday Flow\",\n    \"date\": \"2099-06-15\",\n    \"description\": \"Holiday for testing complete flow\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/holidays",
+              "host": ["{{base_url}}"],
+              "path": ["holidays"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2 - Create Exception",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Exception created successfully', function() {",
+                  "    pm.response.to.have.status(201);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('exception_id', jsonData.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{jwt_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"exceptionDate\": \"2099-06-15\",\n    \"startTimeException\": \"09:00\",\n    \"endTimeException\": \"18:00\",\n    \"reason\": \"Exception for test holiday\",\n    \"holidayId\": \"{{holiday_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/holidays/exceptions",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "exceptions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3 - Verify Holiday",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Holiday verification successful', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.isHoliday).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/holidays/check/2099-06-15",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "check", "2099-06-15"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 4 - Cleanup Holiday (cascades exceptions)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Holiday deleted successfully', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{jwt_token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/holidays/{{holiday_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "{{holiday_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Error Testing",
+      "description": "Pruebas de errores y validaciones",
+      "item": [
+        {
+          "name": "Create Holiday without Auth (should fail 401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Unauthorized Holiday\",\n    \"date\": \"2025-07-04\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/holidays",
+              "host": ["{{base_url}}"],
+              "path": ["holidays"]
+            },
+            "description": "Intenta crear un feriado sin autenticación. Debería fallar con 401."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Holiday without Name (should fail 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{jwt_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"date\": \"2025-08-15\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/holidays",
+              "host": ["{{base_url}}"],
+              "path": ["holidays"]
+            },
+            "description": "Intenta crear un feriado sin nombre. Debería fallar con 400."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Exception with Invalid Time (should fail 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{jwt_token}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"exceptionDate\": \"2025-09-01\",\n    \"startTimeException\": \"25:00\",\n    \"endTimeException\": \"14:00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/holidays/exceptions",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "exceptions"]
+            },
+            "description": "Intenta crear una excepción con hora inválida. Debería fallar con 400."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Non-existent Holiday (should fail 404/500)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/holidays/00000000-0000-4000-8000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "00000000-0000-4000-8000-000000000000"]
+            },
+            "description": "Intenta obtener un feriado que no existe."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
