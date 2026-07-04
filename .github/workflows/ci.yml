@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-and-test:
+    name: Lint, Build & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_USER: turnity_ci
+          POSTGRES_PASSWORD: turnity_ci
+          POSTGRES_DB: turnity_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U turnity_ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      NODE_ENV: test
+      PORT: 3000
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USERNAME: turnity_ci
+      DB_PASSWORD: turnity_ci
+      DB_DATABASE: turnity_ci
+      DATABASE_URL: postgresql://turnity_ci:turnity_ci@localhost:5432/turnity_ci?schema=public
+      TEST_DATABASE_URL: postgresql://turnity_ci:turnity_ci@localhost:5432/turnity_ci?schema=public
+      JWT_ACCESS_SECRET: ci_access_secret_for_testing_only
+      JWT_REFRESH_SECRET: ci_refresh_secret_for_testing_only
+      JWT_ACCESS_EXPIRY: 15m
+      JWT_REFRESH_EXPIRY: 7d
+      FRONTEND_URL: http://localhost:3000
+      MAIL_HOST: smtp.example.com
+      MAIL_PORT: 587
+      MAIL_USER: ci@example.com
+      MAIL_PASSWORD: ci_password_not_real
+      MAIL_FROM: noreply@example.com
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check & build
+        run: npm run build
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Seed database
+        run: npx prisma db seed
+
+      - name: Run test suite
+        run: npm test

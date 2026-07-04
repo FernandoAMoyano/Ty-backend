@@ -4,8 +4,8 @@ import { GetServiceById } from '../../../src/modules/services/application/use-ca
 import { GetServicesByCategory } from '../../../src/modules/services/application/use-cases/GetServicesByCategory';
 import { ActivateService } from '../../../src/modules/services/application/use-cases/ActivateService';
 import { DeleteService } from '../../../src/modules/services/application/use-cases/DeleteService';
-import { ServiceRepository } from '../../../src/modules/services/domain/repositories/ServiceRepository';
-import { CategoryRepository } from '../../../src/modules/services/domain/repositories/CategoryRepository';
+import { IServiceRepository } from '../../../src/modules/services/domain/repositories/IServiceRepository';
+import { ICategoryRepository } from '../../../src/modules/services/domain/repositories/ICategoryRepository';
 import { Service } from '../../../src/modules/services/domain/entities/Service';
 import { Category } from '../../../src/modules/services/domain/entities/Category';
 import { ValidationError } from '../../../src/shared/exceptions/ValidationError';
@@ -15,8 +15,8 @@ import { BusinessRuleError } from '../../../src/shared/exceptions/BusinessRuleEr
 import { IAppointmentRepository } from '../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
 
 describe('Service Use Cases', () => {
-  let mockServiceRepository: jest.Mocked<ServiceRepository>;
-  let mockCategoryRepository: jest.Mocked<CategoryRepository>;
+  let mockServiceRepository: jest.Mocked<IServiceRepository>;
+  let mockCategoryRepository: jest.Mocked<ICategoryRepository>;
 
   beforeEach(() => {
     mockServiceRepository = {
