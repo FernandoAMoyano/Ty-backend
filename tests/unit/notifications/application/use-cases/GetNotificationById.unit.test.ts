@@ -1,5 +1,5 @@
 import { GetNotificationById } from '../../../../../src/modules/notifications/application/use-cases/GetNotificationById';
-import { NotificationRepository } from '../../../../../src/modules/notifications/domain/repositories/NotificationRepository';
+import { INotificationRepository } from '../../../../../src/modules/notifications/domain/repositories/INotificationRepository';
 import { Notification, NotificationTypeEnum } from '../../../../../src/modules/notifications/domain/entities/Notification';
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
@@ -8,7 +8,7 @@ import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('GetNotificationById Use Case', () => {
   let useCase: GetNotificationById;
-  let mockNotificationRepository: jest.Mocked<NotificationRepository>;
+  let mockNotificationRepository: jest.Mocked<INotificationRepository>;
 
   const validNotificationId = generateUuid();
   const validUserId = generateUuid();

@@ -1,6 +1,6 @@
 import { GetUnreadCount } from '../../../../../src/modules/notifications/application/use-cases/GetUnreadCount';
-import { NotificationRepository } from '../../../../../src/modules/notifications/domain/repositories/NotificationRepository';
-import { NotificationStatusRepository } from '../../../../../src/modules/notifications/domain/repositories/NotificationStatusRepository';
+import { INotificationRepository } from '../../../../../src/modules/notifications/domain/repositories/INotificationRepository';
+import { INotificationStatusRepository } from '../../../../../src/modules/notifications/domain/repositories/INotificationStatusRepository';
 import { Notification, NotificationTypeEnum } from '../../../../../src/modules/notifications/domain/entities/Notification';
 import { NotificationStatus, NotificationStatusEnum } from '../../../../../src/modules/notifications/domain/entities/NotificationStatus';
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
@@ -8,8 +8,8 @@ import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('GetUnreadCount Use Case', () => {
   let useCase: GetUnreadCount;
-  let mockNotificationRepository: jest.Mocked<NotificationRepository>;
-  let mockNotificationStatusRepository: jest.Mocked<NotificationStatusRepository>;
+  let mockNotificationRepository: jest.Mocked<INotificationRepository>;
+  let mockNotificationStatusRepository: jest.Mocked<INotificationStatusRepository>;
 
   const validUserId = generateUuid();
   const readStatusId = generateUuid();

@@ -6,7 +6,7 @@ import { GetActiveCategories } from '../../../src/modules/services/application/u
 import { ActivateCategory } from '../../../src/modules/services/application/use-cases/ActivateCategory';
 import { DeactivateCategory } from '../../../src/modules/services/application/use-cases/DeactivateCategory';
 import { DeleteCategory } from '../../../src/modules/services/application/use-cases/DeleteCategory';
-import { CategoryRepository } from '../../../src/modules/services/domain/repositories/CategoryRepository';
+import { ICategoryRepository } from '../../../src/modules/services/domain/repositories/ICategoryRepository';
 import { Category } from '../../../src/modules/services/domain/entities/Category';
 import { ValidationError } from '../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../src/shared/exceptions/NotFoundError';
@@ -14,7 +14,7 @@ import { ConflictError } from '../../../src/shared/exceptions/ConflictError';
 import { BusinessRuleError } from '../../../src/shared/exceptions/BusinessRuleError';
 
 describe('Category Use Cases', () => {
-  let mockCategoryRepository: jest.Mocked<CategoryRepository>;
+  let mockCategoryRepository: jest.Mocked<ICategoryRepository>;
   let mockServiceRepository: any;
 
   beforeEach(() => {
