@@ -25,12 +25,9 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/tests/setup/jest.setup.ts'],
   testTimeout: 30000,
 
-  // Environment
-  testEnvironmentOptions: {
-    NODE_ENV: 'test',
-    LOG_LEVEL: 'silent',
-    PRISMA_LOG_LEVEL: 'silent',
-  },
+  // NOTA: testEnvironmentOptions NO setea process.env -- se pasa al constructor
+  // del entorno de test (sandbox de jest-environment-node), no al proceso real.
+  // NODE_ENV=test se fuerza correctamente en tests/setup/jest.setup.ts en su lugar.
 
   // Ignore patterns
   testPathIgnorePatterns: ['/node_modules/', '/dist/', '/coverage/', '/prisma/migrations/'],
