@@ -29,6 +29,7 @@ import { PrismaScheduleExceptionRepository } from '../holidays/infrastructure/pe
 
 // Servicios de dominio
 import { ScheduleAvailabilityService } from './domain/services/ScheduleAvailabilityService';
+import { UserRoleValidationService } from '../auth/domain/services/UserRoleValidationService';
 
 // Casos de uso
 import { CreateAppointment } from './application/use-cases/CreateAppointment';
@@ -126,15 +127,18 @@ export class AppointmentContainer {
       this._scheduleRepository,
     );
 
+    // Servicio de dominio de validacion de rol de usuario (compartido entre use cases)
+    const userRoleValidationService = new UserRoleValidationService(this._userRepository);
+
     // Casos de uso implementados
     this._createAppointment = new CreateAppointment(
       this._appointmentRepository,
       this._appointmentStatusRepository,
       this._scheduleRepository,
       this._serviceRepository,
-      this._userRepository,
       this._stylistServiceRepository,
       scheduleAvailabilityService,
+      userRoleValidationService,
     );
 
     this._getAppointmentById = new GetAppointmentById(this._appointmentRepository);
@@ -163,7 +167,7 @@ export class AppointmentContainer {
       this._appointmentRepository,
       this._appointmentStatusRepository,
       this._serviceRepository,
-      this._userRepository,
+      userRoleValidationService,
     );
 
     // HTTP Layer - Inyectamos los casos de uso implementados

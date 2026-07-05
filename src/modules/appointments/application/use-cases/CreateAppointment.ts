@@ -3,8 +3,9 @@ import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRe
 import { IAppointmentStatusRepository } from '../../domain/repositories/IAppointmentStatusRepository';
 import { IScheduleRepository } from '../../domain/repositories/IScheduleRepository';
 import { IServiceRepository } from '../../../services/domain/repositories/IServiceRepository';
-import { IUserRepository } from '../../../auth/domain/repositories/IUserRepository';
 import { IStylistServiceRepository } from '../../../services/domain/repositories/IStylistServiceRepository';
+import { UserRoleValidationService } from '../../../auth/domain/services/UserRoleValidationService';
+import { RoleName } from '@prisma/client';
 import { CreateAppointmentDto } from '../dto/request/CreateAppointmentDto';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
@@ -26,9 +27,9 @@ export class CreateAppointment {
     private appointmentStatusRepository: IAppointmentStatusRepository,
     private scheduleRepository: IScheduleRepository,
     private serviceRepository: IServiceRepository,
-    private userRepository: IUserRepository,
     private stylistServiceRepository: IStylistServiceRepository,
     private scheduleAvailabilityService: ScheduleAvailabilityService,
+    private userRoleValidationService: UserRoleValidationService,
   ) {}
 
   /**
@@ -179,16 +180,15 @@ export class CreateAppointment {
    * @throws BusinessRuleError si un servicio está inactivo o el estilista no lo ofrece
    */
   private async validateRelatedEntities(createDto: CreateAppointmentDto): Promise<void> {
+    // Validar que el cliente existe y tiene rol CLIENT
+    // Cierra el gap historico: a diferencia de stylistId, clientId nunca se validaba
+    // en la capa de aplicacion (solo la FK de Prisma a nivel de base de datos)
+    await this.userRoleValidationService.ensureUserHasRole(createDto.clientId, RoleName.CLIENT);
+
     // Validar que el estilista existe (si se proporciona)
     // stylistId en el DTO es User.id; StylistService.stylistId también almacena User.id
     if (createDto.stylistId) {
-      const userWithRole = await this.userRepository.findByIdWithRole(createDto.stylistId);
-      if (!userWithRole) {
-        throw new NotFoundError('Stylist', createDto.stylistId);
-      }
-      if (!userWithRole.role || userWithRole.role.name !== 'STYLIST') {
-        throw new BusinessRuleError('The specified user is not a stylist');
-      }
+      await this.userRoleValidationService.ensureUserHasRole(createDto.stylistId, RoleName.STYLIST);
     }
 
     // Validar que todos los servicios existen y están activos

@@ -2,7 +2,7 @@ import { UpdateAppointment } from '../../../../../src/modules/appointments/appli
 import { IAppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
 import { IAppointmentStatusRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentStatusRepository';
 import { IServiceRepository } from '../../../../../src/modules/services/domain/repositories/IServiceRepository';
-import { IUserRepository } from '../../../../../src/modules/auth/domain/repositories/IUserRepository';
+import { UserRoleValidationService } from '../../../../../src/modules/auth/domain/services/UserRoleValidationService';
 import { Appointment } from '../../../../../src/modules/appointments/domain/entities/Appointment';
 import {
   AppointmentStatus,
@@ -21,7 +21,7 @@ describe('UpdateAppointment Use Case', () => {
   let mockAppointmentRepository: jest.Mocked<IAppointmentRepository>;
   let mockAppointmentStatusRepository: jest.Mocked<IAppointmentStatusRepository>;
   let mockServiceRepository: jest.Mocked<IServiceRepository>;
-  let mockUserRepository: jest.Mocked<IUserRepository>;
+  let mockUserRoleValidationService: jest.Mocked<UserRoleValidationService>;
 
   const getFutureDate = (hoursFromNow: number = 48): Date => {
     const future = new Date();
@@ -112,19 +112,6 @@ describe('UpdateAppointment Use Case', () => {
     } as unknown as Service;
   };
 
-  const createMockStylistUser = (id: string = generateUuid()): any => {
-    return {
-      id,
-      roleId: 'stylist-role-id',
-      name: 'Test Stylist',
-      email: 'stylist@test.com',
-      phone: '+1234567890',
-      password: 'hashed',
-      isActive: true,
-      role: { id: 'stylist-role-id', name: 'STYLIST', description: 'Estilista' },
-    };
-  };
-
   const setupBasicSuccessfulMocks = (appointment: Appointment) => {
     const confirmedStatus = createMockAppointmentStatus(
       AppointmentStatusEnum.CONFIRMED,
@@ -185,24 +172,17 @@ describe('UpdateAppointment Use Case', () => {
       existsById: jest.fn(),
       existsByName: jest.fn(),
     } as unknown as jest.Mocked<IServiceRepository>;
-    mockUserRepository = {
-      findById: jest.fn(),
-      findByIdWithRole: jest.fn(),
-      findByEmail: jest.fn(),
-      findByEmailWithRole: jest.fn(),
-      existsByEmail: jest.fn(),
-      save: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      findAll: jest.fn(),
-      findByRole: jest.fn(),
-    } as unknown as jest.Mocked<IUserRepository>;
+
+    // Mock de UserRoleValidationService (reemplaza el chequeo manual de rol via IUserRepository)
+    mockUserRoleValidationService = {
+      ensureUserHasRole: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<UserRoleValidationService>;
 
     useCase = new UpdateAppointment(
       mockAppointmentRepository,
       mockAppointmentStatusRepository,
       mockServiceRepository,
-      mockUserRepository,
+      mockUserRoleValidationService,
     );
   });
 
@@ -228,7 +208,6 @@ describe('UpdateAppointment Use Case', () => {
       jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
       jest.spyOn(appointment, 'isConfirmed').mockReturnValue(true);
       setupBasicSuccessfulMocks(appointment);
-      mockUserRepository.findByIdWithRole.mockResolvedValue(createMockStylistUser(validNewStylistId));
       mockServiceRepository.findById.mockResolvedValue(createMockService(validNewServiceId));
 
       const result = await useCase.execute(
@@ -258,7 +237,7 @@ describe('UpdateAppointment Use Case', () => {
       );
 
       expect(result.id).toBe(appointment.id);
-      expect(mockUserRepository.findByIdWithRole).not.toHaveBeenCalled();
+      expect(mockUserRoleValidationService.ensureUserHasRole).not.toHaveBeenCalled();
     });
 
     it('should allow update by assigned stylist', async () => {
@@ -445,7 +424,9 @@ describe('UpdateAppointment Use Case', () => {
       jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
       setupBasicSuccessfulMocks(appointment);
       const invalidStylistDto: UpdateAppointmentDto = { stylistId: validNewStylistId };
-      mockUserRepository.findByIdWithRole.mockResolvedValue(null);
+      mockUserRoleValidationService.ensureUserHasRole.mockRejectedValue(
+        new NotFoundError('Stylist', validNewStylistId),
+      );
 
       await expect(
         useCase.execute(validAppointmentId, invalidStylistDto, validRequesterId, adminRole),

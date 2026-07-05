@@ -1,10 +1,11 @@
+import { RoleName } from '@prisma/client';
 import { CreateAppointment } from '../../../../../src/modules/appointments/application/use-cases/CreateAppointment';
 import { IAppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
 import { IAppointmentStatusRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentStatusRepository';
 import { IScheduleRepository } from '../../../../../src/modules/appointments/domain/repositories/IScheduleRepository';
 import { IServiceRepository } from '../../../../../src/modules/services/domain/repositories/IServiceRepository';
-import { IUserRepository } from '../../../../../src/modules/auth/domain/repositories/IUserRepository';
 import { IStylistServiceRepository } from '../../../../../src/modules/services/domain/repositories/IStylistServiceRepository';
+import { UserRoleValidationService } from '../../../../../src/modules/auth/domain/services/UserRoleValidationService';
 import { Appointment } from '../../../../../src/modules/appointments/domain/entities/Appointment';
 import { AppointmentStatus } from '../../../../../src/modules/appointments/domain/entities/AppointmentStatus';
 import { Schedule } from '../../../../../src/modules/appointments/domain/entities/Schedule';
@@ -23,9 +24,9 @@ describe('CreateAppointment Use Case', () => {
   let mockAppointmentStatusRepository: jest.Mocked<IAppointmentStatusRepository>;
   let mockScheduleRepository: jest.Mocked<IScheduleRepository>;
   let mockServiceRepository: jest.Mocked<IServiceRepository>;
-  let mockUserRepository: jest.Mocked<IUserRepository>;
   let mockStylistServiceRepository: jest.Mocked<IStylistServiceRepository>;
   let mockScheduleAvailabilityService: jest.Mocked<ScheduleAvailabilityService>;
+  let mockUserRoleValidationService: jest.Mocked<UserRoleValidationService>;
 
   // Utilidades de fecha dinámicas y mantenibles
   const getNextMonday = (hoursFromNow: number = 48): Date => {
@@ -147,19 +148,6 @@ describe('CreateAppointment Use Case', () => {
     } as unknown as Service;
   };
 
-  const createMockStylistUser = (id: string = validStylistId): any => {
-    return {
-      id,
-      roleId: 'stylist-role-id',
-      name: 'Test Stylist',
-      email: 'stylist@test.com',
-      phone: '+1234567890',
-      password: 'hashed',
-      isActive: true,
-      role: { id: 'stylist-role-id', name: 'STYLIST', description: 'Estilista' },
-    };
-  };
-
   const createMockSchedule = (
     dayOfWeek: string = 'MONDAY',
     id: string = validScheduleId,
@@ -184,7 +172,6 @@ describe('CreateAppointment Use Case', () => {
   // Helper para configurar mocks exitosos básicos
   const setupBasicSuccessfulMocks = (appointment: Appointment = createMockAppointment()) => {
     const pendingStatus = createMockAppointmentStatus('Pendiente');
-    const stylistUser = createMockStylistUser(validStylistId);
     const service = createMockService(validServiceId1, 60);
     const schedule = createMockSchedule('MONDAY');
     const stylistService = {
@@ -197,7 +184,6 @@ describe('CreateAppointment Use Case', () => {
     };
 
     mockAppointmentStatusRepository.findByName.mockResolvedValue(pendingStatus);
-    mockUserRepository.findByIdWithRole.mockResolvedValue(stylistUser);
     mockServiceRepository.findById.mockResolvedValue(service);
     mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(stylistService as any);
     mockScheduleRepository.findAll.mockResolvedValue([schedule]);
@@ -279,20 +265,6 @@ describe('CreateAppointment Use Case', () => {
       existsByName: jest.fn(),
     } as unknown as jest.Mocked<IServiceRepository>;
 
-    // Mock de UserRepository (reemplaza IStylistRepository)
-    mockUserRepository = {
-      findById: jest.fn(),
-      findByIdWithRole: jest.fn(),
-      findByEmail: jest.fn(),
-      findByEmailWithRole: jest.fn(),
-      existsByEmail: jest.fn(),
-      save: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      findAll: jest.fn(),
-      findByRole: jest.fn(),
-    } as unknown as jest.Mocked<IUserRepository>;
-
     mockStylistServiceRepository = {
       findByStylistAndService: jest.fn(),
       findByStylist: jest.fn(),
@@ -314,14 +286,21 @@ describe('CreateAppointment Use Case', () => {
       isDayClosed: jest.fn().mockResolvedValue(false),
     } as unknown as jest.Mocked<ScheduleAvailabilityService>;
 
+    // Mock de UserRoleValidationService (reemplaza el chequeo manual de rol via IUserRepository)
+    // Por defecto resuelve exitosamente para clientId y stylistId; los tests que necesiten
+    // simular un fallo puntual sobreescriben mockImplementation discriminando por roleName.
+    mockUserRoleValidationService = {
+      ensureUserHasRole: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<UserRoleValidationService>;
+
     useCase = new CreateAppointment(
       mockAppointmentRepository,
       mockAppointmentStatusRepository,
       mockScheduleRepository,
       mockServiceRepository,
-      mockUserRepository,
       mockStylistServiceRepository,
       mockScheduleAvailabilityService,
+      mockUserRoleValidationService,
     );
   });
 
@@ -448,10 +427,56 @@ describe('CreateAppointment Use Case', () => {
     });
   });
 
+  describe('Client Role Validation', () => {
+    // Debería lanzar NotFoundError cuando el cliente no existe
+    // Cierra el gap historico: a diferencia de stylistId, clientId nunca se validaba
+    it('should throw NotFoundError when client does not exist', async () => {
+      mockUserRoleValidationService.ensureUserHasRole.mockImplementation(async (_userId, roleName) => {
+        if (roleName === RoleName.CLIENT) {
+          throw new NotFoundError('Client', validClientId);
+        }
+      });
+
+      await expect(useCase.execute(validCreateDto, validUserId)).rejects.toThrow(
+        new NotFoundError('Client', validClientId),
+      );
+    });
+
+    // Debería lanzar BusinessRuleError cuando el usuario especificado como cliente no tiene rol CLIENT
+    it('should throw BusinessRuleError when specified user is not a client', async () => {
+      mockUserRoleValidationService.ensureUserHasRole.mockImplementation(async (_userId, roleName) => {
+        if (roleName === RoleName.CLIENT) {
+          throw new BusinessRuleError('The specified user is not a client');
+        }
+      });
+
+      await expect(useCase.execute(validCreateDto, validUserId)).rejects.toThrow(
+        new BusinessRuleError('The specified user is not a client'),
+      );
+    });
+
+    // Debería validar clientId incluso cuando no se proporciona stylistId
+    it('should validate clientId even when stylistId is not provided', async () => {
+      mockUserRoleValidationService.ensureUserHasRole.mockImplementation(async (_userId, roleName) => {
+        if (roleName === RoleName.CLIENT) {
+          throw new NotFoundError('Client', validClientId);
+        }
+      });
+
+      await expect(useCase.execute(minimalCreateDto, validUserId)).rejects.toThrow(
+        new NotFoundError('Client', validClientId),
+      );
+    });
+  });
+
   describe('Not Found Handling', () => {
     // Debería lanzar NotFoundError cuando el estilista no existe
     it('should throw NotFoundError when stylist does not exist', async () => {
-      mockUserRepository.findByIdWithRole.mockResolvedValue(null);
+      mockUserRoleValidationService.ensureUserHasRole.mockImplementation(async (_userId, roleName) => {
+        if (roleName === RoleName.STYLIST) {
+          throw new NotFoundError('Stylist', validStylistId);
+        }
+      });
 
       await expect(useCase.execute(validCreateDto, validUserId)).rejects.toThrow(
         new NotFoundError('Stylist', validStylistId),
@@ -460,9 +485,6 @@ describe('CreateAppointment Use Case', () => {
 
     // Debería lanzar NotFoundError cuando un servicio no existe
     it('should throw NotFoundError when service does not exist', async () => {
-      const stylistUser = createMockStylistUser(validStylistId);
-
-      mockUserRepository.findByIdWithRole.mockResolvedValue(stylistUser);
       mockServiceRepository.findById.mockResolvedValue(null);
 
       await expect(useCase.execute(validCreateDto, validUserId)).rejects.toThrow(
@@ -472,11 +494,9 @@ describe('CreateAppointment Use Case', () => {
 
     // Debería lanzar BusinessRuleError cuando un servicio no está activo
     it('should throw BusinessRuleError when service is not active', async () => {
-      const stylistUser = createMockStylistUser(validStylistId);
       const inactiveService = createMockService(validServiceId1, 60);
       (inactiveService as any).isActive = false;
 
-      mockUserRepository.findByIdWithRole.mockResolvedValue(stylistUser);
       mockServiceRepository.findById.mockResolvedValue(inactiveService);
 
       await expect(useCase.execute(validCreateDto, validUserId)).rejects.toThrow(BusinessRuleError);
@@ -484,10 +504,8 @@ describe('CreateAppointment Use Case', () => {
 
     // Debería lanzar BusinessRuleError cuando el estilista no tiene asignado el servicio
     it('should throw BusinessRuleError when stylist does not offer service', async () => {
-      const stylistUser = createMockStylistUser(validStylistId);
       const service = createMockService(validServiceId1, 60);
 
-      mockUserRepository.findByIdWithRole.mockResolvedValue(stylistUser);
       mockServiceRepository.findById.mockResolvedValue(service);
       mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(null);
 
@@ -496,7 +514,6 @@ describe('CreateAppointment Use Case', () => {
 
     // Debería lanzar BusinessRuleError cuando el estilista no está ofreciendo el servicio actualmente
     it('should throw BusinessRuleError when stylist is not currently offering service', async () => {
-      const stylistUser = createMockStylistUser(validStylistId);
       const service = createMockService(validServiceId1, 60);
       const notOfferingAssignment = {
         stylistId: validStylistId,
@@ -504,7 +521,6 @@ describe('CreateAppointment Use Case', () => {
         isOffering: false,
       };
 
-      mockUserRepository.findByIdWithRole.mockResolvedValue(stylistUser);
       mockServiceRepository.findById.mockResolvedValue(service);
       mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(
         notOfferingAssignment as any,
@@ -553,12 +569,10 @@ describe('CreateAppointment Use Case', () => {
     // Debería lanzar ConflictError cuando hay citas en conflicto
     it('should throw ConflictError when there are conflicting appointments', async () => {
       const conflictingAppointment = createMockAppointment({ id: generateUuid() });
-      const stylistUser = createMockStylistUser(validStylistId);
       const service = createMockService(validServiceId1);
       const pendingStatus = createMockAppointmentStatus('PENDING');
       const schedule = createMockSchedule('MONDAY');
 
-      mockUserRepository.findByIdWithRole.mockResolvedValue(stylistUser);
       mockServiceRepository.findById.mockResolvedValue(service);
       mockStylistServiceRepository.findByStylistAndService.mockResolvedValue({
         stylistId: validStylistId,
@@ -585,7 +599,14 @@ describe('CreateAppointment Use Case', () => {
 
       await useCase.execute(validCreateDto, validUserId);
 
-      expect(mockUserRepository.findByIdWithRole).toHaveBeenCalledWith(validStylistId);
+      expect(mockUserRoleValidationService.ensureUserHasRole).toHaveBeenCalledWith(
+        validClientId,
+        RoleName.CLIENT,
+      );
+      expect(mockUserRoleValidationService.ensureUserHasRole).toHaveBeenCalledWith(
+        validStylistId,
+        RoleName.STYLIST,
+      );
       expect(mockServiceRepository.findById).toHaveBeenCalledWith(validServiceId1);
       expect(mockAppointmentStatusRepository.findByName).toHaveBeenCalledWith('PENDING');
       expect(mockScheduleRepository.findAll).toHaveBeenCalled();

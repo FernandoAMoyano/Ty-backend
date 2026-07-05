@@ -2,7 +2,8 @@ import { Appointment } from '../../domain/entities/Appointment';
 import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
 import { IAppointmentStatusRepository } from '../../domain/repositories/IAppointmentStatusRepository';
 import { IServiceRepository } from '../../../services/domain/repositories/IServiceRepository';
-import { IUserRepository } from '../../../auth/domain/repositories/IUserRepository';
+import { UserRoleValidationService } from '../../../auth/domain/services/UserRoleValidationService';
+import { RoleName } from '@prisma/client';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { UpdateAppointmentDto } from '../dto/request/UpdateAppointmentDto';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
@@ -20,7 +21,7 @@ export class UpdateAppointment {
     private appointmentRepository: IAppointmentRepository,
     private appointmentStatusRepository: IAppointmentStatusRepository,
     private serviceRepository: IServiceRepository,
-    private userRepository: IUserRepository,
+    private userRoleValidationService: UserRoleValidationService,
   ) {}
 
   /**
@@ -285,14 +286,8 @@ export class UpdateAppointment {
   private async updateStylist(appointment: Appointment, newStylistId: string): Promise<void> {
     if (newStylistId) {
       // newStylistId es User.id; verificar que existe y tiene rol STYLIST
-      const userWithRole = await this.userRepository.findByIdWithRole(newStylistId);
-      if (!userWithRole) {
-        throw new NotFoundError('Stylist', newStylistId);
-      }
-      if (!userWithRole.role || userWithRole.role.name !== 'STYLIST') {
-        throw new BusinessRuleError('The specified user is not a stylist');
-      }
-      
+      await this.userRoleValidationService.ensureUserHasRole(newStylistId, RoleName.STYLIST);
+
       appointment.updateStylist(newStylistId);
     } else {
       // Permitir quitar el estilista (asignarlo a null)
