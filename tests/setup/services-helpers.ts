@@ -162,6 +162,46 @@ export const cleanupTestData = async (): Promise<void> => {
   try {
     console.log('🧹 Starting test data cleanup...');
 
+    // 0. Obtener IDs de usuarios de test primero -- se necesitan para las tablas
+    // que referencian User sin cascada (Appointment, Notification) antes de poder
+    // borrar los Users mismos sin violar la FK constraint
+    const testUsers = await testPrisma.user.findMany({
+      where: { email: { contains: 'test' } },
+      select: { id: true },
+    });
+    const testUserIds = testUsers.map((u) => u.id);
+
+    if (testUserIds.length > 0) {
+      // 0a. Appointment.userId/clientId/stylistId -> User, sin cascada.
+      // Payment.appointmentId -> Appointment, sin cascada: hay que borrar
+      // los Payments de esas citas antes que las citas mismas.
+      const testAppointments = await testPrisma.appointment.findMany({
+        where: {
+          OR: [
+            { userId: { in: testUserIds } },
+            { clientId: { in: testUserIds } },
+            { stylistId: { in: testUserIds } },
+          ],
+        },
+        select: { id: true },
+      });
+      const testAppointmentIds = testAppointments.map((a) => a.id);
+
+      if (testAppointmentIds.length > 0) {
+        await testPrisma.payment.deleteMany({
+          where: { appointmentId: { in: testAppointmentIds } },
+        });
+        await testPrisma.appointment.deleteMany({
+          where: { id: { in: testAppointmentIds } },
+        });
+      }
+
+      // 0b. Notification.userId -> User, sin cascada.
+      await testPrisma.notification.deleteMany({
+        where: { userId: { in: testUserIds } },
+      });
+    }
+
     // 1. Eliminar asignaciones StylistService de test
     await testPrisma.stylistService.deleteMany({
       where: {
