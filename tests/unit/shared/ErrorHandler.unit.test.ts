@@ -25,6 +25,7 @@ describe('errorHandler', () => {
     statusMock = jest.fn().mockReturnValue({ json: jsonMock });
 
     mockRequest = {
+      id: 'a1b2c3d4-e5f6-4789-a012-3456789abcde',
       method: 'GET',
       originalUrl: '/api/v1/appointments/123',
     };
@@ -64,6 +65,7 @@ describe('errorHandler', () => {
       expect(logger.error).toHaveBeenCalledWith(
         'Custom business error',
         expect.objectContaining({
+          requestId: 'a1b2c3d4-e5f6-4789-a012-3456789abcde',
           method: 'GET',
           path: '/api/v1/appointments/123',
           statusCode: 422,

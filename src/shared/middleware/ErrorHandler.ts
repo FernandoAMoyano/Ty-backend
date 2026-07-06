@@ -9,6 +9,7 @@ export const errorHandler = (
   _next: NextFunction,
 ): void => {
   logger.error(error.message, {
+    requestId: req.id,
     stack: error.stack,
     method: req.method,
     path: req.originalUrl,
