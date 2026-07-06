@@ -3,6 +3,11 @@ import { AuthController } from '../controllers/AuthController';
 import { AuthMiddleware } from '../middleware/AuthMiddleware';
 import { AuthValidations } from '../validations/AuthValidations';
 import { ValidationMiddleware } from '../../../../shared/middleware/ValidationMiddleware';
+import {
+  loginRateLimiter,
+  registerRateLimiter,
+  refreshTokenRateLimiter,
+} from '../../../../shared/middleware/RateLimiter';
 
 /**
  * Configurador de rutas para el módulo de autenticación
@@ -35,6 +40,7 @@ export class AuthRoutes {
     // POST /login - Inicio de sesión (público)
     this.router.post(
       '/login',
+      loginRateLimiter,
       AuthValidations.login,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
@@ -45,6 +51,7 @@ export class AuthRoutes {
     // POST /register - Registro de usuario (público)
     this.router.post(
       '/register',
+      registerRateLimiter,
       AuthValidations.register,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
@@ -55,6 +62,7 @@ export class AuthRoutes {
     // POST /refresh-token - Renovar token (público)
     this.router.post(
       '/refresh-token',
+      refreshTokenRateLimiter,
       AuthValidations.refreshToken,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
