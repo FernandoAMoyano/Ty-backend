@@ -59,6 +59,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '409':
           $ref: '#/components/responses/Error409'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /auth/login:
     post:
@@ -132,6 +134,8 @@ paths:
                             description: "Preferencias del usuario (opcional, relevante para clientes)"
         '401':
           $ref: '#/components/responses/Error401'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /auth/refresh-token:
     post:
@@ -158,6 +162,8 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '401':
           $ref: '#/components/responses/Error401'
+        '429':
+          $ref: '#/components/responses/Error429'
 
   /auth/profile:
     get:
@@ -3066,6 +3072,17 @@ components:
             success: false
             message: "Business rule violation"
             code: "BUSINESS_RULE_ERROR"
+
+    Error429:
+      description: Limite de requests excedido (rate limiting)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: "Too many login attempts, please try again in 15 minutes"
+            code: "TOO_MANY_REQUESTS"
 
 tags:
   - name: Authentication
