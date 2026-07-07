@@ -1,5 +1,6 @@
 import * as jwt from 'jsonwebtoken';
 import { JwtService, JwtPayload } from '../../application/services/JwtService';
+import { env } from '../../../../shared/config/env';
 
 /**
  * Implementación del servicio JWT usando jsonwebtoken
@@ -16,14 +17,15 @@ export class JwtTokenService implements JwtService {
   private readonly refreshTokenExpiry: string;
 
   /**
-   * Constructor que inicializa configuración desde variables de entorno
-   * @description Carga secretos y tiempos de expiración desde env vars con fallbacks por defecto
+   * Constructor que inicializa configuración desde variables de entorno ya validadas
+   * @description Toma secretos y tiempos de expiración de src/shared/config/env.ts
+   * -- validados al arrancar el proceso, sin fallbacks inseguros
    */
   constructor() {
-    this.accessTokenSecret = process.env.JWT_ACCESS_SECRET || 'your-access-token-secret';
-    this.refreshTokenSecret = process.env.JWT_REFRESH_SECRET || 'your-refresh-token-secret';
-    this.accessTokenExpiry = process.env.JWT_ACCESS_EXPIRY || '15m';
-    this.refreshTokenExpiry = process.env.JWT_REFRESH_EXPIRY || '7d';
+    this.accessTokenSecret = env.JWT_ACCESS_SECRET;
+    this.refreshTokenSecret = env.JWT_REFRESH_SECRET;
+    this.accessTokenExpiry = env.JWT_ACCESS_EXPIRY;
+    this.refreshTokenExpiry = env.JWT_REFRESH_EXPIRY;
   }
 
   /**
