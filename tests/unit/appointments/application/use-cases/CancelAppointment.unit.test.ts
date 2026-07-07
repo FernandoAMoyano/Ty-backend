@@ -10,6 +10,7 @@ import { CancelAppointmentDto } from '../../../../../src/modules/appointments/ap
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
 import { BusinessRuleError } from '../../../../../src/shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../../../src/shared/exceptions/ForbiddenError';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('CancelAppointment Use Case', () => {
@@ -331,7 +332,7 @@ describe('CancelAppointment Use Case', () => {
     });
 
     // Usar rol CLIENT para que no tenga ADMIN override
-    it('should throw BusinessRuleError for user without permissions', async () => {
+    it('should throw ForbiddenError for user without permissions', async () => {
       const unauthorizedUserId = generateUuid();
       const appointment = createMockAppointment({
         userId: validUserId,
@@ -346,7 +347,7 @@ describe('CancelAppointment Use Case', () => {
       await expect(
         useCase.execute(validAppointmentId, validCancelDto, unauthorizedUserId, 'CLIENT'),
       ).rejects.toThrow(
-        new BusinessRuleError('You do not have permission to cancel this appointment'),
+        new ForbiddenError('You do not have permission to cancel this appointment'),
       );
     });
 

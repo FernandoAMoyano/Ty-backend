@@ -13,6 +13,7 @@ import { UpdateAppointmentDto } from '../../../../../src/modules/appointments/ap
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
 import { BusinessRuleError } from '../../../../../src/shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../../../src/shared/exceptions/ForbiddenError';
 import { ConflictError } from '../../../../../src/shared/exceptions/ConflictError';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
@@ -346,7 +347,7 @@ describe('UpdateAppointment Use Case', () => {
 
   describe('Business Rules Validation', () => {
     // Usar rol CLIENT para que no tenga ADMIN override
-    it('should throw BusinessRuleError for user without permissions', async () => {
+    it('should throw ForbiddenError for user without permissions', async () => {
       const unauthorizedUserId = generateUuid();
       const appointment = createMockAppointment({ userId: validUserId, stylistId: validStylistId });
       mockAppointmentRepository.findById.mockResolvedValue(appointment);
@@ -354,7 +355,7 @@ describe('UpdateAppointment Use Case', () => {
       await expect(
         useCase.execute(validAppointmentId, minimalUpdateDto, unauthorizedUserId, 'CLIENT'),
       ).rejects.toThrow(
-        new BusinessRuleError('You do not have permission to update this appointment'),
+        new ForbiddenError('You do not have permission to update this appointment'),
       );
     });
 

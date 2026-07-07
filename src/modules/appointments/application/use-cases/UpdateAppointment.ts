@@ -9,6 +9,7 @@ import { UpdateAppointmentDto } from '../dto/request/UpdateAppointmentDto';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
 import { AppointmentStatusEnum } from '../../domain/entities/AppointmentStatus';
 
@@ -217,7 +218,7 @@ export class UpdateAppointment {
       appointment.stylistId === requesterId;
 
     if (!canUpdate) {
-      throw new BusinessRuleError('You do not have permission to update this appointment');
+      throw new ForbiddenError('You do not have permission to update this appointment');
     }
   }
 

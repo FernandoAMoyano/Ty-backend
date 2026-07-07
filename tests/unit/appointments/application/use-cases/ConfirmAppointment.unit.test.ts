@@ -9,6 +9,7 @@ import {
 import { ConfirmAppointmentDto } from '../../../../../src/modules/appointments/application/dto/request/ConfirmAppointmentDto';
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { BusinessRuleError } from '../../../../../src/shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../../../src/shared/exceptions/ForbiddenError';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('ConfirmAppointment Use Case', () => {
@@ -308,8 +309,8 @@ describe('ConfirmAppointment Use Case', () => {
       ).rejects.toThrow(new BusinessRuleError('Appointment is already confirmed'));
     });
 
-    // Debería lanzar BusinessRuleError para usuario sin permisos (no ADMIN)
-    it('should throw BusinessRuleError for user without permissions', async () => {
+    // Debería lanzar ForbiddenError para usuario sin permisos (no ADMIN)
+    it('should throw ForbiddenError for user without permissions', async () => {
       const unauthorizedUserId = generateUuid();
       const appointment = createMockAppointment({
         userId: validUserId,
@@ -324,7 +325,7 @@ describe('ConfirmAppointment Use Case', () => {
       await expect(
         useCase.execute(validAppointmentId, validConfirmDto, unauthorizedUserId, 'CLIENT'),
       ).rejects.toThrow(
-        new BusinessRuleError('You do not have permission to confirm this appointment'),
+        new ForbiddenError('You do not have permission to confirm this appointment'),
       );
     });
 
