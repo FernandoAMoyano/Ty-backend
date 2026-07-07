@@ -1,8 +1,11 @@
+// env.ts DEBE ser el primer import: valida las variables de entorno
+// requeridas (secrets de JWT, DATABASE_URL, etc.)
+import { env } from './shared/config/env';
 import app from './app';
 import { prisma } from './shared/config/Prisma';
 import { logger } from './shared/logger/logger';
 
-const PORT = process.env.PORT || 3000;
+const PORT = env.PORT;
 
 const startServer = async (): Promise<void> => {
   try {
@@ -11,13 +14,16 @@ const startServer = async (): Promise<void> => {
 
     app.listen(PORT, () => {
       logger.info(`Turnity API running on port ${PORT}`, {
-        environment: process.env.NODE_ENV || 'development',
+        environment: env.NODE_ENV,
       });
       logger.info(`Health check available at http://localhost:${PORT}/health`);
       logger.info(`API documentation available at http://localhost:${PORT}/api/docs`);
     });
   } catch (error) {
-    logger.error('Failed to start server', { error: (error as Error).message, stack: (error as Error).stack });
+    logger.error('Failed to start server', {
+      error: (error as Error).message,
+      stack: (error as Error).stack,
+    });
     process.exit(1);
   }
 };
