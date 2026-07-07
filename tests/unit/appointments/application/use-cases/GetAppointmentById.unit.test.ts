@@ -3,7 +3,7 @@ import { IAppointmentRepository } from '../../../../../src/modules/appointments/
 import { Appointment } from '../../../../../src/modules/appointments/domain/entities/Appointment';
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
-import { UnauthorizedError } from '../../../../../src/shared/exceptions/UnauthorizedError';
+import { ForbiddenError } from '../../../../../src/shared/exceptions/ForbiddenError';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('GetAppointmentById Use Case', () => {
@@ -413,7 +413,7 @@ describe('GetAppointmentById Use Case', () => {
       // Act & Assert
       await expect(
         useCase.execute(validAppointmentId, otherStylistId, 'STYLIST'),
-      ).rejects.toThrow(UnauthorizedError);
+      ).rejects.toThrow(ForbiddenError);
     });
 
     // Debería permitir al creador (userId) ver la cita como CLIENT
@@ -452,7 +452,7 @@ describe('GetAppointmentById Use Case', () => {
       // Act & Assert
       await expect(
         useCase.execute(validAppointmentId, unrelatedClientId, 'CLIENT'),
-      ).rejects.toThrow(UnauthorizedError);
+      ).rejects.toThrow(ForbiddenError);
     });
   });
 
