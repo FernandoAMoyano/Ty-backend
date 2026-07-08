@@ -13,8 +13,8 @@ export class User {
   public phone: string;
   public password: string;
   public isActive: boolean;
-  public profilePicture?: string;
-  public preferences?: string;
+  public profilePicture?: string | null;
+  public preferences?: string | null;
   public readonly createdAt: Date;
   public updatedAt: Date;
 
@@ -41,8 +41,8 @@ export class User {
     phone: string,
     password: string,
     isActive: boolean,
-    profilePicture?: string,
-    preferences?: string,
+    profilePicture?: string | null,
+    preferences?: string | null,
     createdAt?: Date,
     updatedAt?: Date,
   ) {
@@ -90,8 +90,8 @@ export class User {
     email: string,
     phone: string,
     password: string,
-    profilePicture?: string,
-    preferences?: string,
+    profilePicture?: string | null,
+    preferences?: string | null,
   ): User {
     return new User(
       generateUuid(),
@@ -162,7 +162,7 @@ export class User {
    * @param preferences - Nuevas preferencias (null para eliminar)
    */
   updatePreferences(preferences: string | null): void {
-    this.preferences = preferences ?? undefined;
+    this.preferences = preferences;
     this.updatedAt = new Date();
   }
 

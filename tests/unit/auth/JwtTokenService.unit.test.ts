@@ -6,12 +6,11 @@ describe('JwtTokenService Unit Tests', () => {
   let mockPayload: JwtPayload;
 
   beforeEach(() => {
-    // Establecer variables de entorno de prueba
-    process.env.JWT_ACCESS_SECRET = 'test-access-secret';
-    process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
-    process.env.JWT_ACCESS_EXPIRY = '15m';
-    process.env.JWT_REFRESH_EXPIRY = '7d';
-
+    // JwtTokenService ahora toma los secrets del env ya validado en
+    // src/shared/config/env.ts (cargado una unica vez desde el .env real),
+    // no de process.env directamente -- no hace falta (ni tiene efecto)
+    // setearlos aca. El test no depende del valor especifico del secret,
+    // solo de que firma/verificacion sean consistentes entre si.
     jwtService = new JwtTokenService();
     mockPayload = {
       userId: 'user-123',

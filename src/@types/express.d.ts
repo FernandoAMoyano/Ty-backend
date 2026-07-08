@@ -2,10 +2,13 @@ import 'express';
 
 /**
  * Extensión de tipos de Express para incluir datos del usuario autenticado
- * Utilizado por AuthMiddleware para poblar req.user tras validar el JWT
+ * y el ID de correlación de la request
+ * Utilizado por AuthMiddleware (req.user) y RequestIdMiddleware (req.id)
  */
 declare module 'express-serve-static-core' {
   interface Request {
+    /** ID unico de correlacion de la request, generado por RequestIdMiddleware */
+    id: string;
     user?: {
       /** ID único del usuario autenticado */
       userId: string;

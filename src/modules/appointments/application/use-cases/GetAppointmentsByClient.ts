@@ -2,7 +2,7 @@ import { Appointment } from '../../domain/entities/Appointment';
 import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
-import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
+import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 
 /**
  * Caso de uso para obtener todas las citas de un cliente específico
@@ -21,7 +21,7 @@ export class GetAppointmentsByClient {
    * @param requesterRole - Nombre del rol del usuario solicitante
    * @returns Promise con array de DTOs de las citas del cliente
    * @throws ValidationError si el ID del cliente no es válido
-   * @throws UnauthorizedError si el usuario no tiene permisos
+   * @throws ForbiddenError si el usuario no tiene permisos
    */
   async execute(
     clientId: string,
@@ -66,7 +66,7 @@ export class GetAppointmentsByClient {
    * @param clientId - ID del cliente consultado
    * @param requesterId - ID del usuario solicitante
    * @param requesterRole - Nombre del rol del usuario
-   * @throws UnauthorizedError si no tiene permisos
+   * @throws ForbiddenError si no tiene permisos
    */
   private validateAccessPermissions(
     clientId: string,
@@ -81,7 +81,7 @@ export class GetAppointmentsByClient {
 
     // CLIENT solo puede ver sus propias citas
     if (clientId !== requesterId) {
-      throw new UnauthorizedError('You can only view your own appointments');
+      throw new ForbiddenError('You can only view your own appointments');
     }
   }
 

@@ -2,7 +2,7 @@ import { GetAppointmentsByStylist } from '../../../../../src/modules/appointment
 import { IAppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
 import { Appointment } from '../../../../../src/modules/appointments/domain/entities/Appointment';
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
-import { UnauthorizedError } from '../../../../../src/shared/exceptions/UnauthorizedError';
+import { ForbiddenError } from '../../../../../src/shared/exceptions/ForbiddenError';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('GetAppointmentsByStylist Use Case', () => {
@@ -231,7 +231,7 @@ describe('GetAppointmentsByStylist Use Case', () => {
       const otherStylistId = generateUuid();
 
       await expect(useCase.execute(otherStylistId, validStylistId, 'STYLIST')).rejects.toThrow(
-        UnauthorizedError,
+        ForbiddenError,
       );
 
       expect(mockAppointmentRepository.findByStylistId).not.toHaveBeenCalled();

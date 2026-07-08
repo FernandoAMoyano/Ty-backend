@@ -1,3 +1,4 @@
+import { RoleName } from '@prisma/client';
 import { AssignServiceToStylist } from '../../../src/modules/services/application/use-cases/AssignServiceToStylist';
 import { UpdateStylistService } from '../../../src/modules/services/application/use-cases/UpdateStylistService';
 import { RemoveServiceFromStylist } from '../../../src/modules/services/application/use-cases/RemoveServiceFromStylist';
@@ -8,6 +9,7 @@ import { GetServiceWithStylists } from '../../../src/modules/services/applicatio
 import { IStylistServiceRepository } from '../../../src/modules/services/domain/repositories/IStylistServiceRepository';
 import { IServiceRepository } from '../../../src/modules/services/domain/repositories/IServiceRepository';
 import { IUserRepository } from '../../../src/modules/auth/domain/repositories/IUserRepository';
+import { UserRoleValidationService } from '../../../src/modules/auth/domain/services/UserRoleValidationService';
 import { StylistService } from '../../../src/modules/services/domain/entities/StylistService';
 import { Service } from '../../../src/modules/services/domain/entities/Service';
 import { ValidationError } from '../../../src/shared/exceptions/ValidationError';
@@ -19,6 +21,7 @@ describe('StylistService Use Cases', () => {
   let mockStylistServiceRepository: jest.Mocked<IStylistServiceRepository>;
   let mockServiceRepository: jest.Mocked<IServiceRepository>;
   let mockUserRepository: jest.Mocked<IUserRepository>;
+  let mockUserRoleValidationService: jest.Mocked<UserRoleValidationService>;
 
   beforeEach(() => {
     mockStylistServiceRepository = {
@@ -59,6 +62,13 @@ describe('StylistService Use Cases', () => {
       delete: jest.fn(),
       existsByEmail: jest.fn(),
     };
+
+    // Mock de UserRoleValidationService (reemplaza el chequeo manual de rol via IUserRepository
+    // en AssignServiceToStylist; GetStylistServices/GetStylistWithServices siguen usando
+    // mockUserRepository.findById directamente, sin validacion de rol)
+    mockUserRoleValidationService = {
+      ensureUserHasRole: jest.fn(),
+    } as unknown as jest.Mocked<UserRoleValidationService>;
   });
 
   describe('AssignServiceToStylist', () => {
@@ -68,29 +78,27 @@ describe('StylistService Use Cases', () => {
       assignServiceToStylist = new AssignServiceToStylist(
         mockStylistServiceRepository,
         mockServiceRepository,
-        mockUserRepository,
+        mockUserRoleValidationService,
       );
     });
 
     const assignDto = { serviceId: 'service-id', customPrice: 3000 };
 
     it('should assign service to stylist successfully', async () => {
-      const mockUserWithRole = {
-        id: 'stylist-id', roleId: 'stylist-role-id', name: 'Test User',
-        email: 'test@example.com', phone: '+1234567890', password: 'password',
-        isActive: true, role: { id: 'stylist-role-id', name: 'STYLIST', description: 'Estilista' },
-      };
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
       const mockStylistService = StylistService.create('stylist-id', 'service-id', 3000);
 
-      mockUserRepository.findByIdWithRole.mockResolvedValue(mockUserWithRole);
+      mockUserRoleValidationService.ensureUserHasRole.mockResolvedValue(undefined);
       mockServiceRepository.findById.mockResolvedValue(mockService);
       mockStylistServiceRepository.existsAssignment.mockResolvedValue(false);
       mockStylistServiceRepository.save.mockResolvedValue(mockStylistService);
 
       const result = await assignServiceToStylist.execute('stylist-id', assignDto);
 
-      expect(mockUserRepository.findByIdWithRole).toHaveBeenCalledWith('stylist-id');
+      expect(mockUserRoleValidationService.ensureUserHasRole).toHaveBeenCalledWith(
+        'stylist-id',
+        RoleName.STYLIST,
+      );
       expect(mockServiceRepository.findById).toHaveBeenCalledWith('service-id');
       expect(mockStylistServiceRepository.existsAssignment).toHaveBeenCalledWith('stylist-id', 'service-id');
       expect(mockStylistServiceRepository.save).toHaveBeenCalled();
@@ -99,55 +107,57 @@ describe('StylistService Use Cases', () => {
     });
 
     it('should throw NotFoundError if stylist not found', async () => {
-      mockUserRepository.findByIdWithRole.mockResolvedValue(null);
+      mockUserRoleValidationService.ensureUserHasRole.mockRejectedValue(
+        new NotFoundError('Stylist', 'non-existent-stylist'),
+      );
       await expect(assignServiceToStylist.execute('non-existent-stylist', assignDto)).rejects.toThrow(NotFoundError);
     });
 
+    // Cobertura faltante: AssignServiceToStylist valida esto antes de tocar
+    // el UserRoleValidationService, pero no tenia ningun test que lo cubriera
+    it('should throw ValidationError if serviceId is missing', async () => {
+      await expect(
+        assignServiceToStylist.execute('stylist-id', { serviceId: '' }),
+      ).rejects.toThrow(ValidationError);
+      expect(mockUserRoleValidationService.ensureUserHasRole).not.toHaveBeenCalled();
+    });
+
+    it('should throw ValidationError if customPrice is negative', async () => {
+      await expect(
+        assignServiceToStylist.execute('stylist-id', { serviceId: 'service-id', customPrice: -100 }),
+      ).rejects.toThrow(ValidationError);
+      expect(mockUserRoleValidationService.ensureUserHasRole).not.toHaveBeenCalled();
+    });
+
     it('should throw NotFoundError if service not found', async () => {
-      const mockUserWithRole = {
-        id: 'stylist-id', roleId: 'stylist-role-id', name: 'Test User',
-        email: 'test@example.com', phone: '+1234567890', password: 'password',
-        isActive: true, role: { id: 'stylist-role-id', name: 'STYLIST', description: 'Estilista' },
-      };
-      mockUserRepository.findByIdWithRole.mockResolvedValue(mockUserWithRole);
+      mockUserRoleValidationService.ensureUserHasRole.mockResolvedValue(undefined);
       mockServiceRepository.findById.mockResolvedValue(null);
       await expect(assignServiceToStylist.execute('stylist-id', assignDto)).rejects.toThrow(NotFoundError);
     });
 
     it('should throw BusinessRuleError if service is inactive', async () => {
-      const mockUserWithRole = {
-        id: 'stylist-id', roleId: 'stylist-role-id', name: 'Test User',
-        email: 'test@example.com', phone: '+1234567890', password: 'password',
-        isActive: true, role: { id: 'stylist-role-id', name: 'STYLIST', description: 'Estilista' },
-      };
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
       mockService.deactivate();
 
-      mockUserRepository.findByIdWithRole.mockResolvedValue(mockUserWithRole);
+      mockUserRoleValidationService.ensureUserHasRole.mockResolvedValue(undefined);
       mockServiceRepository.findById.mockResolvedValue(mockService);
 
       await expect(assignServiceToStylist.execute('stylist-id', assignDto)).rejects.toThrow(BusinessRuleError);
     });
 
-    it('should throw ValidationError if user is not a stylist', async () => {
-      const mockUserWithRole = {
-        id: 'stylist-id', roleId: 'client-role-id', name: 'Test User',
-        email: 'test@example.com', phone: '+1234567890', password: 'password',
-        isActive: true, role: { id: 'client-role-id', name: 'CLIENT', description: 'Cliente' },
-      };
-      mockUserRepository.findByIdWithRole.mockResolvedValue(mockUserWithRole);
-      await expect(assignServiceToStylist.execute('stylist-id', assignDto)).rejects.toThrow(ValidationError);
+    // Estandarizado via UserRoleValidationService: antes lanzaba ValidationError (400),
+    // ahora BusinessRuleError (422), consistente con CreateAppointment/UpdateAppointment
+    it('should throw BusinessRuleError if user is not a stylist', async () => {
+      mockUserRoleValidationService.ensureUserHasRole.mockRejectedValue(
+        new BusinessRuleError('The specified user is not a stylist'),
+      );
+      await expect(assignServiceToStylist.execute('stylist-id', assignDto)).rejects.toThrow(BusinessRuleError);
     });
 
     it('should throw ConflictError if assignment already exists', async () => {
-      const mockUserWithRole = {
-        id: 'stylist-id', roleId: 'stylist-role-id', name: 'Test User',
-        email: 'test@example.com', phone: '+1234567890', password: 'password',
-        isActive: true, role: { id: 'stylist-role-id', name: 'STYLIST', description: 'Estilista' },
-      };
       const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
 
-      mockUserRepository.findByIdWithRole.mockResolvedValue(mockUserWithRole);
+      mockUserRoleValidationService.ensureUserHasRole.mockResolvedValue(undefined);
       mockServiceRepository.findById.mockResolvedValue(mockService);
       mockStylistServiceRepository.existsAssignment.mockResolvedValue(true);
 

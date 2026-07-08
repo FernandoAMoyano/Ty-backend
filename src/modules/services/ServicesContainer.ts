@@ -47,6 +47,7 @@ import { PrismaStylistServiceRepository } from './infrastructure/persistence/Pri
 // Importar userRepository desde el módulo de autenticación
 import { IUserRepository } from '../auth/domain/repositories/IUserRepository';
 import { PrismaUserRepository } from '../auth/infrastructure/persistence/PrismaUserRepository';
+import { UserRoleValidationService } from '../auth/domain/services/UserRoleValidationService';
 
 // Importar appointmentRepository desde el módulo de citas
 import { IAppointmentRepository } from '../appointments/domain/repositories/IAppointmentRepository';
@@ -142,6 +143,9 @@ export class ServicesContainer {
       this.prisma,
     );
 
+    // Servicio de dominio de validacion de rol de usuario
+    const userRoleValidationService = new UserRoleValidationService(userRepository);
+
     // 2. Use cases — Categorías
     this._createCategory = new CreateCategory(categoryRepository);
     this._updateCategory = new UpdateCategory(categoryRepository);
@@ -171,7 +175,7 @@ export class ServicesContainer {
     this._assignServiceToStylist = new AssignServiceToStylist(
       stylistServiceRepository,
       serviceRepository,
-      userRepository,
+      userRoleValidationService,
     );
     this._updateStylistService = new UpdateStylistService(
       stylistServiceRepository,

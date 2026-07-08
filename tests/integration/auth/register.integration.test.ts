@@ -19,6 +19,11 @@ describe('Register Integration Tests', () => {
       expect(response.body.data.name).toBe('Test User');
       expect(response.body.data.role.name).toBe('CLIENT');
       expect(response.body.data.isActive).toBe(true);
+      // Regresion: preferences debe estar presente como null, no desaparecer de la
+      // respuesta JSON (PrismaUserRepository convertia null -> undefined, y
+      // JSON.stringify elimina las propiedades undefined del payload real)
+      expect(response.body.data).toHaveProperty('preferences');
+      expect(response.body.data.preferences).toBeNull();
     });
 
     // Debería registrar un nuevo usuario con un rol específico

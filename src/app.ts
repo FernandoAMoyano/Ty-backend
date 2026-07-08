@@ -9,6 +9,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { errorHandler } from './shared/middleware/ErrorHandler';
+import { requestIdMiddleware } from './shared/middleware/RequestIdMiddleware';
 import { prisma } from './shared/config/Prisma';
 import { AuthContainer } from './modules/auth/AuthContainer';
 import { ServicesContainer } from './modules/services/ServicesContainer';
@@ -60,6 +61,7 @@ class App {
   }
 
   private setupMiddleware(): void {
+    this.app.use(requestIdMiddleware);
     this.app.use(helmet());
     this.app.use(
       cors({

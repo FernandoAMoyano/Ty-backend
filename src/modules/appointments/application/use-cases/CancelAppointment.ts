@@ -6,6 +6,7 @@ import { CancelAppointmentDto } from '../dto/request/CancelAppointmentDto';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 import { AppointmentStatusEnum } from '../../domain/entities/AppointmentStatus';
 
 /**
@@ -154,7 +155,7 @@ export class CancelAppointment {
    * @param appointment - Entidad de la cita
    * @param requesterId - ID del usuario solicitante
    * @param requesterRole - Nombre del rol del usuario
-   * @throws BusinessRuleError si no tiene permisos
+   * @throws ForbiddenError si no tiene permisos
    */
   private async validateCancellationPermissions(
     appointment: Appointment,
@@ -171,7 +172,7 @@ export class CancelAppointment {
       appointment.stylistId === requesterId;
 
     if (!canCancel) {
-      throw new BusinessRuleError('You do not have permission to cancel this appointment');
+      throw new ForbiddenError('You do not have permission to cancel this appointment');
     }
   }
 

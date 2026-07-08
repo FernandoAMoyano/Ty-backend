@@ -40,6 +40,10 @@ describe('Profile Integration Tests', () => {
       expect(response.body.data).toHaveProperty('phone');
       expect(response.body.data).toHaveProperty('createdAt');
       expect(response.body.data).toHaveProperty('updatedAt');
+      // Regresion: mismo bug que en registro -- preferences no debia desaparecer
+      // de la respuesta JSON al pasar por PrismaUserRepository.findById()
+      expect(response.body.data).toHaveProperty('preferences');
+      expect(response.body.data.preferences).toBeNull();
     });
 
     // Debería rechazar el acceso sin token

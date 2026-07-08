@@ -16,9 +16,9 @@ export interface UserDto {
   /** Estado de activación de la cuenta */
   isActive: boolean;
   /** URL de la foto de perfil del usuario (opcional) */
-  profilePicture?: string;
+  profilePicture?: string | null;
   /** Preferencias del usuario (opcional, relevante para clientes) */
-  preferences?: string;
+  preferences?: string | null;
   /** Información del rol asignado al usuario */
   role: RoleDto;
   /** Fecha de creación de la cuenta */

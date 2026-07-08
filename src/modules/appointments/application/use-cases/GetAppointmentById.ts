@@ -3,7 +3,7 @@ import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRe
 import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
-import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
+import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 
 /**
  * Caso de uso para obtener una cita específica por su ID
@@ -23,7 +23,7 @@ export class GetAppointmentById {
    * @returns Promise con el DTO de la cita encontrada
    * @throws ValidationError si el ID no es válido
    * @throws NotFoundError si la cita no existe
-   * @throws UnauthorizedError si el usuario no tiene permisos para ver la cita
+   * @throws ForbiddenError si el usuario no tiene permisos para ver la cita
    */
   async execute(
     appointmentId: string,
@@ -70,7 +70,7 @@ export class GetAppointmentById {
    * @param appointment - Entidad de la cita
    * @param requesterId - ID del usuario solicitante
    * @param requesterRole - Nombre del rol del usuario
-   * @throws UnauthorizedError si no tiene permisos
+   * @throws ForbiddenError si no tiene permisos
    */
   private validateAccessPermissions(
     appointment: Appointment,
@@ -83,7 +83,7 @@ export class GetAppointmentById {
     // STYLIST solo ve citas donde es el estilista asignado
     if (requesterRole === 'STYLIST') {
       if (appointment.stylistId === requesterId) return;
-      throw new UnauthorizedError('You do not have permission to view this appointment');
+      throw new ForbiddenError('You do not have permission to view this appointment');
     }
 
     // CLIENT solo ve citas donde es el creador o el cliente
@@ -94,7 +94,7 @@ export class GetAppointmentById {
       return;
     }
 
-    throw new UnauthorizedError('You do not have permission to view this appointment');
+    throw new ForbiddenError('You do not have permission to view this appointment');
   }
 
   /**

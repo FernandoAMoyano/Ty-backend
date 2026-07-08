@@ -2,7 +2,7 @@ import { GetAppointmentsByClient } from '../../../../../src/modules/appointments
 import { IAppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
 import { Appointment } from '../../../../../src/modules/appointments/domain/entities/Appointment';
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
-import { UnauthorizedError } from '../../../../../src/shared/exceptions/UnauthorizedError';
+import { ForbiddenError } from '../../../../../src/shared/exceptions/ForbiddenError';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('GetAppointmentsByClient Use Case', () => {
@@ -234,7 +234,7 @@ describe('GetAppointmentsByClient Use Case', () => {
       const otherClientId = generateUuid();
 
       await expect(useCase.execute(otherClientId, validClientId, 'CLIENT')).rejects.toThrow(
-        UnauthorizedError,
+        ForbiddenError,
       );
 
       expect(mockAppointmentRepository.findByClientId).not.toHaveBeenCalled();
