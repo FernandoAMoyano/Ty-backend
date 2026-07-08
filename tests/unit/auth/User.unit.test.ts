@@ -105,6 +105,20 @@ describe('User Entity', () => {
         expect(user.updatedAt.getTime()).toBeGreaterThan(originalUpdatedAt.getTime());
       }, 10);
     });
+
+    // Debería actualizar preferencias con un valor string
+    it('should update preferences with a string value', () => {
+      user.updatePreferences('dark-mode');
+      expect(user.preferences).toBe('dark-mode');
+    });
+
+    // Debería mantener null al actualizar preferencias con null (no convertir a undefined)
+    it('should keep null when updating preferences with null', () => {
+      user.updatePreferences('dark-mode');
+      user.updatePreferences(null);
+      expect(user.preferences).toBeNull();
+      expect(user.preferences).not.toBeUndefined();
+    });
   });
 
   describe('User Validation', () => {
