@@ -113,6 +113,22 @@ describe('StylistService Use Cases', () => {
       await expect(assignServiceToStylist.execute('non-existent-stylist', assignDto)).rejects.toThrow(NotFoundError);
     });
 
+    // Cobertura faltante: AssignServiceToStylist valida esto antes de tocar
+    // el UserRoleValidationService, pero no tenia ningun test que lo cubriera
+    it('should throw ValidationError if serviceId is missing', async () => {
+      await expect(
+        assignServiceToStylist.execute('stylist-id', { serviceId: '' }),
+      ).rejects.toThrow(ValidationError);
+      expect(mockUserRoleValidationService.ensureUserHasRole).not.toHaveBeenCalled();
+    });
+
+    it('should throw ValidationError if customPrice is negative', async () => {
+      await expect(
+        assignServiceToStylist.execute('stylist-id', { serviceId: 'service-id', customPrice: -100 }),
+      ).rejects.toThrow(ValidationError);
+      expect(mockUserRoleValidationService.ensureUserHasRole).not.toHaveBeenCalled();
+    });
+
     it('should throw NotFoundError if service not found', async () => {
       mockUserRoleValidationService.ensureUserHasRole.mockResolvedValue(undefined);
       mockServiceRepository.findById.mockResolvedValue(null);
