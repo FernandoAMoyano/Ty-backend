@@ -321,7 +321,7 @@ describe('Holidays Complete Flow E2E Tests', () => {
       `/api/v1/holidays/exceptions/${nochebuenaExceptionId}`,
     );
 
-    expect(checkDeletedExceptionResponse.status).toBe(500); // O 404 con NotFoundError
+    expect(checkDeletedExceptionResponse.status).toBe(404);
 
     // 6.4 Verificar que cliente no puede eliminar feriados
     const clientDeleteHolidayAttempt = await request(app)
@@ -350,7 +350,7 @@ describe('Holidays Complete Flow E2E Tests', () => {
       `/api/v1/holidays/exceptions/${navidadExceptionId}`,
     );
 
-    expect(checkDeletedNavidadExceptionResponse.status).toBe(500); // O 404 con NotFoundError
+    expect(checkDeletedNavidadExceptionResponse.status).toBe(404);
 
     // 6.8 Admin elimina el feriado de Año Nuevo
     const deleteAnoNuevoResponse = await request(app)

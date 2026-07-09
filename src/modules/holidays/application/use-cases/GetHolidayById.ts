@@ -1,5 +1,6 @@
 import { IHolidayRepository } from '../../domain/repositories/IHolidayRepository';
 import { HolidayResponseDto, HolidayResponseMapper } from '../dto/response/HolidayResponseDto';
+import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 
 /**
  * Caso de uso: Obtener feriado por ID
@@ -12,13 +13,13 @@ export class GetHolidayById {
    * Ejecuta el caso de uso
    * @param id - ID del feriado a buscar
    * @returns El feriado encontrado
-   * @throws Error si no se encuentra el feriado
+   * @throws NotFoundError si no se encuentra el feriado
    */
   async execute(id: string): Promise<HolidayResponseDto> {
     const holiday = await this.holidayRepository.findById(id);
 
     if (!holiday) {
-      throw new Error('Feriado no encontrado');
+      throw new NotFoundError('Holiday', id);
     }
 
     return HolidayResponseMapper.toDto(holiday);

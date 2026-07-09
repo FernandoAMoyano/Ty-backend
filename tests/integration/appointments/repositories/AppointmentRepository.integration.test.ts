@@ -169,6 +169,35 @@ describe('AppointmentRepository Integration Tests', () => {
       const foundAppointment = await repository.findById(nonExistingId);
       expect(foundAppointment).toBeNull();
     });
+
+    // Regresión: Prisma devuelve `null` para confirmedAt cuando la cita no está confirmada,
+    // no `undefined`. Appointment.isConfirmed() compara contra `undefined`, así que si
+    // mapToEntity() no normaliza ese null, toda cita releída de la base aparece
+    // incorrectamente como "ya confirmada" (rompe Confirm/Update en producción).
+    it('should not appear as confirmed when re-read from persistence right after creation', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
+      const appointment = Appointment.create(
+        futureDate,
+        60,
+        testUserId,
+        testClientId,
+        testScheduleId,
+        testStatusId,
+        testStylistId,
+        [],
+      );
+
+      const savedAppointment = await repository.save(appointment);
+      expect(savedAppointment.isConfirmed()).toBe(false);
+
+      const foundAppointment = await repository.findById(savedAppointment.id);
+
+      expect(foundAppointment).toBeDefined();
+      expect(foundAppointment!.confirmedAt).toBeUndefined();
+      expect(foundAppointment!.isConfirmed()).toBe(false);
+    });
   });
 
   describe('findAll', () => {

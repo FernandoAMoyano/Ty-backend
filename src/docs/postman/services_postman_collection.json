@@ -22,7 +22,17 @@
       "type": "string"
     },
     {
+      "key": "persistent_category_id",
+      "value": "",
+      "type": "string"
+    },
+    {
       "key": "service_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "persistent_service_id",
       "value": "",
       "type": "string"
     },
@@ -44,6 +54,82 @@
   },
   "item": [
     {
+      "name": "Authentication Setup",
+      "description": "Setup de autenticación para testing. Corre primero para que jwt_token y stylist_id existan antes de las carpetas que los usan. Orden: Stylist primero (solo para capturar stylist_id), Admin al final (para que jwt_token quede con el token de Admin, que tiene acceso tanto a Categories/Services -solo ADMIN- como a Stylist-Service -ADMIN o STYLIST-).",
+      "item": [
+        {
+          "name": "Quick Login Stylist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "    // stylist_id es el User.id del estilista (no un Stylist.id separado)",
+                  "    pm.collectionVariables.set('stylist_id', response.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"lucia@turnity.com\",\n  \"password\": \"stylist123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Quick Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@turnity.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Categories Management",
       "description": "Gestión de categorías de servicios",
       "item": [
@@ -62,6 +148,7 @@
                   "    });",
                   "    if (response.data.length > 0) {",
                   "        pm.collectionVariables.set('category_id', response.data[0].id);",
+                  "        pm.collectionVariables.set('persistent_category_id', response.data[0].id);",
                   "    }",
                   "}"
                 ]
@@ -132,7 +219,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cabello & Estilismo\",\n  \"description\": \"Servicios profesionales de corte, peinado y tratamientos capilares\"\n}"
+              "raw": "{\n  \"name\": \"Cabello y Estilismo\",\n  \"description\": \"Servicios profesionales de corte, peinado y tratamientos capilares\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/categories",
@@ -158,7 +245,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cabello & Estilismo Actualizada\",\n  \"description\": \"Servicios profesionales de corte, peinado y tratamientos capilares - Descripción actualizada\"\n}"
+              "raw": "{\n  \"name\": \"Cabello y Estilismo Actualizada\",\n  \"description\": \"Servicios profesionales de corte, peinado y tratamientos capilares - Descripción actualizada\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/categories/{{category_id}}",
@@ -241,6 +328,7 @@
                   "    });",
                   "    if (response.data.length > 0) {",
                   "        pm.collectionVariables.set('service_id', response.data[0].id);",
+                  "        pm.collectionVariables.set('persistent_service_id', response.data[0].id);",
                   "    }",
                   "}"
                 ]
@@ -275,9 +363,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/category/{{category_id}}",
+              "raw": "{{base_url}}/services/category/{{persistent_category_id}}",
               "host": ["{{base_url}}"],
-              "path": ["services", "category", "{{category_id}}"]
+              "path": ["services", "category", "{{persistent_category_id}}"]
             }
           }
         },
@@ -287,9 +375,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/category/{{category_id}}/active",
+              "raw": "{{base_url}}/services/category/{{persistent_category_id}}/active",
               "host": ["{{base_url}}"],
-              "path": ["services", "category", "{{category_id}}", "active"]
+              "path": ["services", "category", "{{persistent_category_id}}", "active"]
             }
           }
         },
@@ -335,7 +423,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"categoryId\": \"{{category_id}}\",\n  \"name\": \"Corte Premium\",\n  \"description\": \"Corte de cabello profesional con consulta de estilo personalizada\",\n  \"duration\": 45,\n  \"durationVariation\": 15,\n  \"price\": 35.00\n}"
+              "raw": "{\n  \"categoryId\": \"{{persistent_category_id}}\",\n  \"name\": \"Corte Premium\",\n  \"description\": \"Corte de cabello profesional con consulta de estilo personalizada\",\n  \"duration\": 45,\n  \"durationVariation\": 15,\n  \"price\": 35.00\n}"
             },
             "url": {
               "raw": "{{base_url}}/services",
@@ -428,7 +516,7 @@
     },
     {
       "name": "Stylist-Service Management",
-      "description": "Gestión de relaciones entre estilistas y servicios",
+      "description": "Gestión de relaciones entre estilistas y servicios. Usa persistent_service_id (capturado por 'Get All Services') en vez de service_id, porque Services Management crea y borra su propio servicio en el mismo run y dejaría service_id apuntando a un recurso eliminado.",
       "item": [
         {
           "name": "Get Stylist Services",
@@ -460,9 +548,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/{{service_id}}/stylists",
+              "raw": "{{base_url}}/services/{{persistent_service_id}}/stylists",
               "host": ["{{base_url}}"],
-              "path": ["services", "{{service_id}}", "stylists"]
+              "path": ["services", "{{persistent_service_id}}", "stylists"]
             }
           }
         },
@@ -472,9 +560,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/{{service_id}}/stylists/offering",
+              "raw": "{{base_url}}/services/{{persistent_service_id}}/stylists/offering",
               "host": ["{{base_url}}"],
-              "path": ["services", "{{service_id}}", "stylists", "offering"]
+              "path": ["services", "{{persistent_service_id}}", "stylists", "offering"]
             }
           }
         },
@@ -495,7 +583,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"serviceId\": \"{{service_id}}\",\n  \"customPrice\": 45.00\n}"
+              "raw": "{\n  \"serviceId\": \"{{persistent_service_id}}\",\n  \"customPrice\": 45.00\n}"
             },
             "url": {
               "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services",
@@ -524,9 +612,9 @@
               "raw": "{\n  \"customPrice\": 50.00,\n  \"isOffering\": true\n}"
             },
             "url": {
-              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services/{{service_id}}",
+              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services/{{persistent_service_id}}",
               "host": ["{{base_url}}"],
-              "path": ["services", "stylists", "{{stylist_id}}", "services", "{{service_id}}"]
+              "path": ["services", "stylists", "{{stylist_id}}", "services", "{{persistent_service_id}}"]
             }
           }
         },
@@ -542,9 +630,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services/{{service_id}}",
+              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services/{{persistent_service_id}}",
               "host": ["{{base_url}}"],
-              "path": ["services", "stylists", "{{stylist_id}}", "services", "{{service_id}}"]
+              "path": ["services", "stylists", "{{stylist_id}}", "services", "{{persistent_service_id}}"]
             }
           }
         },
@@ -566,65 +654,23 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/services/{{service_id}}/stylists/detailed",
+              "raw": "{{base_url}}/services/{{persistent_service_id}}/stylists/detailed",
               "host": ["{{base_url}}"],
-              "path": ["services", "{{service_id}}", "stylists", "detailed"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Authentication Setup",
-      "description": "Setup de autenticación para testing",
-      "item": [
-        {
-          "name": "Quick Login Admin",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@turnity.com\",\n  \"password\": \"admin123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "login"]
+              "path": ["services", "{{persistent_service_id}}", "stylists", "detailed"]
             }
           }
         },
         {
-          "name": "Quick Login Stylist",
+          "name": "Restore Assignment",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('jwt_token', response.data.token);",
-                  "    // stylist_id es el User.id del estilista (no un Stylist.id separado)",
-                  "    pm.collectionVariables.set('stylist_id', response.data.user.id);",
-                  "}"
+                  "pm.test('Assignment restored', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "console.log('✅ Asignación restaurada: persistent_service_id -> stylist_id (estado del seed)');"
                 ]
               }
             }
@@ -633,19 +679,25 @@
             "method": "POST",
             "header": [
               {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
                 "key": "Content-Type",
                 "value": "application/json"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"lucia@turnity.com\",\n  \"password\": \"stylist123\"\n}"
+              "raw": "{\n  \"serviceId\": \"{{persistent_service_id}}\",\n  \"customPrice\": 45.00\n}"
             },
             "url": {
-              "raw": "{{base_url}}/auth/login",
+              "raw": "{{base_url}}/services/stylists/{{stylist_id}}/services",
               "host": ["{{base_url}}"],
-              "path": ["auth", "login"]
-            }
+              "path": ["services", "stylists", "{{stylist_id}}", "services"]
+            },
+            "description": "Restaura la asignación persistent_service_id -> estilista real que 'Remove Service from Stylist' borró antes en esta misma carpeta, dejando el seed en su estado original para que 'Create Appointment' en appointments no falle con 422."
           }
         }
       ]
@@ -717,6 +769,9 @@
             }
           ],
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {

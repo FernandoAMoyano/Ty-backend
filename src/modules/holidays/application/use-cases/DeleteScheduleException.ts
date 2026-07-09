@@ -1,4 +1,5 @@
 import { IScheduleExceptionRepository } from '../../domain/repositories/IScheduleExceptionRepository';
+import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 
 /**
  * Caso de uso: Eliminar excepción de horario
@@ -11,14 +12,14 @@ export class DeleteScheduleException {
    * Ejecuta el caso de uso
    * @param id - ID de la excepción a eliminar
    * @returns true si se eliminó correctamente
-   * @throws Error si no se encuentra la excepción
+   * @throws NotFoundError si no se encuentra la excepción
    */
   async execute(id: string): Promise<boolean> {
     // Verificar que la excepción existe
     const exception = await this.scheduleExceptionRepository.findById(id);
 
     if (!exception) {
-      throw new Error('Excepción de horario no encontrada');
+      throw new NotFoundError('ScheduleException', id);
     }
 
     return this.scheduleExceptionRepository.delete(id);

@@ -1,6 +1,7 @@
 import { DeleteScheduleException } from '../../../../../src/modules/holidays/application/use-cases/DeleteScheduleException';
 import { IScheduleExceptionRepository } from '../../../../../src/modules/holidays/domain/repositories/IScheduleExceptionRepository';
 import { ScheduleException } from '../../../../../src/modules/holidays/domain/entities/ScheduleException';
+import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
 
 describe('DeleteScheduleException Use Case', () => {
   let deleteScheduleException: DeleteScheduleException;
@@ -51,13 +52,17 @@ describe('DeleteScheduleException Use Case', () => {
     );
   });
 
-  // Debería lanzar error si la excepción no existe
-  it('should throw error if exception not found', async () => {
+  // Debería lanzar NotFoundError (404) si la excepción no existe, no un Error genérico (500)
+  it('should throw NotFoundError if exception not found', async () => {
     mockRepository.findById.mockResolvedValue(null);
 
     await expect(
       deleteScheduleException.execute('non-existent-id'),
-    ).rejects.toThrow('Excepción de horario no encontrada');
+    ).rejects.toThrow(NotFoundError);
+
+    await expect(
+      deleteScheduleException.execute('non-existent-id'),
+    ).rejects.toThrow('ScheduleException not found: non-existent-id');
     expect(mockRepository.delete).not.toHaveBeenCalled();
   });
 

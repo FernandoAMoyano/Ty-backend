@@ -1,6 +1,8 @@
 import { UpdateHoliday } from '../../../../../src/modules/holidays/application/use-cases/UpdateHoliday';
 import { IHolidayRepository } from '../../../../../src/modules/holidays/domain/repositories/IHolidayRepository';
 import { Holiday } from '../../../../../src/modules/holidays/domain/entities/Holiday';
+import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
+import { ConflictError } from '../../../../../src/shared/exceptions/ConflictError';
 
 describe('UpdateHoliday Use Case', () => {
   let updateHoliday: UpdateHoliday;
@@ -60,8 +62,8 @@ describe('UpdateHoliday Use Case', () => {
     expect(mockHolidayRepository.update).toHaveBeenCalledTimes(1);
   });
 
-  // Debería lanzar error si la nueva fecha ya tiene un feriado
-  it('should throw error if new date already has a holiday', async () => {
+  // Debería lanzar ConflictError (409) si la nueva fecha ya tiene un feriado, no un Error genérico (500)
+  it('should throw ConflictError if new date already has a holiday', async () => {
     mockHolidayRepository.findById.mockResolvedValue(mockHoliday);
     mockHolidayRepository.existsByDate.mockResolvedValue(true);
 
@@ -69,7 +71,13 @@ describe('UpdateHoliday Use Case', () => {
       updateHoliday.execute('123e4567-e89b-12d3-a456-426614174000', {
         date: '2025-12-24',
       }),
-    ).rejects.toThrow('Ya existe un feriado en la fecha especificada');
+    ).rejects.toThrow(ConflictError);
+
+    await expect(
+      updateHoliday.execute('123e4567-e89b-12d3-a456-426614174000', {
+        date: '2025-12-24',
+      }),
+    ).rejects.toThrow('A holiday already exists on the specified date');
   });
 
   // Debería actualizar la descripción del feriado
@@ -96,13 +104,17 @@ describe('UpdateHoliday Use Case', () => {
     expect(result.description).toBeNull();
   });
 
-  // Debería lanzar error si el feriado no existe
-  it('should throw error if holiday not found', async () => {
+  // Debería lanzar NotFoundError (404) si el feriado no existe, no un Error genérico (500)
+  it('should throw NotFoundError if holiday not found', async () => {
     mockHolidayRepository.findById.mockResolvedValue(null);
 
     await expect(
       updateHoliday.execute('non-existent-id', { name: 'Test' }),
-    ).rejects.toThrow('Feriado no encontrado');
+    ).rejects.toThrow(NotFoundError);
+
+    await expect(
+      updateHoliday.execute('non-existent-id', { name: 'Test' }),
+    ).rejects.toThrow('Holiday not found: non-existent-id');
   });
 
   // Debería actualizar múltiples campos a la vez

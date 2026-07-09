@@ -210,7 +210,8 @@ describe('Holidays Integration Tests', () => {
         '/api/v1/holidays/00000000-0000-4000-8000-000000000000',
       );
 
-      expect(response.status).toBe(500); // O 404 si se implementa NotFoundError
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
     });
 
     // Debería validar UUID inválido

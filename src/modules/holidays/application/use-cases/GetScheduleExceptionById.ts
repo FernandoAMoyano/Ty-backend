@@ -1,5 +1,6 @@
 import { IScheduleExceptionRepository } from '../../domain/repositories/IScheduleExceptionRepository';
 import { ScheduleExceptionResponseDto, ScheduleExceptionResponseMapper } from '../dto/response/ScheduleExceptionResponseDto';
+import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 
 /**
  * Caso de uso: Obtener excepción de horario por ID
@@ -12,13 +13,13 @@ export class GetScheduleExceptionById {
    * Ejecuta el caso de uso
    * @param id - ID de la excepción a buscar
    * @returns La excepción encontrada
-   * @throws Error si no se encuentra la excepción
+   * @throws NotFoundError si no se encuentra la excepción
    */
   async execute(id: string): Promise<ScheduleExceptionResponseDto> {
     const exception = await this.scheduleExceptionRepository.findById(id);
 
     if (!exception) {
-      throw new Error('Excepción de horario no encontrada');
+      throw new NotFoundError('ScheduleException', id);
     }
 
     return ScheduleExceptionResponseMapper.toDto(exception);
