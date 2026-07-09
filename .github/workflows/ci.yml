@@ -76,4 +76,4 @@ jobs:
         run: npx prisma db seed
 
       - name: Run test suite
-        run: npm test
+        run: npm test -- --coverage
