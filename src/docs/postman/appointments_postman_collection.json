@@ -502,7 +502,8 @@
                 "exec": [
                   "if (pm.response.code === 201) {",
                   "    const response = pm.response.json();",
-                  "    console.log('✅ Cita mínima creada');",
+                  "    pm.collectionVariables.set('appointment_id', response.data.id);",
+                  "    console.log('✅ Cita mínima creada con ID:', response.data.id);",
                   "}"
                 ]
               }
