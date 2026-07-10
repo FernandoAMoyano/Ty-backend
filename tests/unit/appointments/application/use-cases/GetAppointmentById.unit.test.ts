@@ -416,6 +416,27 @@ describe('GetAppointmentById Use Case', () => {
       ).rejects.toThrow(ForbiddenError);
     });
 
+    // Regresión: un STYLIST que creó la cita (userId) pero no quedó asignado como
+    // stylistId (ej. "Create Appointment (Minimal)" sin stylistId) debe poder verla,
+    // igual que puede actualizarla/confirmarla/cancelarla (ownership unificado).
+    // Antes de este fix, GetAppointmentById solo miraba stylistId para el rol STYLIST
+    // e ignoraba userId, a diferencia de Update/Confirm/CancelAppointment.
+    it('should allow STYLIST who is the creator (userId) but not the assigned stylist to view the appointment', async () => {
+      // Arrange — cita sin estilista asignado, creada por un STYLIST
+      const creatorStylistId = generateUuid();
+      const appointment = createMockAppointment({
+        userId: creatorStylistId,
+        stylistId: undefined,
+      } as any);
+      mockAppointmentRepository.findById.mockResolvedValue(appointment);
+
+      // Act
+      const result = await useCase.execute(validAppointmentId, creatorStylistId, 'STYLIST');
+
+      // Assert
+      expect(result.id).toBe(validAppointmentId);
+    });
+
     // Debería permitir al creador (userId) ver la cita como CLIENT
     it('should allow creator (userId) to view the appointment as CLIENT', async () => {
       // Arrange

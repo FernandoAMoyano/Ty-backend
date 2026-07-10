@@ -7,10 +7,11 @@ import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 
 /**
  * Caso de uso para obtener una cita específica por su ID
- * Aplica control de acceso híbrido: ownership + role-based
+ * Aplica ownership unificado (userId || clientId || stylistId) con ADMIN override,
+ * el mismo patrón que UpdateAppointment/ConfirmAppointment/CancelAppointment
  * - ADMIN: puede ver cualquier cita
- * - STYLIST: solo citas donde es el estilista asignado
- * - CLIENT: solo citas donde es el creador (userId) o el cliente (clientId)
+ * - Cualquier otro rol: solo si es el creador (userId), el cliente (clientId)
+ *   o el estilista asignado (stylistId) de la cita
  */
 export class GetAppointmentById {
   constructor(private appointmentRepository: IAppointmentRepository) {}
@@ -67,6 +68,7 @@ export class GetAppointmentById {
 
   /**
    * Valida que el usuario tenga permisos para ver la cita
+   * Aplica ownership unificado (userId || clientId || stylistId) con ADMIN override
    * @param appointment - Entidad de la cita
    * @param requesterId - ID del usuario solicitante
    * @param requesterRole - Nombre del rol del usuario
@@ -80,21 +82,15 @@ export class GetAppointmentById {
     // ADMIN puede ver cualquier cita
     if (requesterRole === 'ADMIN') return;
 
-    // STYLIST solo ve citas donde es el estilista asignado
-    if (requesterRole === 'STYLIST') {
-      if (appointment.stylistId === requesterId) return;
+    // Ownership unificado: userId, clientId o stylistId
+    const canView =
+      appointment.userId === requesterId ||
+      appointment.clientId === requesterId ||
+      appointment.stylistId === requesterId;
+
+    if (!canView) {
       throw new ForbiddenError('You do not have permission to view this appointment');
     }
-
-    // CLIENT solo ve citas donde es el creador o el cliente
-    if (
-      appointment.userId === requesterId ||
-      appointment.clientId === requesterId
-    ) {
-      return;
-    }
-
-    throw new ForbiddenError('You do not have permission to view this appointment');
   }
 
   /**

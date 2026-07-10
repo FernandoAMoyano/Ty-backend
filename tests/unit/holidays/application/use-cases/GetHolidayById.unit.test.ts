@@ -1,6 +1,7 @@
 import { GetHolidayById } from '../../../../../src/modules/holidays/application/use-cases/GetHolidayById';
 import { IHolidayRepository } from '../../../../../src/modules/holidays/domain/repositories/IHolidayRepository';
 import { Holiday } from '../../../../../src/modules/holidays/domain/entities/Holiday';
+import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
 
 describe('GetHolidayById Use Case', () => {
   let getHolidayById: GetHolidayById;
@@ -44,13 +45,17 @@ describe('GetHolidayById Use Case', () => {
     expect(mockHolidayRepository.findById).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000');
   });
 
-  // Debería lanzar error si el feriado no existe
-  it('should throw error if holiday not found', async () => {
+  // Debería lanzar NotFoundError (404) si el feriado no existe, no un Error genérico (500)
+  it('should throw NotFoundError if holiday not found', async () => {
     mockHolidayRepository.findById.mockResolvedValue(null);
 
     await expect(
       getHolidayById.execute('non-existent-id'),
-    ).rejects.toThrow('Feriado no encontrado');
+    ).rejects.toThrow(NotFoundError);
+
+    await expect(
+      getHolidayById.execute('non-existent-id'),
+    ).rejects.toThrow('Holiday not found: non-existent-id');
   });
 
   // Debería llamar al repositorio con el ID correcto

@@ -485,7 +485,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       appointmentData.scheduleId,
       appointmentData.statusId,
       appointmentData.stylistId,
-      appointmentData.confirmedAt,
+      appointmentData.confirmedAt ?? undefined,
       appointmentData.services?.map((service: any) => service.id) || [],
       appointmentData.createdAt,
       appointmentData.updatedAt,

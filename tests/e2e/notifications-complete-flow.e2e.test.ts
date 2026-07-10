@@ -289,8 +289,8 @@ describe('Notifications Complete Flow E2E Tests', () => {
         userId: userId,
       });
 
-    // Debería ser rechazado (401 por el middleware de autorización)
-    expect(userCreateAttempt.status).toBe(401);
+    // Debería ser rechazado (403 -- autenticado pero sin el rol requerido)
+    expect(userCreateAttempt.status).toBe(403);
     expect(userCreateAttempt.body.success).toBe(false);
 
     // Sin autenticación

@@ -49,8 +49,8 @@ describe('Notifications Integration Tests', () => {
           userId: userId,
         });
 
-      // AuthMiddleware retorna 401 para cualquier error de autorización
-      expect(response.status).toBe(401);
+      // Usuario autenticado pero sin el rol requerido -> ForbiddenError (403)
+      expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
     });
 

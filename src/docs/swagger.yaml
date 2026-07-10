@@ -132,6 +132,8 @@ paths:
                             nullable: true
                             example: null
                             description: "Preferencias del usuario (opcional, relevante para clientes)"
+        '400':
+          $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '429':
@@ -160,6 +162,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '429':
@@ -178,7 +182,9 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '401':
           $ref: '#/components/responses/Error401'
-    
+        '404':
+          $ref: '#/components/responses/Error404'
+
     put:
       tags: [Authentication]
       summary: Actualizar perfil del usuario
@@ -209,6 +215,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
 
   /auth/change-password:
     put:
@@ -239,6 +247,39 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /auth/users/{id}/deactivate:
+    patch:
+      tags: [Authentication]
+      summary: Desactivar usuario (Solo Admin)
+      description: Desactiva un usuario. Si es STYLIST, cancela en cascada sus citas activas (PENDING/CONFIRMED) y desactiva sus asignaciones de servicio.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Usuario desactivado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
 
   # CATEGORIES
   /categories:
@@ -408,6 +449,8 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
 
   /categories/{id}/activate:
     patch:
@@ -651,6 +694,8 @@ paths:
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
 
   /services/category/{categoryId}:
     get:
@@ -1082,6 +1127,8 @@ paths:
           $ref: '#/components/responses/Error401'
         '409':
           $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
 
   /appointments/available-slots:
     get:
@@ -1116,6 +1163,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '422':
+          $ref: '#/components/responses/Error422'
 
   /appointments/client/{clientId}:
     get:
@@ -1135,6 +1186,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
@@ -1155,6 +1208,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
@@ -1237,6 +1292,8 @@ paths:
           $ref: '#/components/responses/Error404'
         '409':
           $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
 
   /appointments/{id}/confirm:
     post:
@@ -1256,12 +1313,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
 
   /appointments/{id}/cancel:
     post:
@@ -1291,12 +1352,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
+        '422':
+          $ref: '#/components/responses/Error422'
 
   # PAYMENTS
   /payments:
@@ -1383,6 +1448,8 @@ paths:
                         example: false
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
 
     post:
       tags: [Payments]
@@ -1427,6 +1494,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
 
   /payments/statistics:
     get:
@@ -1464,6 +1533,8 @@ paths:
                     $ref: '#/components/schemas/PaymentStatistics'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
 
   /payments/appointment/{appointmentId}:
     get:
@@ -1500,6 +1571,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
 
   /payments/{id}:
     get:
@@ -1533,6 +1606,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
 
@@ -1580,6 +1655,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
         '422':
@@ -1631,6 +1708,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
         '422':
@@ -1681,6 +1760,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
         '422':
@@ -1717,6 +1798,8 @@ paths:
                     $ref: '#/components/schemas/Payment'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
         '422':
@@ -1814,6 +1897,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '409':
           $ref: '#/components/responses/Error409'
 
@@ -1961,6 +2046,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
 
@@ -1984,6 +2071,8 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
 
@@ -2107,6 +2196,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '409':
           $ref: '#/components/responses/Error409'
 
@@ -2202,6 +2293,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
 
@@ -2224,6 +2317,8 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
 
@@ -2474,8 +2569,12 @@ paths:
                     example: "Notification retrieved successfully"
                   data:
                     $ref: '#/components/schemas/Notification'
+        '400':
+          $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
 
@@ -2508,8 +2607,12 @@ paths:
                     example: "Notification marked as read"
                   data:
                     $ref: '#/components/schemas/Notification'
+        '400':
+          $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
         '404':
           $ref: '#/components/responses/Error404'
 

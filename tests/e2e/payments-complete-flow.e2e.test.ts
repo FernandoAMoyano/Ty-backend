@@ -386,14 +386,14 @@ describe('Payments Complete Flow E2E Tests', () => {
       .get('/api/v1/payments')
       .set('Authorization', `Bearer ${stylistToken}`);
 
-    expect(stylistListResponse.status).toBe(401);
+    expect(stylistListResponse.status).toBe(403);
 
     // Stylist NO puede ver estadísticas
     const stylistStatsResponse = await request(app)
       .get('/api/v1/payments/statistics')
       .set('Authorization', `Bearer ${stylistToken}`);
 
-    expect(stylistStatsResponse.status).toBe(401);
+    expect(stylistStatsResponse.status).toBe(403);
 
     // Stylist NO puede actualizar monto
     const anotherPaymentResponse = await request(app)
@@ -413,7 +413,7 @@ describe('Payments Complete Flow E2E Tests', () => {
         amount: 100.0,
       });
 
-    expect(stylistUpdateResponse.status).toBe(401);
+    expect(stylistUpdateResponse.status).toBe(403);
 
     // Stylist NO puede reembolsar
     // Primero procesar el pago
@@ -427,7 +427,7 @@ describe('Payments Complete Flow E2E Tests', () => {
       .set('Authorization', `Bearer ${stylistToken}`)
       .send({});
 
-    expect(stylistRefundResponse.status).toBe(401);
+    expect(stylistRefundResponse.status).toBe(403);
 
     // ==========================================
     // CLIENT: Todo denegado
@@ -442,21 +442,21 @@ describe('Payments Complete Flow E2E Tests', () => {
         appointmentId: testAppointmentId,
       });
 
-    expect(clientCreateResponse.status).toBe(401);
+    expect(clientCreateResponse.status).toBe(403);
 
     // Client NO puede listar pagos
     const clientListResponse = await request(app)
       .get('/api/v1/payments')
       .set('Authorization', `Bearer ${userToken}`);
 
-    expect(clientListResponse.status).toBe(401);
+    expect(clientListResponse.status).toBe(403);
 
     // Client NO puede ver estadísticas
     const clientStatsResponse = await request(app)
       .get('/api/v1/payments/statistics')
       .set('Authorization', `Bearer ${userToken}`);
 
-    expect(clientStatsResponse.status).toBe(401);
+    expect(clientStatsResponse.status).toBe(403);
 
     // ==========================================
     // SIN AUTENTICACIÓN: Todo denegado

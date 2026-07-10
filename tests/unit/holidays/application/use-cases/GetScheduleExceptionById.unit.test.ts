@@ -1,6 +1,7 @@
 import { GetScheduleExceptionById } from '../../../../../src/modules/holidays/application/use-cases/GetScheduleExceptionById';
 import { IScheduleExceptionRepository } from '../../../../../src/modules/holidays/domain/repositories/IScheduleExceptionRepository';
 import { ScheduleException } from '../../../../../src/modules/holidays/domain/entities/ScheduleException';
+import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
 
 describe('GetScheduleExceptionById Use Case', () => {
   let getScheduleExceptionById: GetScheduleExceptionById;
@@ -49,13 +50,17 @@ describe('GetScheduleExceptionById Use Case', () => {
     expect(result.endTimeException).toBe('14:00');
   });
 
-  // Debería lanzar error si la excepción no existe
-  it('should throw error if exception not found', async () => {
+  // Debería lanzar NotFoundError (404) si la excepción no existe, no un Error genérico (500)
+  it('should throw NotFoundError if exception not found', async () => {
     mockRepository.findById.mockResolvedValue(null);
 
     await expect(
       getScheduleExceptionById.execute('non-existent-id'),
-    ).rejects.toThrow('Excepción de horario no encontrada');
+    ).rejects.toThrow(NotFoundError);
+
+    await expect(
+      getScheduleExceptionById.execute('non-existent-id'),
+    ).rejects.toThrow('ScheduleException not found: non-existent-id');
   });
 
   // Debería llamar al repositorio con el ID correcto

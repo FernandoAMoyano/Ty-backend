@@ -2,6 +2,8 @@ import { IScheduleExceptionRepository } from '../../domain/repositories/ISchedul
 import { IHolidayRepository } from '../../domain/repositories/IHolidayRepository';
 import { UpdateScheduleExceptionDto } from '../dto/request/UpdateScheduleExceptionDto';
 import { ScheduleExceptionResponseDto, ScheduleExceptionResponseMapper } from '../dto/response/ScheduleExceptionResponseDto';
+import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
+import { ConflictError } from '../../../../shared/exceptions/ConflictError';
 
 /**
  * Caso de uso: Actualizar excepción de horario
@@ -18,16 +20,16 @@ export class UpdateScheduleException {
    * @param id - ID de la excepción a actualizar
    * @param dto - Datos a actualizar
    * @returns La excepción actualizada
-   * @throws Error si no se encuentra la excepción
-   * @throws Error si la nueva fecha ya tiene otra excepción
-   * @throws Error si el holidayId no existe
+   * @throws NotFoundError si no se encuentra la excepción
+   * @throws ConflictError si la nueva fecha ya tiene otra excepción
+   * @throws NotFoundError si el holidayId no existe
    */
   async execute(id: string, dto: UpdateScheduleExceptionDto): Promise<ScheduleExceptionResponseDto> {
     // Buscar la excepción
     const exception = await this.scheduleExceptionRepository.findById(id);
 
     if (!exception) {
-      throw new Error('Excepción de horario no encontrada');
+      throw new NotFoundError('ScheduleException', id);
     }
 
     // Si se actualiza la fecha, verificar que no exista otra excepción en esa fecha
@@ -35,7 +37,7 @@ export class UpdateScheduleException {
       const newDate = new Date(dto.exceptionDate);
       const existingException = await this.scheduleExceptionRepository.existsByDate(newDate, id);
       if (existingException) {
-        throw new Error('Ya existe una excepción de horario en la fecha especificada');
+        throw new ConflictError('A schedule exception already exists on the specified date');
       }
       exception.updateDate(newDate);
     }
@@ -63,7 +65,7 @@ export class UpdateScheduleException {
         // Verificar que el feriado exista
         const holiday = await this.holidayRepository.findById(dto.holidayId);
         if (!holiday) {
-          throw new Error('El feriado especificado no existe');
+          throw new NotFoundError('Holiday', dto.holidayId);
         }
         exception.associateToHoliday(dto.holidayId);
       }

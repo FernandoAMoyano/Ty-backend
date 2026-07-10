@@ -3,6 +3,8 @@ import { IScheduleExceptionRepository } from '../../../../../src/modules/holiday
 import { IHolidayRepository } from '../../../../../src/modules/holidays/domain/repositories/IHolidayRepository';
 import { ScheduleException } from '../../../../../src/modules/holidays/domain/entities/ScheduleException';
 import { Holiday } from '../../../../../src/modules/holidays/domain/entities/Holiday';
+import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
+import { ConflictError } from '../../../../../src/shared/exceptions/ConflictError';
 
 describe('UpdateScheduleException Use Case', () => {
   let updateScheduleException: UpdateScheduleException;
@@ -100,8 +102,8 @@ describe('UpdateScheduleException Use Case', () => {
     expect(mockScheduleExceptionRepository.update).toHaveBeenCalledTimes(1);
   });
 
-  // Debería lanzar error si la nueva fecha ya tiene una excepción
-  it('should throw error if new date already has an exception', async () => {
+  // Debería lanzar ConflictError (409) si la nueva fecha ya tiene una excepción, no un Error genérico (500)
+  it('should throw ConflictError if new date already has an exception', async () => {
     mockScheduleExceptionRepository.findById.mockResolvedValue(mockException);
     mockScheduleExceptionRepository.existsByDate.mockResolvedValue(true);
 
@@ -109,7 +111,13 @@ describe('UpdateScheduleException Use Case', () => {
       updateScheduleException.execute('123e4567-e89b-12d3-a456-426614174000', {
         exceptionDate: '2025-12-26',
       }),
-    ).rejects.toThrow('Ya existe una excepción de horario en la fecha especificada');
+    ).rejects.toThrow(ConflictError);
+
+    await expect(
+      updateScheduleException.execute('123e4567-e89b-12d3-a456-426614174000', {
+        exceptionDate: '2025-12-26',
+      }),
+    ).rejects.toThrow('A schedule exception already exists on the specified date');
   });
 
   // Debería asociar la excepción a un feriado
@@ -152,8 +160,8 @@ describe('UpdateScheduleException Use Case', () => {
     expect(result.holidayId).toBeNull();
   });
 
-  // Debería lanzar error si el feriado no existe
-  it('should throw error if holiday does not exist', async () => {
+  // Debería lanzar NotFoundError (404) si el feriado no existe, no un Error genérico (500)
+  it('should throw NotFoundError if holiday does not exist', async () => {
     mockScheduleExceptionRepository.findById.mockResolvedValue(mockException);
     mockHolidayRepository.findById.mockResolvedValue(null);
 
@@ -161,18 +169,30 @@ describe('UpdateScheduleException Use Case', () => {
       updateScheduleException.execute('123e4567-e89b-12d3-a456-426614174000', {
         holidayId: 'non-existent-id',
       }),
-    ).rejects.toThrow('El feriado especificado no existe');
+    ).rejects.toThrow(NotFoundError);
+
+    await expect(
+      updateScheduleException.execute('123e4567-e89b-12d3-a456-426614174000', {
+        holidayId: 'non-existent-id',
+      }),
+    ).rejects.toThrow('Holiday not found: non-existent-id');
   });
 
-  // Debería lanzar error si la excepción no existe
-  it('should throw error if exception not found', async () => {
+  // Debería lanzar NotFoundError (404) si la excepción no existe, no un Error genérico (500)
+  it('should throw NotFoundError if exception not found', async () => {
     mockScheduleExceptionRepository.findById.mockResolvedValue(null);
 
     await expect(
       updateScheduleException.execute('non-existent-id', {
         reason: 'Nueva razón',
       }),
-    ).rejects.toThrow('Excepción de horario no encontrada');
+    ).rejects.toThrow(NotFoundError);
+
+    await expect(
+      updateScheduleException.execute('non-existent-id', {
+        reason: 'Nueva razón',
+      }),
+    ).rejects.toThrow('ScheduleException not found: non-existent-id');
   });
 
   // Debería actualizar la razón

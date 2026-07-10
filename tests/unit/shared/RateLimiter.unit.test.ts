@@ -43,8 +43,10 @@ describe('RateLimiter', () => {
     process.env.NODE_ENV = originalNodeEnv;
   });
 
-  describe('en NODE_ENV=test (comportamiento normal de la suite)', () => {
-    it('no debería bloquear ni siquiera superando el límite configurado', async () => {
+  // en NODE_ENV=test (comportamiento normal de la suite)
+  describe('in NODE_ENV=test (normal suite behavior)', () => {
+    // No debería bloquear ni siquiera superando el límite configurado
+    it('should not block even when exceeding the configured limit', async () => {
       process.env.NODE_ENV = 'test';
       const app = buildTestApp({ ...loginRateLimiterOptions, limit: 2 });
 
@@ -56,8 +58,10 @@ describe('RateLimiter', () => {
     });
   });
 
-  describe('loginRateLimiter (fuera de NODE_ENV=test)', () => {
-    it('debería permitir hasta el límite configurado (5) y bloquear el siguiente con 429', async () => {
+  // loginRateLimiter (fuera de NODE_ENV=test)
+  describe('loginRateLimiter (outside NODE_ENV=test)', () => {
+    // Debería permitir hasta el límite configurado (5) y bloquear el siguiente con 429
+    it('should allow up to the configured limit (5) and block the next one with 429', async () => {
       process.env.NODE_ENV = 'production';
       const app = buildTestApp({ ...loginRateLimiterOptions });
 
@@ -77,7 +81,8 @@ describe('RateLimiter', () => {
       );
     });
 
-    it('no debería contar los intentos exitosos (skipSuccessfulRequests)', async () => {
+    // No debería contar los intentos exitosos (skipSuccessfulRequests)
+    it('should not count successful attempts (skipSuccessfulRequests)', async () => {
       process.env.NODE_ENV = 'production';
       const app = buildTestApp({ ...loginRateLimiterOptions });
 
@@ -89,8 +94,10 @@ describe('RateLimiter', () => {
     });
   });
 
-  describe('registerRateLimiter (fuera de NODE_ENV=test)', () => {
-    it('debería bloquear con 429 tras superar el límite configurado (10), contando también los exitosos', async () => {
+  // registerRateLimiter (fuera de NODE_ENV=test)
+  describe('registerRateLimiter (outside NODE_ENV=test)', () => {
+    // Debería bloquear con 429 tras superar el límite configurado (10), contando también los exitosos
+    it('should block with 429 after exceeding the configured limit (10), counting successful attempts too', async () => {
       process.env.NODE_ENV = 'production';
       const app = buildTestApp({ ...registerRateLimiterOptions });
 
@@ -106,8 +113,10 @@ describe('RateLimiter', () => {
     });
   });
 
-  describe('refreshTokenRateLimiter (fuera de NODE_ENV=test)', () => {
-    it('debería bloquear con 429 tras superar el límite configurado (20)', async () => {
+  // refreshTokenRateLimiter (fuera de NODE_ENV=test)
+  describe('refreshTokenRateLimiter (outside NODE_ENV=test)', () => {
+    // Debería bloquear con 429 tras superar el límite configurado (20)
+    it('should block with 429 after exceeding the configured limit (20)', async () => {
       process.env.NODE_ENV = 'production';
       const app = buildTestApp({ ...refreshTokenRateLimiterOptions });
 
