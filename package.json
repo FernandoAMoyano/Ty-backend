@@ -35,6 +35,7 @@
     "docker:db:reset": "docker exec -it turnity-api-dev npx prisma migrate reset --force",
     "docker:prisma:test:migrate:deploy": "docker exec -it turnity-api-dev sh -c \"DATABASE_URL=$TEST_DATABASE_URL npx prisma migrate deploy\"",
     "docker:prisma:test:db:seed": "docker exec -it turnity-api-dev sh -c \"DATABASE_URL=$TEST_DATABASE_URL npx prisma db seed\"",
+    "docker:build": "docker exec -it turnity-api-dev npm run build",
     "docker:jest:test": "docker exec -it turnity-api-dev npm test",
     "docker:jest:test:watch": "docker exec -it turnity-api-dev npm run test:watch",
     "docker:prod:up": "docker-compose up -d",
