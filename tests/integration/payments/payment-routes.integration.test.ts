@@ -81,7 +81,7 @@ describe('Payments Integration Tests', () => {
           appointmentId: testAppointmentId,
         });
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
     });
 
@@ -191,7 +191,7 @@ describe('Payments Integration Tests', () => {
         .get('/api/v1/payments')
         .set('Authorization', `Bearer ${userToken}`);
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
     });
 
@@ -201,7 +201,7 @@ describe('Payments Integration Tests', () => {
         .get('/api/v1/payments')
         .set('Authorization', `Bearer ${stylistToken}`);
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
     });
 
@@ -277,7 +277,7 @@ describe('Payments Integration Tests', () => {
         .get('/api/v1/payments/statistics')
         .set('Authorization', `Bearer ${userToken}`);
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
     });
 
@@ -447,7 +447,7 @@ describe('Payments Integration Tests', () => {
           method: 'CASH',
         });
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
     });
 
@@ -597,7 +597,7 @@ describe('Payments Integration Tests', () => {
         .set('Authorization', `Bearer ${stylistToken}`)
         .send({});
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
     });
 
@@ -675,7 +675,7 @@ describe('Payments Integration Tests', () => {
         .post(`/api/v1/payments/${createResponse.body.data.id}/cancel`)
         .set('Authorization', `Bearer ${userToken}`);
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
     });
 
@@ -745,7 +745,7 @@ describe('Payments Integration Tests', () => {
           amount: 150.0,
         });
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
     });
 

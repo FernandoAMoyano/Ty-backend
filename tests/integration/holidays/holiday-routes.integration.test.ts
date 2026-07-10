@@ -103,7 +103,7 @@ describe('Holidays Integration Tests', () => {
           date: '2099-07-09',
         });
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
     });
 
     // Debería rechazar creación sin autenticación
@@ -314,7 +314,7 @@ describe('Holidays Integration Tests', () => {
           name: 'TEST Modificado',
         });
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
     });
   });
 
@@ -373,7 +373,7 @@ describe('Holidays Integration Tests', () => {
           endTimeException: '14:00',
         });
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
     });
 
     // Debería validar horarios requeridos
@@ -485,7 +485,7 @@ describe('Holidays Integration Tests', () => {
         .delete(`/api/v1/holidays/exceptions/${createResponse.body.data.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
     });
   });
 
@@ -497,7 +497,7 @@ describe('Holidays Integration Tests', () => {
         .delete(`/api/v1/holidays/${testHolidayId}`)
         .set('Authorization', `Bearer ${userToken}`);
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
     });
 
     // Debería eliminar un feriado y sus excepciones asociadas como admin
