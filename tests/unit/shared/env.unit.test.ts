@@ -20,8 +20,10 @@ describe('validateEnv', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  describe('con variables válidas', () => {
-    it('debería parsear correctamente sin llamar a process.exit', () => {
+  // con variables válidas
+  describe('with valid variables', () => {
+    // Debería parsear correctamente sin llamar a process.exit
+    it('should parse correctly without calling process.exit', () => {
       const result = validateEnv(validEnv);
 
       expect(exitSpy).not.toHaveBeenCalled();
@@ -29,7 +31,8 @@ describe('validateEnv', () => {
       expect(result.DATABASE_URL).toBe(validEnv.DATABASE_URL);
     });
 
-    it('debería aplicar los defaults de las variables opcionales', () => {
+    // Debería aplicar los defaults de las variables opcionales
+    it('should apply defaults for optional variables', () => {
       const result = validateEnv(validEnv);
 
       expect(result.NODE_ENV).toBe('development');
@@ -40,7 +43,8 @@ describe('validateEnv', () => {
       expect(result.FRONTEND_URL).toBe('http://localhost:3000');
     });
 
-    it('debería respetar los valores explícitos de las variables opcionales en vez del default', () => {
+    // Debería respetar los valores explícitos de las variables opcionales en vez del default
+    it('should respect explicit values for optional variables instead of the default', () => {
       const result = validateEnv({
         ...validEnv,
         NODE_ENV: 'production',
@@ -58,8 +62,10 @@ describe('validateEnv', () => {
     });
   });
 
-  describe('con variables requeridas faltantes o inválidas', () => {
-    it('debería llamar a process.exit(1) si falta JWT_ACCESS_SECRET', () => {
+  // con variables requeridas faltantes o inválidas
+  describe('with missing or invalid required variables', () => {
+    // Debería llamar a process.exit(1) si falta JWT_ACCESS_SECRET
+    it('should call process.exit(1) if JWT_ACCESS_SECRET is missing', () => {
       const { JWT_ACCESS_SECRET, ...rest } = validEnv;
       void JWT_ACCESS_SECRET;
 
@@ -69,13 +75,15 @@ describe('validateEnv', () => {
       expect(consoleErrorSpy).toHaveBeenCalled();
     });
 
-    it('debería llamar a process.exit(1) si JWT_ACCESS_SECRET tiene menos de 32 caracteres', () => {
+    // Debería llamar a process.exit(1) si JWT_ACCESS_SECRET tiene menos de 32 caracteres
+    it('should call process.exit(1) if JWT_ACCESS_SECRET has fewer than 32 characters', () => {
       validateEnv({ ...validEnv, JWT_ACCESS_SECRET: 'demasiado-corto' });
 
       expect(exitSpy).toHaveBeenCalledWith(1);
     });
 
-    it('debería llamar a process.exit(1) si falta DATABASE_URL', () => {
+    // Debería llamar a process.exit(1) si falta DATABASE_URL
+    it('should call process.exit(1) if DATABASE_URL is missing', () => {
       const { DATABASE_URL, ...rest } = validEnv;
       void DATABASE_URL;
 
@@ -84,31 +92,36 @@ describe('validateEnv', () => {
       expect(exitSpy).toHaveBeenCalledWith(1);
     });
 
-    it('debería llamar a process.exit(1) si DATABASE_URL no es una URL válida', () => {
+    // Debería llamar a process.exit(1) si DATABASE_URL no es una URL válida
+    it('should call process.exit(1) if DATABASE_URL is not a valid URL', () => {
       validateEnv({ ...validEnv, DATABASE_URL: 'no-es-una-url' });
 
       expect(exitSpy).toHaveBeenCalledWith(1);
     });
 
-    it('debería llamar a process.exit(1) si NODE_ENV tiene un valor fuera del enum', () => {
+    // Debería llamar a process.exit(1) si NODE_ENV tiene un valor fuera del enum
+    it('should call process.exit(1) if NODE_ENV has a value outside the enum', () => {
       validateEnv({ ...validEnv, NODE_ENV: 'staging' });
 
       expect(exitSpy).toHaveBeenCalledWith(1);
     });
 
-    it('debería llamar a process.exit(1) si PORT no es un número de puerto válido', () => {
+    // Debería llamar a process.exit(1) si PORT no es un número de puerto válido
+    it('should call process.exit(1) if PORT is not a valid port number', () => {
       validateEnv({ ...validEnv, PORT: 'not-a-number' });
 
       expect(exitSpy).toHaveBeenCalledWith(1);
     });
 
-    it('debería llamar a process.exit(1) si JWT_ACCESS_EXPIRY no matchea el formato esperado', () => {
+    // Debería llamar a process.exit(1) si JWT_ACCESS_EXPIRY no matchea el formato esperado
+    it('should call process.exit(1) if JWT_ACCESS_EXPIRY does not match the expected format', () => {
       validateEnv({ ...validEnv, JWT_ACCESS_EXPIRY: '2 days' });
 
       expect(exitSpy).toHaveBeenCalledWith(1);
     });
 
-    it('debería imprimir un mensaje legible por cada variable inválida', () => {
+    // Debería imprimir un mensaje legible por cada variable inválida
+    it('should print a readable message for each invalid variable', () => {
       validateEnv({});
 
       const printedMessages = consoleErrorSpy.mock.calls.map((call) => call[0]).join('\n');

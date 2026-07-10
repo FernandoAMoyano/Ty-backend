@@ -5,8 +5,7 @@ import { NotFoundError } from '../../../src/shared/exceptions/NotFoundError';
 import { logger } from '../../../src/shared/logger/logger';
 
 // Mockeamos el logger para verificar que ErrorHandler efectivamente registra
-// los errores -- antes de este cambio, el console.error estaba comentado y
-// ningun error de servidor se registraba en ningun lado.
+// los errores.
 jest.mock('../../../src/shared/logger/logger', () => ({
   logger: {
     error: jest.fn(),
@@ -41,8 +40,10 @@ describe('errorHandler', () => {
     jest.restoreAllMocks();
   });
 
-  describe('con AppError', () => {
-    it('debería responder con el statusCode y code del error', () => {
+  // con AppError
+  describe('with AppError', () => {
+    // Debería responder con el statusCode y code del error
+    it("should respond with the error's statusCode and code", () => {
       const error = new NotFoundError('Appointment', 'appointment-id');
 
       errorHandler(error, mockRequest as Request, mockResponse as Response, mockNext);
@@ -57,7 +58,8 @@ describe('errorHandler', () => {
       );
     });
 
-    it('debería registrar el error via logger.error con contexto de la request', () => {
+    // Debería registrar el error via logger.error con contexto de la request
+    it('should log the error via logger.error with request context', () => {
       const error = new AppError('Custom business error', 422, 'BUSINESS_RULE_ERROR');
 
       errorHandler(error, mockRequest as Request, mockResponse as Response, mockNext);
@@ -75,7 +77,8 @@ describe('errorHandler', () => {
       );
     });
 
-    it('no debería incluir el stack en la respuesta HTTP fuera de development', () => {
+    // No debería incluir el stack en la respuesta HTTP fuera de development
+    it('should not include the stack in the HTTP response outside development', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
 
@@ -89,8 +92,10 @@ describe('errorHandler', () => {
     });
   });
 
-  describe('con error genérico (no AppError)', () => {
-    it('debería responder 500 con mensaje genérico', () => {
+  // con error genérico (no AppError)
+  describe('with a generic error (non-AppError)', () => {
+    // Debería responder 500 con mensaje genérico
+    it('should respond with 500 and a generic message', () => {
       const error = new Error('Unexpected failure');
 
       errorHandler(error, mockRequest as Request, mockResponse as Response, mockNext);
@@ -105,7 +110,8 @@ describe('errorHandler', () => {
       );
     });
 
-    it('debería registrar el error via logger.error sin statusCode/code', () => {
+    // Debería registrar el error via logger.error sin statusCode/code
+    it('should log the error via logger.error without statusCode/code', () => {
       const error = new Error('Unexpected failure');
 
       errorHandler(error, mockRequest as Request, mockResponse as Response, mockNext);

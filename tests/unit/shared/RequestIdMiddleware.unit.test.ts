@@ -16,26 +16,30 @@ describe('requestIdMiddleware', () => {
     mockNext = jest.fn();
   });
 
-  it('debería asignar un UUID v4 válido a req.id', () => {
+  // Debería asignar un UUID v4 válido a req.id
+  it('should assign a valid UUID v4 to req.id', () => {
     requestIdMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockRequest.id).toBeDefined();
     expect(mockRequest.id).toMatch(UUID_V4_REGEX);
   });
 
-  it('debería exponer el mismo ID como header X-Request-Id de la respuesta', () => {
+  // Debería exponer el mismo ID como header X-Request-Id de la respuesta
+  it('should expose the same ID as the X-Request-Id response header', () => {
     requestIdMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(setHeaderMock).toHaveBeenCalledWith('X-Request-Id', mockRequest.id);
   });
 
-  it('debería llamar a next() sin argumentos', () => {
+  // Debería llamar a next() sin argumentos
+  it('should call next() without arguments', () => {
     requestIdMiddleware(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockNext).toHaveBeenCalledWith();
   });
 
-  it('debería generar un ID distinto en cada request', () => {
+  // Debería generar un ID distinto en cada request
+  it('should generate a different ID on each request', () => {
     const firstRequest: Partial<Request> = {};
     const secondRequest: Partial<Request> = {};
 
