@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../../application/services/JwtService';
 import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
+import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 import { prisma } from '../../../../shared/config/Prisma';
 
 /**
@@ -65,7 +66,11 @@ export class AuthMiddleware {
    * @param allowedRoles - Array de roles que tienen permiso para acceder al recurso
    * @returns Función middleware que valida si el usuario tiene el rol requerido
    * @description Verifica que el usuario autenticado tenga uno de los roles permitidos
-   * @throws UnauthorizedError si el usuario no tiene permisos suficientes
+   * @throws UnauthorizedError si no hay usuario autenticado (req.user ausente -- no debería
+   * ocurrir en la práctica, ya que authorize() siempre corre después de authenticate() en las rutas)
+   * @throws ForbiddenError si el usuario está autenticado pero no tiene el rol requerido --
+   * mismo criterio que ForbiddenError en appointments/notifications: usuario valido, solo sin
+   * el permiso necesario, no es un problema de autenticacion (401)
    */
   authorize = (allowedRoles: string[]) => {
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -80,7 +85,7 @@ export class AuthMiddleware {
         });
 
         if (!userRole || !allowedRoles.includes(userRole.name)) {
-          throw new UnauthorizedError('Insufficient permissions');
+          throw new ForbiddenError('Insufficient permissions');
         }
 
         // Adjuntar nombre del rol para que los controllers/use cases puedan usarlo
