@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { User } from '../../domain/entities/User';
-import { IUserRepository } from '../../domain/repositories/IUserRepository';
+import { IUserRepository, UserWithRole } from '../../domain/repositories/IUserRepository';
 
 /**
  * Implementación de UserRepository usando Prisma ORM
@@ -75,51 +75,30 @@ export class PrismaUserRepository implements IUserRepository {
    * @returns Promise con usuario y rol o null si no existe
    * @description Usa include de Prisma para obtener relación con tabla role
    */
-  async findByEmailWithRole(email: string): Promise<any | null> {
-    const userData = await this.prisma.user.findUnique({
+  async findByEmailWithRole(email: string): Promise<UserWithRole | null> {
+    return this.prisma.user.findUnique({
       where: { email: email.toLowerCase() },
       include: {
         role: true,
       },
     });
-
-    return userData;
   }
 
   /**
    * Busca usuario por ID incluyendo datos del rol asociado
    * @param id - ID del usuario
    * @returns Promise con usuario y rol o null si no existe
-   * @description Usa include de Prisma para obtener relación con tabla role
+   * @description Usa include de Prisma para obtener relación con tabla role.
+   * Devuelve el resultado de Prisma directamente (mismo patron que
+   * findByEmailWithRole).
    */
-  async findByIdWithRole(id: string): Promise<any | null> {
-    const userData = await this.prisma.user.findUnique({
+  async findByIdWithRole(id: string): Promise<UserWithRole | null> {
+    return this.prisma.user.findUnique({
       where: { id },
       include: {
         role: true,
       },
     });
-
-    if (!userData) return null;
-
-    const user = new User(
-      userData.id,
-      userData.roleId,
-      userData.name,
-      userData.email,
-      userData.phone,
-      userData.password,
-      userData.isActive,
-      userData.profilePicture,
-      userData.preferences,
-      userData.createdAt,
-      userData.updatedAt,
-    );
-
-    return {
-      ...user,
-      role: userData.role,
-    };
   }
 
   /**
