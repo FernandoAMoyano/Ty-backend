@@ -21,6 +21,10 @@
     {
       "key": "exception_id",
       "value": ""
+    },
+    {
+      "key": "standalone_exception_id",
+      "value": ""
     }
   ],
   "item": [
@@ -103,14 +107,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Navidad\",\n    \"date\": \"2025-12-25\",\n    \"description\": \"Día de Navidad - Salón cerrado\"\n}"
+              "raw": "{\n    \"name\": \"Feriado de Prueba CRUD\",\n    \"date\": \"2098-03-10\",\n    \"description\": \"Feriado de prueba (fecha lejana única, no colisiona con el seed)\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/holidays",
               "host": ["{{base_url}}"],
               "path": ["holidays"]
             },
-            "description": "Crea un nuevo feriado (solo Admin)."
+            "description": "Crea un nuevo feriado (solo Admin). Usa una fecha lejana y única (2098-03-10) para no colisionar con los feriados reales del seed (Navidad 2025-12-25, Año Nuevo 2026-01-01) y así ser idempotente entre corridas."
           },
           "response": []
         },
@@ -210,7 +214,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Navidad Actualizada\",\n    \"description\": \"Nueva descripción de Navidad\"\n}"
+              "raw": "{\n    \"name\": \"Feriado de Prueba Actualizado\",\n    \"description\": \"Descripción actualizada del feriado de prueba\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/holidays/{{holiday_id}}",
@@ -220,31 +224,12 @@
             "description": "Actualiza un feriado existente (solo Admin)."
           },
           "response": []
-        },
-        {
-          "name": "Delete Holiday",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/holidays/{{holiday_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["holidays", "{{holiday_id}}"]
-            },
-            "description": "Elimina un feriado y todas sus excepciones asociadas (solo Admin)."
-          },
-          "response": []
         }
       ]
     },
     {
       "name": "3. Schedule Exceptions",
-      "description": "Operaciones para excepciones de horario",
+      "description": "Operaciones para excepciones de horario. Nota: la eliminación del feriado creado en la sección 2 se hace acá al final (no en esa sección), para que 'Create Exception with Holiday' pueda seguir usando un holiday_id válido durante toda esta sección.",
       "item": [
         {
           "name": "Create Schedule Exception",
@@ -256,6 +241,7 @@
                   "if (pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
                   "    pm.collectionVariables.set('exception_id', jsonData.data.id);",
+                  "    pm.collectionVariables.set('standalone_exception_id', jsonData.data.id);",
                   "    console.log('Exception ID saved:', jsonData.data.id);",
                   "}"
                 ],
@@ -277,14 +263,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"exceptionDate\": \"2025-12-24\",\n    \"startTimeException\": \"09:00\",\n    \"endTimeException\": \"14:00\",\n    \"reason\": \"Horario reducido de Nochebuena\"\n}"
+              "raw": "{\n    \"exceptionDate\": \"2098-04-10\",\n    \"startTimeException\": \"09:00\",\n    \"endTimeException\": \"14:00\",\n    \"reason\": \"Horario reducido de prueba (excepción independiente, sin holidayId)\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/holidays/exceptions",
               "host": ["{{base_url}}"],
               "path": ["holidays", "exceptions"]
             },
-            "description": "Crea una nueva excepción de horario (solo Admin)."
+            "description": "Crea una nueva excepción de horario independiente (solo Admin). Usa fecha lejana única (2098-04-10) para no colisionar con el seed. Guarda su ID también en standalone_exception_id porque no tiene holidayId, así que no se limpia por cascada al borrar el feriado — necesita su propio delete al final de esta sección."
           },
           "response": []
         },
@@ -304,14 +290,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"exceptionDate\": \"2025-12-25\",\n    \"startTimeException\": \"00:00\",\n    \"endTimeException\": \"23:59\",\n    \"reason\": \"Salón cerrado por Navidad\",\n    \"holidayId\": \"{{holiday_id}}\"\n}"
+              "raw": "{\n    \"exceptionDate\": \"2098-03-11\",\n    \"startTimeException\": \"00:00\",\n    \"endTimeException\": \"23:59\",\n    \"reason\": \"Excepción de prueba asociada al feriado\",\n    \"holidayId\": \"{{holiday_id}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/holidays/exceptions",
               "host": ["{{base_url}}"],
               "path": ["holidays", "exceptions"]
             },
-            "description": "Crea una excepción asociada a un feriado específico."
+            "description": "Crea una excepción asociada a un feriado específico. Usa fecha lejana única (2098-03-11) para no colisionar con el seed. Como sí tiene holidayId, queda cubierta por el cascade delete del feriado al final de esta sección."
           },
           "response": []
         },
@@ -423,7 +409,45 @@
               "host": ["{{base_url}}"],
               "path": ["holidays", "exceptions", "{{exception_id}}"]
             },
-            "description": "Elimina una excepción de horario (solo Admin)."
+            "description": "Elimina la excepción asociada al feriado (solo Admin)."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Standalone Exception (cleanup)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/holidays/exceptions/{{standalone_exception_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "exceptions", "{{standalone_exception_id}}"]
+            },
+            "description": "Limpieza: elimina la excepción independiente creada en 'Create Schedule Exception'. No tiene holidayId, así que no queda cubierta por el cascade delete del feriado."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Holiday (cleanup, cascades remaining exceptions)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/holidays/{{holiday_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["holidays", "{{holiday_id}}"]
+            },
+            "description": "Limpieza final: elimina el feriado creado en la sección 2 (movida acá para que 'Create Exception with Holiday' pudiera usar un holiday_id válido durante toda esta sección). Cascadea cualquier excepción asociada restante."
           },
           "response": []
         }
