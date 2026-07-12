@@ -265,6 +265,53 @@ export class PrismaNotificationRepository implements INotificationRepository {
   }
 
   /**
+   * Obtiene las notificaciones de un usuario aplicando filtros y paginación en la misma consulta
+   * @param userId - ID del usuario
+   * @param filters - Filtros opcionales: excludeStatusId (para unreadOnly) y/o type
+   * @param limit - Cantidad máxima de resultados
+   * @param offset - Cantidad de resultados a saltar
+   * @returns Promise con array de notificaciones filtradas y paginadas
+   */
+  async findByUserIdFiltered(
+    userId: string,
+    filters: { excludeStatusId?: string; type?: NotificationTypeEnum },
+    limit: number,
+    offset: number,
+  ): Promise<Notification[]> {
+    const notifications = await this.prisma.notification.findMany({
+      where: {
+        userId,
+        ...(filters.type && { type: filters.type as NotificationType }),
+        ...(filters.excludeStatusId && { statusId: { not: filters.excludeStatusId } }),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
+    });
+
+    return notifications.map(n => this.mapToDomain(n));
+  }
+
+  /**
+   * Cuenta las notificaciones de un usuario que cumplen los mismos filtros que findByUserIdFiltered
+   * @param userId - ID del usuario
+   * @param filters - Filtros opcionales: excludeStatusId (para unreadOnly) y/o type
+   * @returns Promise con el conteo total filtrado
+   */
+  async countByUserIdFiltered(
+    userId: string,
+    filters: { excludeStatusId?: string; type?: NotificationTypeEnum },
+  ): Promise<number> {
+    return this.prisma.notification.count({
+      where: {
+        userId,
+        ...(filters.type && { type: filters.type as NotificationType }),
+        ...(filters.excludeStatusId && { statusId: { not: filters.excludeStatusId } }),
+      },
+    });
+  }
+
+  /**
    * Mapea un registro de Prisma a la entidad de dominio
    * @param prismaNotification - Registro de Prisma
    * @returns Entidad de dominio Notification

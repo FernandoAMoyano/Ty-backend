@@ -230,6 +230,44 @@ describe('Notifications Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
     });
+
+    // Debería paginar correctamente cuando se combina unreadOnly con limit,
+    // reflejando el total filtrado y no el total sin filtrar (regresión F3)
+    it('should paginate correctly when combining unreadOnly with limit', async () => {
+      // Crear un usuario aislado para no interferir con notificaciones de otros tests
+      const isolatedUser = await loginTestUser();
+
+      const createNotification = async () =>
+        request(app)
+          .post('/api/v1/notifications')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            type: 'SYSTEM',
+            message: 'Notificación para test de paginación F3',
+            userId: isolatedUser.user.id,
+          });
+
+      const created = await Promise.all([
+        createNotification(),
+        createNotification(),
+        createNotification(),
+      ]);
+      const notificationIds = created.map((r) => r.body.data.id);
+
+      // Marcar 1 de las 3 como leída
+      await request(app)
+        .patch(`/api/v1/notifications/${notificationIds[0]}/read`)
+        .set('Authorization', `Bearer ${isolatedUser.token}`);
+
+      const response = await request(app)
+        .get('/api/v1/notifications?unreadOnly=true&limit=1')
+        .set('Authorization', `Bearer ${isolatedUser.token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.notifications.length).toBe(1);
+      expect(response.body.data.total).toBe(2);
+      expect(response.body.data.totalPages).toBe(2);
+    });
   });
 
   describe('GET /api/v1/notifications/unread-count - Get Unread Count', () => {

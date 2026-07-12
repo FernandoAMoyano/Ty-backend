@@ -115,4 +115,30 @@ export interface INotificationRepository {
    * @returns Promise con el conteo total de notificaciones
    */
   countByUserId(userId: string): Promise<number>;
+
+  /**
+   * Obtiene las notificaciones de un usuario aplicando filtros y paginación en la misma consulta
+   * @param userId - ID del usuario
+   * @param filters - Filtros opcionales: excludeStatusId (para unreadOnly) y/o type
+   * @param limit - Cantidad máxima de resultados
+   * @param offset - Cantidad de resultados a saltar
+   * @returns Promise con array de notificaciones filtradas y paginadas
+   */
+  findByUserIdFiltered(
+    userId: string,
+    filters: { excludeStatusId?: string; type?: NotificationTypeEnum },
+    limit: number,
+    offset: number,
+  ): Promise<Notification[]>;
+
+  /**
+   * Cuenta las notificaciones de un usuario que cumplen los mismos filtros que findByUserIdFiltered
+   * @param userId - ID del usuario
+   * @param filters - Filtros opcionales: excludeStatusId (para unreadOnly) y/o type
+   * @returns Promise con el conteo total filtrado
+   */
+  countByUserIdFiltered(
+    userId: string,
+    filters: { excludeStatusId?: string; type?: NotificationTypeEnum },
+  ): Promise<number>;
 }
