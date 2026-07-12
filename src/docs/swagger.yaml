@@ -143,6 +143,10 @@ paths:
     post:
       tags: [Authentication]
       summary: Renovar token de acceso
+      description: >-
+        Renueva el par de tokens a partir de un refresh token válido. Un token corrupto o
+        expirado devuelve 401. Si el usuario asociado tiene un rol inexistente (corrupción de
+        datos referencial), devuelve 404 en vez de enmascararlo como 401.
       security: []
       requestBody:
         required: true
@@ -166,6 +170,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
         '429':
           $ref: '#/components/responses/Error429'
 
@@ -930,6 +936,9 @@ paths:
     put:
       tags: [Stylist Services]
       summary: Actualizar relación estilista-servicio
+      description: >-
+        Envía `customPrice: null` explícito para restablecer el precio base del servicio
+        (elimina el precio personalizado). Omitir el campo deja el precio personalizado sin cambios.
       parameters:
         - $ref: '#/components/parameters/StylistIdParam'
         - name: serviceId
@@ -947,7 +956,9 @@ paths:
               properties:
                 customPrice:
                   type: number
+                  nullable: true
                   example: 40.00
+                  description: "null restablece el precio base"
                 isOffering:
                   type: boolean
                   example: true
@@ -2712,6 +2723,7 @@ components:
         price:
           type: integer
           example: 2500
+          description: "Precio en centavos (unidad monetaria minima, patron Stripe)"
         formattedPrice:
           type: string
           example: "25.00"
@@ -2749,7 +2761,9 @@ components:
           example: 2500
         customPrice:
           type: integer
+          nullable: true
           example: 3000
+          description: "Precio personalizado del estilista en centavos. null si no tiene (usa el precio base)."
         effectivePrice:
           type: integer
           example: 3000
