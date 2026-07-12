@@ -9,7 +9,7 @@ import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
  * Aplica control de acceso híbrido: ownership + role-based
  * - ADMIN: puede ver citas de cualquier cliente
  * - CLIENT: solo puede ver sus propias citas (clientId === requesterId)
- * - STYLIST: ve citas del cliente donde es el estilista asignado
+ * - STYLIST: ve citas del cliente donde es el estilista asignado o el creador de la cita
  */
 export class GetAppointmentsByClient {
   constructor(private appointmentRepository: IAppointmentRepository) {}
@@ -87,7 +87,8 @@ export class GetAppointmentsByClient {
 
   /**
    * Filtra las citas según el rol del solicitante
-   * STYLIST solo ve citas donde es el estilista asignado
+   * STYLIST solo ve citas donde es el estilista asignado o el creador de la cita
+   * (un STYLIST puede crear una cita para otro estilista y sigue debiendo verla en este listado)
    * @param appointments - Lista completa de citas
    * @param requesterId - ID del usuario solicitante
    * @param requesterRole - Nombre del rol del usuario
@@ -99,7 +100,7 @@ export class GetAppointmentsByClient {
     requesterRole: string,
   ): Appointment[] {
     if (requesterRole === 'STYLIST') {
-      return appointments.filter(a => a.stylistId === requesterId);
+      return appointments.filter(a => a.stylistId === requesterId || a.userId === requesterId);
     }
     return appointments;
   }

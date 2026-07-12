@@ -267,6 +267,30 @@ describe('GetAppointmentsByClient Use Case', () => {
 
       expect(result).toHaveLength(0);
     });
+
+    // Un STYLIST creador debe ver la cita aunque no sea el estilista asignado
+    it('should include appointments created by the stylist even if not assigned', async () => {
+      const creatorStylistId = generateUuid();
+      const assignedStylistId = generateUuid();
+      // El STYLIST creó la cita (userId) pero el estilista asignado es otro (stylistId)
+      const appointmentCreatedByStylist = createMockAppointment({
+        userId: creatorStylistId,
+        stylistId: assignedStylistId,
+      });
+      const unrelatedAppointment = createMockAppointment({
+        userId: generateUuid(),
+        stylistId: generateUuid(),
+      });
+      mockAppointmentRepository.findByClientId.mockResolvedValue([
+        appointmentCreatedByStylist,
+        unrelatedAppointment,
+      ]);
+
+      const result = await useCase.execute(validClientId, creatorStylistId, 'STYLIST');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].userId).toBe(creatorStylistId);
+    });
   });
 
   describe('Input Validation', () => {
