@@ -1,5 +1,6 @@
 import { JwtPayload } from '../../../src/modules/auth/application/services/JwtService';
 import { JwtTokenService } from '../../../src/modules/auth/infrastructure/services/JwtTokenService';
+import { UnauthorizedError } from '../../../src/shared/exceptions/UnauthorizedError';
 
 describe('JwtTokenService Unit Tests', () => {
   let jwtService: JwtTokenService;
@@ -71,18 +72,24 @@ describe('JwtTokenService Unit Tests', () => {
       expect(decoded.email).toBe(mockPayload.email);
     });
 
-    // Debería lanzar error para token inválido
-    it('should throw error for invalid token', () => {
+    // Debería lanzar UnauthorizedError para token inválido
+    it('should throw UnauthorizedError for invalid token', () => {
       expect(() => {
         jwtService.verifyAccessToken('invalid.token.here');
       }).toThrow('Invalid access token');
+      expect(() => {
+        jwtService.verifyAccessToken('invalid.token.here');
+      }).toThrow(UnauthorizedError);
     });
 
-    // Debería lanzar error para token mal formado
-    it('should throw error for malformed token', () => {
+    // Debería lanzar UnauthorizedError para token mal formado
+    it('should throw UnauthorizedError for malformed token', () => {
       expect(() => {
         jwtService.verifyAccessToken('malformed-token');
       }).toThrow('Invalid access token');
+      expect(() => {
+        jwtService.verifyAccessToken('malformed-token');
+      }).toThrow(UnauthorizedError);
     });
   });
 
@@ -97,11 +104,14 @@ describe('JwtTokenService Unit Tests', () => {
       expect(decoded.email).toBe(mockPayload.email);
     });
 
-    // Debería lanzar error para token de refresco inválido
-    it('should throw error for invalid refresh token', () => {
+    // Debería lanzar UnauthorizedError para token de refresco inválido
+    it('should throw UnauthorizedError for invalid refresh token', () => {
       expect(() => {
         jwtService.verifyRefreshToken('invalid.refresh.token');
       }).toThrow('Invalid refresh token');
+      expect(() => {
+        jwtService.verifyRefreshToken('invalid.refresh.token');
+      }).toThrow(UnauthorizedError);
     });
 
     // No debería verificar token de acceso como token de refresco
@@ -111,6 +121,9 @@ describe('JwtTokenService Unit Tests', () => {
       expect(() => {
         jwtService.verifyRefreshToken(accessToken);
       }).toThrow('Invalid refresh token');
+      expect(() => {
+        jwtService.verifyRefreshToken(accessToken);
+      }).toThrow(UnauthorizedError);
     });
   });
 });

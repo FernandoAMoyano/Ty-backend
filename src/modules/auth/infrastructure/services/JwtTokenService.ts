@@ -1,6 +1,7 @@
 import * as jwt from 'jsonwebtoken';
 import { JwtService, JwtPayload } from '../../application/services/JwtService';
 import { env } from '../../../../shared/config/env';
+import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
 
 /**
  * Implementación del servicio JWT usando jsonwebtoken
@@ -60,7 +61,7 @@ export class JwtTokenService implements JwtService {
    * Verifica y decodifica un token de acceso JWT
    * @param token - Token JWT a verificar
    * @returns Payload decodificado si el token es válido
-   * @throws Error si el token es inválido, expirado o malformado
+   * @throws UnauthorizedError si el token es inválido, expirado o malformado
    * @description Valida firma, expiración, issuer y audience del token
    */
   verifyAccessToken(token: string): JwtPayload {
@@ -70,7 +71,7 @@ export class JwtTokenService implements JwtService {
         audience: 'turnity-app',
       }) as JwtPayload;
     } catch (error) {
-      throw new Error('Invalid access token');
+      throw new UnauthorizedError('Invalid access token');
     }
   }
 
@@ -78,7 +79,7 @@ export class JwtTokenService implements JwtService {
    * Verifica y decodifica un token de renovación JWT
    * @param token - Token JWT de renovación a verificar
    * @returns Payload decodificado si el token es válido
-   * @throws Error si el token es inválido, expirado o malformado
+   * @throws UnauthorizedError si el token es inválido, expirado o malformado
    * @description Valida firma, expiración, issuer y audience del refresh token
    */
   verifyRefreshToken(token: string): JwtPayload {
@@ -88,7 +89,7 @@ export class JwtTokenService implements JwtService {
         audience: 'turnity-app',
       }) as JwtPayload;
     } catch (error) {
-      throw new Error('Invalid refresh token');
+      throw new UnauthorizedError('Invalid refresh token');
     }
   }
 }
