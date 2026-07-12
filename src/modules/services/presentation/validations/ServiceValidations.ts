@@ -14,7 +14,7 @@ export class ServiceValidations {
    * - description: string 1-1000 caracteres
    * - duration: entero 1-480 minutos
    * - durationVariation: entero no negativo, no mayor que duration
-   * - price: float no negativo, convertido a centavos
+   * - price: float no negativo (en la unidad monetaria base del cliente), convertido a centavos para persistencia
    */
   static createService = [
     body('categoryId').isUUID().withMessage('Category ID must be a valid UUID'),
@@ -50,7 +50,7 @@ export class ServiceValidations {
     body('price')
       .isFloat({ min: 0 })
       .withMessage('Price must be a non-negative number')
-      .customSanitizer((value) => Math.round(value * 100)), // Convert to cents
+      .customSanitizer((value) => Math.round(value * 100)), // Convertir a centavos (patron Stripe, ver F2)
   ];
 
   /**
@@ -96,7 +96,7 @@ export class ServiceValidations {
       .optional()
       .isFloat({ min: 0 })
       .withMessage('Price must be a non-negative number')
-      .customSanitizer((value) => (value ? Math.round(value * 100) : value)), // Convert to cents
+      .customSanitizer((value) => (value !== undefined ? Math.round(value * 100) : value)), // Convertir a centavos (patron Stripe, ver F2)
   ];
 
   /**

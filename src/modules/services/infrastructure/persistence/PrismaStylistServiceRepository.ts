@@ -34,7 +34,7 @@ export class PrismaStylistServiceRepository implements IStylistServiceRepository
     return StylistService.fromPersistence(
       stylistServiceData.stylistId,
       stylistServiceData.serviceId,
-      stylistServiceData.customPrice ? Number(stylistServiceData.customPrice) : undefined,
+      stylistServiceData.customPrice !== null ? Number(stylistServiceData.customPrice) : null,
       stylistServiceData.isOffering ?? true,
       stylistServiceData.createdAt,
       stylistServiceData.updatedAt,
@@ -57,7 +57,7 @@ export class PrismaStylistServiceRepository implements IStylistServiceRepository
       StylistService.fromPersistence(
         data.stylistId,
         data.serviceId,
-        data.customPrice ? Number(data.customPrice) : undefined,
+        data.customPrice !== null ? Number(data.customPrice) : null,
         data.isOffering ?? true,
         data.createdAt,
         data.updatedAt,
@@ -81,7 +81,7 @@ export class PrismaStylistServiceRepository implements IStylistServiceRepository
       StylistService.fromPersistence(
         data.stylistId,
         data.serviceId,
-        data.customPrice ? Number(data.customPrice) : undefined,
+        data.customPrice !== null ? Number(data.customPrice) : null,
         data.isOffering ?? true,
         data.createdAt,
         data.updatedAt,
@@ -107,7 +107,7 @@ export class PrismaStylistServiceRepository implements IStylistServiceRepository
       StylistService.fromPersistence(
         data.stylistId,
         data.serviceId,
-        data.customPrice ? Number(data.customPrice) : undefined,
+        data.customPrice !== null ? Number(data.customPrice) : null,
         data.isOffering ?? true,
         data.createdAt,
         data.updatedAt,
@@ -133,7 +133,7 @@ export class PrismaStylistServiceRepository implements IStylistServiceRepository
       StylistService.fromPersistence(
         data.stylistId,
         data.serviceId,
-        data.customPrice ? Number(data.customPrice) : undefined,
+        data.customPrice !== null ? Number(data.customPrice) : null,
         data.isOffering ?? true,
         data.createdAt,
         data.updatedAt,
@@ -161,7 +161,7 @@ export class PrismaStylistServiceRepository implements IStylistServiceRepository
     return StylistService.fromPersistence(
       stylistServiceData.stylistId,
       stylistServiceData.serviceId,
-      stylistServiceData.customPrice ? Number(stylistServiceData.customPrice) : undefined,
+      stylistServiceData.customPrice !== null ? Number(stylistServiceData.customPrice) : null,
       stylistServiceData.isOffering ?? true,
       stylistServiceData.createdAt,
       stylistServiceData.updatedAt,
@@ -191,7 +191,7 @@ export class PrismaStylistServiceRepository implements IStylistServiceRepository
     return StylistService.fromPersistence(
       stylistServiceData.stylistId,
       stylistServiceData.serviceId,
-      stylistServiceData.customPrice ? Number(stylistServiceData.customPrice) : undefined,
+      stylistServiceData.customPrice !== null ? Number(stylistServiceData.customPrice) : null,
       stylistServiceData.isOffering ?? true,
       stylistServiceData.createdAt,
       stylistServiceData.updatedAt,

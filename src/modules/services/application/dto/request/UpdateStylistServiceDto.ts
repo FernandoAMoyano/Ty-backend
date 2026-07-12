@@ -8,7 +8,7 @@ export interface UpdateStylistServiceDto {
    * Si es null, se usa el precio base del servicio
    * No puede ser negativo
    */
-  customPrice?: number;
+  customPrice?: number | null;
   
   /** 
    * Indica si el estilista está ofreciendo activamente este servicio

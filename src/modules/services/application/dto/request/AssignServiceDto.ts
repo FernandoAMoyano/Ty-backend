@@ -9,5 +9,5 @@ export interface AssignServiceDto {
    * Precio personalizado para este estilista (opcional)
    * Si no se especifica, se usa el precio base del servicio
    */
-  customPrice?: number;
+  customPrice?: number | null;
 }

@@ -21,8 +21,8 @@ export interface StylistServiceDto {
   /** Precio base del servicio */
   basePrice: number;
   
-  /** Precio personalizado del estilista para este servicio (opcional) */
-  customPrice?: number;
+  /** Precio personalizado del estilista para este servicio (null si no tiene) */
+  customPrice: number | null;
   
   /** Precio efectivo (customPrice si existe, sino basePrice) */
   effectivePrice: number;

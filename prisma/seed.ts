@@ -152,7 +152,7 @@ async function main() {
         description: 'Corte y estilo segun preferencias',
         duration: 30,
         durationVariation: 15,
-        price: 25.0,
+        price: 2500, // $25.00 en centavos
         categoryId: hairCategory.id,
       },
     }),
@@ -162,7 +162,7 @@ async function main() {
         description: 'Coloracion completa',
         duration: 90,
         durationVariation: 30,
-        price: 60.0,
+        price: 6000, // $60.00 en centavos
         categoryId: hairCategory.id,
       },
     }),
@@ -172,7 +172,7 @@ async function main() {
         description: 'Limpieza e hidratacion facial',
         duration: 45,
         durationVariation: 15,
-        price: 40.0,
+        price: 4000, // $40.00 en centavos
         categoryId: facialCategory.id,
       },
     }),
@@ -182,7 +182,7 @@ async function main() {
         description: 'Cuidado y pintado de unas',
         duration: 45,
         durationVariation: 15,
-        price: 20.0,
+        price: 2000, // $20.00 en centavos
         categoryId: nailsCategory.id,
       },
     }),

@@ -7,6 +7,7 @@ import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
 import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 import { AssignServiceDto } from '../dto/request/AssignServiceDto';
 import { StylistServiceDto } from '../dto/response/StylistServiceDto';
 
@@ -29,14 +30,24 @@ export class AssignServiceToStylist {
    * @throws BusinessRuleError si el usuario no tiene rol STYLIST
    * @throws ValidationError si los datos son inválidos
    * @throws ConflictError si el servicio ya está asignado al estilista
+   * @throws ForbiddenError si un STYLIST intenta operar sobre otro estilista
    */
-  async execute(stylistId: string, assignDto: AssignServiceDto): Promise<StylistServiceDto> {
+  async execute(
+    stylistId: string,
+    assignDto: AssignServiceDto,
+    requesterId: string,
+    requesterRole: string,
+  ): Promise<StylistServiceDto> {
     if (!assignDto.serviceId || assignDto.serviceId.trim().length === 0) {
       throw new ValidationError('Service ID is required');
     }
 
-    if (assignDto.customPrice !== undefined && assignDto.customPrice < 0) {
+    if (assignDto.customPrice !== undefined && assignDto.customPrice !== null && assignDto.customPrice < 0) {
       throw new ValidationError('Custom price cannot be negative');
+    }
+
+    if (requesterRole !== 'ADMIN' && stylistId !== requesterId) {
+      throw new ForbiddenError('You can only manage your own service assignments');
     }
 
     // Validar que el usuario existe y tiene rol STYLIST
@@ -62,7 +73,7 @@ export class AssignServiceToStylist {
     const stylistService = StylistService.create(
       stylistId,
       assignDto.serviceId,
-      assignDto.customPrice,
+      assignDto.customPrice ?? null,
     );
     const savedAssignment = await this.stylistServiceRepository.save(stylistService);
 

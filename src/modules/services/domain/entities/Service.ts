@@ -204,6 +204,8 @@ export class Service {
 
   /**
    * Formatea el precio del servicio para mostrar en la interfaz
+   * @description `price` se almacena en centavos (patrón Stripe, ver F2); se divide por 100
+   * para mostrarlo en la unidad monetaria base con dos decimales
    * @returns Precio formateado como string con dos decimales
    */
   getFormattedPrice(): string {

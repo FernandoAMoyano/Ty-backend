@@ -11,7 +11,7 @@ export class StylistServiceValidations {
    * @rules
    * - stylistId: UUID válido en parámetros
    * - serviceId: UUID válido en body
-   * - customPrice: float opcional no negativo, convertido a centavos
+   * - customPrice: número opcional no negativo (o null explícito para "sin precio personalizado"), convertido a centavos
    */
   static assignService = [
     param('stylistId').isUUID().withMessage('Stylist ID must be a valid UUID'),
@@ -19,10 +19,20 @@ export class StylistServiceValidations {
     body('serviceId').isUUID().withMessage('Service ID must be a valid UUID'),
 
     body('customPrice')
-      .optional()
-      .isFloat({ min: 0 })
-      .withMessage('Custom price must be a non-negative number')
-      .customSanitizer((value) => (value ? Math.round(value * 100) : undefined)), // Convert to cents
+      .optional({ nullable: true })
+      .custom((value) => {
+        // F5: null explícito significa "sin precio personalizado", no se descarta por truthiness
+        if (value === null || value === undefined) {
+          return true;
+        }
+        if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
+          throw new Error('Custom price must be a non-negative number');
+        }
+        return true;
+      })
+      .customSanitizer((value) =>
+        value === null || value === undefined ? value : Math.round(value * 100),
+      ), // Convertir a centavos preservando null (patron Stripe, ver F2/F5)
   ];
 
   /**
@@ -31,7 +41,7 @@ export class StylistServiceValidations {
    * @rules
    * - stylistId: UUID válido en parámetros
    * - serviceId: UUID válido en parámetros
-   * - customPrice: float opcional no negativo, convertido a centavos
+   * - customPrice: número opcional no negativo (o null explícito para limpiar el precio personalizado), convertido a centavos
    * - isOffering: boolean opcional para estado de oferta
    */
   static updateStylistService = [
@@ -40,10 +50,20 @@ export class StylistServiceValidations {
     param('serviceId').isUUID().withMessage('Service ID must be a valid UUID'),
 
     body('customPrice')
-      .optional()
-      .isFloat({ min: 0 })
-      .withMessage('Custom price must be a non-negative number')
-      .customSanitizer((value) => (value ? Math.round(value * 100) : undefined)), // Convert to cents
+      .optional({ nullable: true })
+      .custom((value) => {
+        // F5: null explícito limpia el precio personalizado y restablece el precio base
+        if (value === null || value === undefined) {
+          return true;
+        }
+        if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
+          throw new Error('Custom price must be a non-negative number');
+        }
+        return true;
+      })
+      .customSanitizer((value) =>
+        value === null || value === undefined ? value : Math.round(value * 100),
+      ), // Convertir a centavos preservando null (patron Stripe, ver F2/F5)
 
     body('isOffering').optional().isBoolean().withMessage('isOffering must be a boolean value'),
   ];

@@ -53,7 +53,7 @@ describe('Service Management Integration Tests', () => {
       expect(service.description).toBe(serviceData.description);
       expect(service.duration).toBe(serviceData.duration);
       expect(service.durationVariation).toBe(serviceData.durationVariation);
-      expect(service.price).toBe(5000); // Precio en centavos
+      expect(service.price).toBe(5000); // Precio en centavos (patron Stripe, F2)
       expect(service.formattedPrice).toBe('50.00');
       expect(service.isActive).toBe(true);
       expect(service.category.id).toBe(testCategoryId);
@@ -285,7 +285,7 @@ describe('Service Management Integration Tests', () => {
       expect(response.body.data.description).toBe(updateData.description);
       expect(response.body.data.duration).toBe(updateData.duration);
       expect(response.body.data.durationVariation).toBe(updateData.durationVariation);
-      expect(response.body.data.price).toBe(4500); // Precio en centavos
+      expect(response.body.data.price).toBe(4500); // Precio en centavos (patron Stripe, F2)
       validateServiceResponse(response.body.data);
     });
 

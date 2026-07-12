@@ -439,12 +439,13 @@ export const getStylistsOfferingService = async (serviceId: string): Promise<any
 
 export const calculateExpectedEffectivePrice = (
   basePrice: number,
-  customPrice?: number,
+  customPrice?: number | null,
 ): number => {
-  return customPrice !== undefined ? customPrice : basePrice;
+  // F5: customPrice viaja como null (no undefined) cuando no hay precio personalizado
+  return customPrice !== undefined && customPrice !== null ? customPrice : basePrice;
 };
 
-//Formatea el precio como string (centavos a decimales)
+//Formatea el precio como string (centavos a decimales, patron Stripe, ver F2)
 
 export const formatPrice = (priceInCents: number): string => {
   return (priceInCents / 100).toFixed(2);

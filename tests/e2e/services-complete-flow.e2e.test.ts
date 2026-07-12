@@ -74,7 +74,7 @@ describe('Services Complete Flow E2E Tests', () => {
     expect(updateResponse.status).toBe(200);
     expect(updateResponse.body.success).toBe(true);
     expect(updateResponse.body.data.hasCustomPrice).toBe(true);
-    expect(updateResponse.body.data.customPrice).toBe(5000); // Precio en centavos
+    expect(updateResponse.body.data.customPrice).toBe(5000); // Precio en centavos (patron Stripe, F2)
 
     // 9. CONSULTA FINAL: Verificar que los cambios se aplicaron
     const finalCheckResponse = await request(app)
