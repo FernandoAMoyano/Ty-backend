@@ -1,3 +1,5 @@
+import { startOfDayUTC } from '../../../../shared/utils/dateOnly';
+
 /**
  * Interface para las propiedades de la excepción de horario
  */
@@ -84,9 +86,9 @@ export class ScheduleException {
    */
   isOnDate(date: Date): boolean {
     return (
-      this._exceptionDate.getFullYear() === date.getFullYear() &&
-      this._exceptionDate.getMonth() === date.getMonth() &&
-      this._exceptionDate.getDate() === date.getDate()
+      this._exceptionDate.getUTCFullYear() === date.getUTCFullYear() &&
+      this._exceptionDate.getUTCMonth() === date.getUTCMonth() &&
+      this._exceptionDate.getUTCDate() === date.getUTCDate()
     );
   }
 
@@ -94,10 +96,8 @@ export class ScheduleException {
    * Verifica si la excepción ya pasó
    */
   get isPast(): boolean {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const exceptionDate = new Date(this._exceptionDate);
-    exceptionDate.setHours(0, 0, 0, 0);
+    const today = startOfDayUTC(new Date());
+    const exceptionDate = startOfDayUTC(this._exceptionDate);
     return exceptionDate < today;
   }
 
@@ -113,10 +113,8 @@ export class ScheduleException {
    * Verifica si la excepción es futura
    */
   get isFuture(): boolean {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const exceptionDate = new Date(this._exceptionDate);
-    exceptionDate.setHours(0, 0, 0, 0);
+    const today = startOfDayUTC(new Date());
+    const exceptionDate = startOfDayUTC(this._exceptionDate);
     return exceptionDate > today;
   }
 

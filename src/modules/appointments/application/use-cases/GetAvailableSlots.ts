@@ -6,6 +6,7 @@ import { DayAvailabilityDto, AvailableSlotDto } from '../dto/response/AvailableS
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
 import { DayOfWeekEnum } from '../../domain/entities/Schedule';
+import { startOfDayUTC } from '../../../../shared/utils/dateOnly';
 
 /**
  * Caso de uso para obtener slots de tiempo disponibles para agendar citas
@@ -140,9 +141,8 @@ export class GetAvailableSlots {
       throw new ValidationError('Invalid date provided');
     }
 
-    // Verificar que no sea en el pasado
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Verificar que no sea en el pasado (comparación en UTC)
+    const today = startOfDayUTC(new Date());
 
     if (date < today) {
       throw new BusinessRuleError('Cannot check availability for past dates');
@@ -297,7 +297,7 @@ export class GetAvailableSlots {
   private createSlotDateTime(date: Date, time: string): Date {
     const [hours, minutes] = time.split(':').map(Number);
     const slotDate = new Date(date);
-    slotDate.setHours(hours, minutes, 0, 0);
+    slotDate.setUTCHours(hours, minutes, 0, 0);
     return slotDate;
   }
 

@@ -628,6 +628,18 @@ describe('GetAvailableSlots Use Case', () => {
       expect(result.date).toBe(today);
     });
 
+    // Pedir slots para hoy no debe fallar como fecha pasada (regresión F7 - comparación UTC)
+    it('should not reject today as a past date', async () => {
+      const now = new Date();
+      const todayUTC = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(
+        now.getUTCDate(),
+      ).padStart(2, '0')}`;
+      const dto = createValidDto({ date: todayUTC });
+      setupSuccessfulMocks(todayUTC);
+
+      await expect(useCase.execute(dto)).resolves.toBeDefined();
+    });
+
     // Debería aceptar fecha dentro de 6 meses
     it('should accept date within 6 months', async () => {
       const dateString = getFutureDateString(90); // ~3 meses

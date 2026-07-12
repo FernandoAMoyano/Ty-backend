@@ -3,6 +3,7 @@ import { UpdateHolidayDto } from '../dto/request/UpdateHolidayDto';
 import { HolidayResponseDto, HolidayResponseMapper } from '../dto/response/HolidayResponseDto';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
+import { parseDateOnlyUTC } from '../../../../shared/utils/dateOnly';
 
 /**
  * Caso de uso: Actualizar feriado
@@ -29,7 +30,7 @@ export class UpdateHoliday {
 
     // Si se actualiza la fecha, verificar que no exista otro feriado en esa fecha
     if (dto.date) {
-      const newDate = new Date(dto.date);
+      const newDate = parseDateOnlyUTC(dto.date);
       const existingHoliday = await this.holidayRepository.existsByDate(newDate, id);
       if (existingHoliday) {
         throw new ConflictError('A holiday already exists on the specified date');

@@ -45,6 +45,7 @@ services:
       - "3000:3000"
       - "9229:9229"
     environment:
+      - TZ=UTC
       - PORT=${PORT}
       - NODE_ENV=${NODE_ENV}
       - DB_HOST=${DB_HOST}

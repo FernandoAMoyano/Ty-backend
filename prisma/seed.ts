@@ -284,7 +284,7 @@ async function main() {
 
   // Creacion de dias festivos
   console.log('Creando dias festivos...');
-  const christmasDate = new Date(2025, 11, 25);
+  const christmasDate = new Date(Date.UTC(2025, 11, 25));
   const christmasHoliday = await prisma.holiday.create({
     data: {
       name: 'Navidad',
@@ -293,7 +293,7 @@ async function main() {
     },
   });
 
-  const newYearDate = new Date(2026, 0, 1);
+  const newYearDate = new Date(Date.UTC(2026, 0, 1));
   const newYearHoliday = await prisma.holiday.create({
     data: {
       name: 'Ano Nuevo',
@@ -304,7 +304,7 @@ async function main() {
 
   // Creacion de excepciones de horario
   console.log('Creando excepciones de horario...');
-  const christmasEveDate = new Date(2025, 11, 24);
+  const christmasEveDate = new Date(Date.UTC(2025, 11, 24));
   await prisma.scheduleException.create({
     data: {
       holidayId: christmasHoliday.id,

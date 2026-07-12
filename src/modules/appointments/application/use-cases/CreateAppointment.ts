@@ -40,9 +40,11 @@ export class CreateAppointment {
    * @throws BusinessRuleError si la cita está fuera del horario laboral
    */
   private validateWorkingHours(dateTimeStr: string, duration: number, schedule: any): void {
+    // Se usa el eje UTC para las horas, alineado con GetAvailableSlots.createSlotDateTime
+    // (Schedule.startTime/endTime se interpretan como horas UTC del día consultado).
     const appointmentDate = new Date(dateTimeStr);
-    const appointmentHours = appointmentDate.getHours();
-    const appointmentMinutes = appointmentDate.getMinutes();
+    const appointmentHours = appointmentDate.getUTCHours();
+    const appointmentMinutes = appointmentDate.getUTCMinutes();
 
     // Convertir horarios a minutos desde medianoche para comparación
     const [startH, startM] = schedule.startTime.split(':').map(Number);

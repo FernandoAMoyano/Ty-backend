@@ -6,6 +6,7 @@ import { CreateScheduleExceptionDto } from '../dto/request/CreateScheduleExcepti
 import { ScheduleExceptionResponseDto, ScheduleExceptionResponseMapper } from '../dto/response/ScheduleExceptionResponseDto';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
+import { parseDateOnlyUTC } from '../../../../shared/utils/dateOnly';
 
 /**
  * Caso de uso: Crear excepción de horario
@@ -25,7 +26,7 @@ export class CreateScheduleException {
    * @throws Error si el holidayId no existe
    */
   async execute(dto: CreateScheduleExceptionDto): Promise<ScheduleExceptionResponseDto> {
-    const exceptionDate = new Date(dto.exceptionDate);
+    const exceptionDate = parseDateOnlyUTC(dto.exceptionDate);
 
     // Verificar si ya existe una excepción en esa fecha
     const existingException = await this.scheduleExceptionRepository.existsByDate(exceptionDate);

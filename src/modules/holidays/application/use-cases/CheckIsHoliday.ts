@@ -1,4 +1,5 @@
 import { IHolidayRepository } from '../../domain/repositories/IHolidayRepository';
+import { parseDateOnlyUTC } from '../../../../shared/utils/dateOnly';
 
 /**
  * Caso de uso: Verificar si una fecha es feriado
@@ -13,7 +14,7 @@ export class CheckIsHoliday {
    * @returns Objeto con el resultado y datos del feriado si existe
    */
   async execute(date: string | Date): Promise<{ isHoliday: boolean; holidayName?: string }> {
-    const dateToCheck = typeof date === 'string' ? new Date(date) : date;
+    const dateToCheck = typeof date === 'string' ? parseDateOnlyUTC(date) : date;
     
     const holiday = await this.holidayRepository.findByDate(dateToCheck);
 

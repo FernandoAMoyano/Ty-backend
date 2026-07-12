@@ -6,6 +6,7 @@ import {
   PaginationOptions,
   PaginatedResult,
 } from '../../domain/repositories/IScheduleExceptionRepository';
+import { startOfDayUTC, endOfDayUTC } from '../../../../shared/utils/dateOnly';
 
 /**
  * Implementación del repositorio de excepciones de horario con Prisma
@@ -66,11 +67,8 @@ export class PrismaScheduleExceptionRepository implements IScheduleExceptionRepo
    * Busca excepciones por fecha
    */
   async findByDate(date: Date): Promise<ScheduleException[]> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
+    const startOfDay = startOfDayUTC(date);
+    const endOfDay = endOfDayUTC(date);
 
     const exceptions = await this.prisma.scheduleException.findMany({
       where: {
@@ -181,8 +179,7 @@ export class PrismaScheduleExceptionRepository implements IScheduleExceptionRepo
    * Busca excepciones próximas (futuras)
    */
   async findUpcoming(limit: number = 5): Promise<ScheduleException[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfDayUTC(new Date());
 
     const exceptions = await this.prisma.scheduleException.findMany({
       where: {
@@ -244,11 +241,8 @@ export class PrismaScheduleExceptionRepository implements IScheduleExceptionRepo
    * Verifica si existe una excepción en una fecha específica
    */
   async existsByDate(date: Date, excludeId?: string): Promise<boolean> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
+    const startOfDay = startOfDayUTC(date);
+    const endOfDay = endOfDayUTC(date);
 
     const where: any = {
       exceptionDate: {
@@ -270,11 +264,8 @@ export class PrismaScheduleExceptionRepository implements IScheduleExceptionRepo
    * Obtiene la excepción de horario para una fecha (si existe)
    */
   async getExceptionForDate(date: Date): Promise<ScheduleException | null> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
+    const startOfDay = startOfDayUTC(date);
+    const endOfDay = endOfDayUTC(date);
 
     const exception = await this.prisma.scheduleException.findFirst({
       where: {
