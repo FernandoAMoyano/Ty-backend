@@ -8,6 +8,8 @@ import {
   validateServiceResponse,
   generateValidServiceData,
 } from '../../setup/helpers';
+import { createTestAppointment } from '../../setup/appointments-helpers';
+import { testPrisma } from '../../setup/database';
 
 describe('Service Management Integration Tests', () => {
   let adminToken: string;
@@ -403,6 +405,61 @@ describe('Service Management Integration Tests', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('Service not found');
+    });
+
+    // Debería rechazar el borrado si el servicio tiene una cita histórica completada (F8)
+    it('should reject deletion when service has a completed historical appointment, and allow deactivate instead', async () => {
+      const completedStatus = await testPrisma.appointmentStatus.findFirst({
+        where: { name: 'COMPLETED' },
+      });
+      if (!completedStatus) {
+        throw new Error('COMPLETED status not found in database. Ensure seed data is loaded.');
+      }
+
+      await createTestAppointment({
+        statusId: completedStatus.id,
+        serviceIds: [testServiceId],
+      });
+
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(422);
+
+      expect(deleteResponse.body.success).toBe(false);
+      expect(deleteResponse.body.message).toContain('associated appointments');
+
+      const deactivateResponse = await request(app)
+        .patch(`/api/v1/services/${testServiceId}/deactivate`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(deactivateResponse.body.success).toBe(true);
+
+      // El servicio sigue existiendo (desactivado), no fue borrado
+      await request(app).get(`/api/v1/services/${testServiceId}`).expect(200);
+    });
+
+    // Debería rechazar el borrado también si la cita histórica está cancelada (F8)
+    it('should reject deletion when service has a cancelled historical appointment', async () => {
+      const cancelledStatus = await testPrisma.appointmentStatus.findFirst({
+        where: { name: 'CANCELLED' },
+      });
+      if (!cancelledStatus) {
+        throw new Error('CANCELLED status not found in database. Ensure seed data is loaded.');
+      }
+
+      await createTestAppointment({
+        statusId: cancelledStatus.id,
+        serviceIds: [testServiceId],
+      });
+
+      const response = await request(app)
+        .delete(`/api/v1/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(422);
+
+      expect(response.body.success).toBe(false);
     });
   });
 

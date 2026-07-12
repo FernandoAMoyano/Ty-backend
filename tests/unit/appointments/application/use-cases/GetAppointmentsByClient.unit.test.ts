@@ -93,7 +93,7 @@ describe('GetAppointmentsByClient Use Case', () => {
       countByDateRange: jest.fn(),
       findUpcomingAppointments: jest.fn(),
       findPendingConfirmation: jest.fn(),
-      existsActiveByServiceId: jest.fn(),
+      existsByServiceId: jest.fn(),
     };
 
     useCase = new GetAppointmentsByClient(mockAppointmentRepository);

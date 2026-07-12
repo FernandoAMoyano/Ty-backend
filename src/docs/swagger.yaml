@@ -680,6 +680,13 @@ paths:
     delete:
       tags: [Services]
       summary: Eliminar servicio
+      description: >
+        Elimina permanentemente (hard-delete) el servicio. No es posible eliminar un
+        servicio que tenga cualquier cita asociada, activa o histórica (PENDING,
+        CONFIRMED, COMPLETED o CANCELLED): el hard-delete borra en cascada la relación
+        con las citas, lo que destruiría el registro histórico de servicios de citas ya
+        completadas. Para retirar un servicio con historial de citas, usar
+        `PATCH /services/:id/deactivate` en su lugar.
       parameters:
         - name: id
           in: path

@@ -34,7 +34,7 @@ describe('CreateHoliday Use Case', () => {
       findConflictingAppointments: jest.fn(), findByScheduleId: jest.fn(),
       findByDate: jest.fn(), countByStatus: jest.fn(), countByDateRange: jest.fn(),
       findUpcomingAppointments: jest.fn(), findPendingConfirmation: jest.fn(),
-      existsActiveByServiceId: jest.fn(),
+      existsByServiceId: jest.fn(),
     } as jest.Mocked<IAppointmentRepository>;
 
     mockAppointmentStatusRepository = {

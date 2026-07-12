@@ -188,11 +188,11 @@ describe('Service Use Cases', () => {
 
   describe('DeleteService', () => {
     let deleteService: DeleteService;
-    let mockAppointmentRepository: jest.Mocked<Pick<IAppointmentRepository, 'existsActiveByServiceId'>>;
+    let mockAppointmentRepository: jest.Mocked<Pick<IAppointmentRepository, 'existsByServiceId'>>;
 
     beforeEach(() => {
       mockAppointmentRepository = {
-        existsActiveByServiceId: jest.fn(),
+        existsByServiceId: jest.fn(),
       };
       deleteService = new DeleteService(
         mockServiceRepository,
@@ -202,13 +202,13 @@ describe('Service Use Cases', () => {
 
     it('should delete service successfully', async () => {
       mockServiceRepository.existsById.mockResolvedValue(true);
-      mockAppointmentRepository.existsActiveByServiceId.mockResolvedValue(false);
+      mockAppointmentRepository.existsByServiceId.mockResolvedValue(false);
       mockServiceRepository.delete.mockResolvedValue();
 
       await deleteService.execute('service-id');
 
       expect(mockServiceRepository.existsById).toHaveBeenCalledWith('service-id');
-      expect(mockAppointmentRepository.existsActiveByServiceId).toHaveBeenCalledWith('service-id');
+      expect(mockAppointmentRepository.existsByServiceId).toHaveBeenCalledWith('service-id');
       expect(mockServiceRepository.delete).toHaveBeenCalledWith('service-id');
     });
 
@@ -217,10 +217,22 @@ describe('Service Use Cases', () => {
       await expect(deleteService.execute('non-existent-id')).rejects.toThrow(NotFoundError);
     });
 
-    // Debería lanzar BusinessRuleError si el servicio tiene citas activas
+    // Debería rechazar el borrado si el servicio tiene citas históricas (F8)
+    it('should reject deletion when service has historical appointments', async () => {
+      mockServiceRepository.existsById.mockResolvedValue(true);
+      mockAppointmentRepository.existsByServiceId.mockResolvedValue(true);
+
+      await expect(deleteService.execute('service-id')).rejects.toThrow(BusinessRuleError);
+      await expect(deleteService.execute('service-id')).rejects.toThrow(
+        'Cannot delete service: it has associated appointments (use deactivate instead)',
+      );
+      expect(mockServiceRepository.delete).not.toHaveBeenCalled();
+    });
+
+    // Debería lanzar BusinessRuleError también para citas activas (mismo método cubre ambos casos)
     it('should throw BusinessRuleError if service has active appointments', async () => {
       mockServiceRepository.existsById.mockResolvedValue(true);
-      mockAppointmentRepository.existsActiveByServiceId.mockResolvedValue(true);
+      mockAppointmentRepository.existsByServiceId.mockResolvedValue(true);
 
       await expect(deleteService.execute('service-id')).rejects.toThrow(BusinessRuleError);
       expect(mockServiceRepository.delete).not.toHaveBeenCalled();

@@ -450,20 +450,19 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   }
 
   /**
-   * Verifica si existen citas activas (no canceladas ni completadas) para un servicio
+   * Verifica si existe cualquier cita (activa o histórica) asociada a un servicio
    * @param serviceId - ID del servicio a verificar
-   * @returns Promise que resuelve con true si existen citas activas
+   * @returns Promise que resuelve con true si existe al menos una cita asociada
+   * @description Sin filtro de status: a diferencia de una validación de "citas activas",
+   * esto también detecta citas COMPLETADAS o CANCELADAS, ya que el hard-delete de un
+   * Service borra en cascada la relación M2M _AppointmentToService y destruiría el
+   * registro histórico de servicios de esas citas (ver F8)
    */
-  async existsActiveByServiceId(serviceId: string): Promise<boolean> {
+  async existsByServiceId(serviceId: string): Promise<boolean> {
     const count = await this.prisma.appointment.count({
       where: {
         services: {
           some: { id: serviceId },
-        },
-        status: {
-          name: {
-            notIn: ['CANCELLED', 'COMPLETED'],
-          },
         },
       },
     });
