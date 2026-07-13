@@ -106,6 +106,8 @@ export class AuthRoutes {
       '/users/:id/deactivate',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
       this.authMiddleware.authorize(['ADMIN']),
+      AuthValidations.deactivateUser,
+      ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {
         this.authController.deactivateUser(req, res).catch(next);
       },
