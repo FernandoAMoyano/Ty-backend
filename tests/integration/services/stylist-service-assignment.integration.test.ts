@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../../../src/app';
 import {
   loginAsAdmin,
+  createTestUser,
   createTestCategory,
   createTestService,
   createTestStylist,
@@ -9,6 +10,21 @@ import {
   cleanupTestData,
   validateStylistServiceResponse,
 } from '../../setup/helpers';
+
+/**
+ * Login de un usuario de test recién creado con la contraseña fija de test
+ */
+const loginAs = async (email: string): Promise<string> => {
+  const response = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email, password: 'TestPass123!' });
+
+  if (response.status !== 200) {
+    throw new Error(`Login falló: ${response.status}`);
+  }
+
+  return response.body.data.token;
+};
 
 describe('Stylist Service Assignment Integration Tests', () => {
   let adminToken: string;
@@ -516,6 +532,29 @@ describe('Stylist Service Assignment Integration Tests', () => {
       await request(app)
         .delete(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
         .expect(401);
+    });
+
+    // Debería rechazar operaciones de escritura para un usuario CLIENT (F14)
+    it('should reject write operations for a CLIENT user (403)', async () => {
+      const clientUser = await createTestUser('CLIENT');
+      const clientToken = await loginAs(clientUser.user?.email || clientUser.email);
+
+      await request(app)
+        .post(`/api/v1/services/stylists/${testStylistId}/services`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send({ serviceId: testServiceId })
+        .expect(403);
+
+      await request(app)
+        .put(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send({ customPrice: 60.0 })
+        .expect(403);
+
+      await request(app)
+        .delete(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .expect(403);
     });
   });
 });

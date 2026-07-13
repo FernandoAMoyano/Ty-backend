@@ -325,6 +325,33 @@ describe('Appointments Complete Flow E2E Tests', () => {
       // 2. Verificar que no rechaza por autenticación
       expect(response.status).not.toBe(401);
     });
+
+    // Debería rechazar el acceso de un cliente ajeno a la cita (ownership, F14)
+    it('should reject GET by a different client (ownership 403)', async () => {
+      // 1. Crear CLIENT A y su cita
+      const clientAUser = await createTestUser('CLIENT');
+      const clientAId = clientAUser.user?.id || clientAUser.id;
+      const appointmentOfClientA = await createTestAppointment({
+        userId: clientAId,
+        clientId: clientAId,
+      });
+
+      // 2. Crear CLIENT B y loguearlo
+      const clientBUser = await createTestUser('CLIENT');
+      const clientBLoginResponse = await request(app).post('/api/v1/auth/login').send({
+        email: clientBUser.user?.email || clientBUser.email,
+        password: 'TestPass123!',
+      });
+      const clientBToken = clientBLoginResponse.body.data.token;
+
+      // 3. CLIENT B intenta ver la cita de CLIENT A -> 403
+      const response = await request(app)
+        .get(`/api/v1/appointments/${appointmentOfClientA.id}`)
+        .set('Authorization', `Bearer ${clientBToken}`)
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+    });
   });
 
   describe('Input Validation', () => {

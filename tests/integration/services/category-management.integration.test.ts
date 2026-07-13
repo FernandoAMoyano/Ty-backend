@@ -2,12 +2,28 @@ import request from 'supertest';
 import app from '../../../src/app';
 import {
   loginAsAdmin,
+  createTestUser,
   createTestCategory,
   cleanupTestData,
   validateCategoryResponse,
   generateValidCategoryData,
   generateUniqueName,
 } from '../../setup/helpers';
+
+/**
+ * Login de un usuario de test recién creado con la contraseña fija de test
+ */
+const loginAs = async (email: string): Promise<string> => {
+  const response = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email, password: 'TestPass123!' });
+
+  if (response.status !== 200) {
+    throw new Error(`Login falló: ${response.status}`);
+  }
+
+  return response.body.data.token;
+};
 
 describe('Category Management Integration Tests', () => {
   let adminToken: string;
@@ -436,6 +452,83 @@ describe('Category Management Integration Tests', () => {
         .expect(401);
 
       expect(response.body.success).toBe(false);
+    });
+  });
+
+  describe('Authorization Tests - Wrong Role (403)', () => {
+    let categoryToTestId: string;
+
+    beforeEach(async () => {
+      const category = await createTestCategory(adminToken, {
+        name: generateUniqueName('Role Test Category'),
+      });
+      categoryToTestId = category.id;
+    });
+
+    // Debería rechazar operaciones de escritura para un usuario CLIENT (F14)
+    it('should reject write operations for a CLIENT user (403)', async () => {
+      const clientUser = await createTestUser('CLIENT');
+      const clientToken = await loginAs(clientUser.user?.email || clientUser.email);
+
+      await request(app)
+        .post('/api/v1/categories')
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send(generateValidCategoryData({ name: generateUniqueName('Client Blocked Category') }))
+        .expect(403);
+
+      await request(app)
+        .put(`/api/v1/categories/${categoryToTestId}`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send({ name: generateUniqueName('Client Blocked Update') })
+        .expect(403);
+
+      await request(app)
+        .patch(`/api/v1/categories/${categoryToTestId}/activate`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .expect(403);
+
+      await request(app)
+        .patch(`/api/v1/categories/${categoryToTestId}/deactivate`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .expect(403);
+
+      await request(app)
+        .delete(`/api/v1/categories/${categoryToTestId}`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .expect(403);
+    });
+
+    // Debería rechazar operaciones de escritura para un usuario STYLIST (F14)
+    it('should reject write operations for a STYLIST user (403)', async () => {
+      const stylistUser = await createTestUser('STYLIST');
+      const stylistToken = await loginAs(stylistUser.user?.email || stylistUser.email);
+
+      await request(app)
+        .post('/api/v1/categories')
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .send(generateValidCategoryData({ name: generateUniqueName('Stylist Blocked Category') }))
+        .expect(403);
+
+      await request(app)
+        .put(`/api/v1/categories/${categoryToTestId}`)
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .send({ name: generateUniqueName('Stylist Blocked Update') })
+        .expect(403);
+
+      await request(app)
+        .patch(`/api/v1/categories/${categoryToTestId}/activate`)
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .expect(403);
+
+      await request(app)
+        .patch(`/api/v1/categories/${categoryToTestId}/deactivate`)
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .expect(403);
+
+      await request(app)
+        .delete(`/api/v1/categories/${categoryToTestId}`)
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .expect(403);
     });
   });
 

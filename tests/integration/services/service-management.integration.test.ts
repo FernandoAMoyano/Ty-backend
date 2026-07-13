@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../../../src/app';
 import {
   loginAsAdmin,
+  createTestUser,
   createTestCategory,
   createTestService,
   cleanupTestData,
@@ -10,6 +11,21 @@ import {
 } from '../../setup/helpers';
 import { createTestAppointment } from '../../setup/appointments-helpers';
 import { testPrisma } from '../../setup/database';
+
+/**
+ * Login de un usuario de test recién creado con la contraseña fija de test
+ */
+const loginAs = async (email: string): Promise<string> => {
+  const response = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email, password: 'TestPass123!' });
+
+  if (response.status !== 200) {
+    throw new Error(`Login falló: ${response.status}`);
+  }
+
+  return response.body.data.token;
+};
 
 describe('Service Management Integration Tests', () => {
   let adminToken: string;
@@ -500,6 +516,78 @@ describe('Service Management Integration Tests', () => {
       await request(app).patch(`/api/v1/services/${testServiceId}/activate`).expect(401);
 
       await request(app).delete(`/api/v1/services/${testServiceId}`).expect(401);
+    });
+
+    // Debería rechazar operaciones de escritura para un usuario CLIENT (F14)
+    it('should reject write operations for a CLIENT user (403)', async () => {
+      const clientUser = await createTestUser('CLIENT');
+      const clientToken = await loginAs(clientUser.user?.email || clientUser.email);
+      const serviceData = generateValidServiceData(testCategoryId, {
+        name: 'Client Blocked Service',
+      });
+
+      await request(app)
+        .post('/api/v1/services')
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send(serviceData)
+        .expect(403);
+
+      await request(app)
+        .put(`/api/v1/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send({ name: 'Client Blocked Update' })
+        .expect(403);
+
+      await request(app)
+        .patch(`/api/v1/services/${testServiceId}/activate`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .expect(403);
+
+      await request(app)
+        .patch(`/api/v1/services/${testServiceId}/deactivate`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .expect(403);
+
+      await request(app)
+        .delete(`/api/v1/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .expect(403);
+    });
+
+    // Debería rechazar operaciones de escritura para un usuario STYLIST (F14)
+    it('should reject write operations for a STYLIST user (403)', async () => {
+      const stylistUser = await createTestUser('STYLIST');
+      const stylistToken = await loginAs(stylistUser.user?.email || stylistUser.email);
+      const serviceData = generateValidServiceData(testCategoryId, {
+        name: 'Stylist Blocked Service',
+      });
+
+      await request(app)
+        .post('/api/v1/services')
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .send(serviceData)
+        .expect(403);
+
+      await request(app)
+        .put(`/api/v1/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .send({ name: 'Stylist Blocked Update' })
+        .expect(403);
+
+      await request(app)
+        .patch(`/api/v1/services/${testServiceId}/activate`)
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .expect(403);
+
+      await request(app)
+        .patch(`/api/v1/services/${testServiceId}/deactivate`)
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .expect(403);
+
+      await request(app)
+        .delete(`/api/v1/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .expect(403);
     });
   });
 });
