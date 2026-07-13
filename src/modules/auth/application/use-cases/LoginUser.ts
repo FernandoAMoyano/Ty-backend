@@ -1,4 +1,4 @@
-import { IUserRepository } from '../../domain/repositories/IUserRepository';
+import { IUserRepository, UserWithRole } from '../../domain/repositories/IUserRepository';
 import { HashService } from '../services/HashService';
 import { JwtPayload, JwtService } from '../services/JwtService';
 import { LoginDto } from '../dto/request/LoginDto';
@@ -82,7 +82,7 @@ export class LoginUser {
    * @returns Objeto DTO con los datos del usuario formateados para respuesta
    * @private
    */
-  private mapUserToDto(user: any, role: any): UserDto {
+  private mapUserToDto(user: UserWithRole, role: UserWithRole['role']): UserDto {
     return {
       id: user.id,
       name: user.name,
@@ -94,7 +94,7 @@ export class LoginUser {
       role: {
         id: role.id,
         name: role.name,
-        description: role.description,
+        description: role.description ?? undefined,
       },
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

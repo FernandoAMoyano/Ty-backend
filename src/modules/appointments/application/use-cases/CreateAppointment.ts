@@ -11,7 +11,10 @@ import { AppointmentDto } from '../dto/response/AppointmentDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
-import { ScheduleAvailabilityService } from '../../domain/services/ScheduleAvailabilityService';
+import {
+  ScheduleAvailabilityService,
+  EffectiveSchedule,
+} from '../../domain/services/ScheduleAvailabilityService';
 import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
 
 /**
@@ -39,7 +42,11 @@ export class CreateAppointment {
    * @param schedule - Horario laboral del día
    * @throws BusinessRuleError si la cita está fuera del horario laboral
    */
-  private validateWorkingHours(dateTimeStr: string, duration: number, schedule: any): void {
+  private validateWorkingHours(
+    dateTimeStr: string,
+    duration: number,
+    schedule: EffectiveSchedule,
+  ): void {
     // Se usa el eje UTC para las horas, alineado con GetAvailableSlots.createSlotDateTime
     // (Schedule.startTime/endTime se interpretan como horas UTC del día consultado).
     const appointmentDate = new Date(dateTimeStr);

@@ -1,3 +1,4 @@
+import { Notification } from '../../domain/entities/Notification';
 import { INotificationRepository } from '../../domain/repositories/INotificationRepository';
 import { INotificationStatusRepository } from '../../domain/repositories/INotificationStatusRepository';
 import { NotificationStatusEnum } from '../../domain/entities/NotificationStatus';
@@ -190,7 +191,7 @@ export class MarkNotificationAsRead {
    * @param isRead - Indica si está leída
    * @returns DTO de notificación para respuesta
    */
-  private mapToDto(notification: any, isRead: boolean): NotificationDto {
+  private mapToDto(notification: Notification, isRead: boolean): NotificationDto {
     return {
       id: notification.id,
       type: notification.type,

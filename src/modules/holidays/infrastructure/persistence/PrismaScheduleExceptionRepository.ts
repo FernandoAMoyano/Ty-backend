@@ -1,4 +1,8 @@
-import { PrismaClient, ScheduleException as PrismaScheduleException } from '@prisma/client';
+import {
+  Prisma,
+  PrismaClient,
+  ScheduleException as PrismaScheduleException,
+} from '@prisma/client';
 import { ScheduleException } from '../../domain/entities/ScheduleException';
 import {
   IScheduleExceptionRepository,
@@ -107,20 +111,19 @@ export class PrismaScheduleExceptionRepository implements IScheduleExceptionRepo
     const skip = (page - 1) * limit;
 
     // Construir condiciones de filtro
-    const where: any = {};
+    const where: Prisma.ScheduleExceptionWhereInput = {};
+    const exceptionDateFilter: Prisma.DateTimeFilter = {};
 
     if (filters?.startDate) {
-      where.exceptionDate = {
-        ...where.exceptionDate,
-        gte: filters.startDate,
-      };
+      exceptionDateFilter.gte = filters.startDate;
     }
 
     if (filters?.endDate) {
-      where.exceptionDate = {
-        ...where.exceptionDate,
-        lte: filters.endDate,
-      };
+      exceptionDateFilter.lte = filters.endDate;
+    }
+
+    if (Object.keys(exceptionDateFilter).length > 0) {
+      where.exceptionDate = exceptionDateFilter;
     }
 
     if (filters?.holidayId) {
@@ -244,7 +247,7 @@ export class PrismaScheduleExceptionRepository implements IScheduleExceptionRepo
     const startOfDay = startOfDayUTC(date);
     const endOfDay = endOfDayUTC(date);
 
-    const where: any = {
+    const where: Prisma.ScheduleExceptionWhereInput = {
       exceptionDate: {
         gte: startOfDay,
         lte: endOfDay,

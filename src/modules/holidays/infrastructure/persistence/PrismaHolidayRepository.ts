@@ -1,4 +1,4 @@
-import { PrismaClient, Holiday as PrismaHoliday } from '@prisma/client';
+import { Prisma, PrismaClient, Holiday as PrismaHoliday } from '@prisma/client';
 import { Holiday } from '../../domain/entities/Holiday';
 import {
   IHolidayRepository,
@@ -110,37 +110,31 @@ export class PrismaHolidayRepository implements IHolidayRepository {
     const skip = (page - 1) * limit;
 
     // Construir condiciones de filtro
-    const where: any = {};
+    const where: Prisma.HolidayWhereInput = {};
+    const dateFilter: Prisma.DateTimeFilter = {};
 
     if (filters?.year) {
       const { gte: startOfYear, lte: endOfYear } = yearRangeUTC(filters.year);
-      where.date = {
-        ...where.date,
-        gte: startOfYear,
-        lte: endOfYear,
-      };
+      dateFilter.gte = startOfYear;
+      dateFilter.lte = endOfYear;
     }
 
     if (filters?.month && filters?.year) {
       const { gte: startOfMonth, lte: endOfMonth } = monthRangeUTC(filters.year, filters.month);
-      where.date = {
-        gte: startOfMonth,
-        lte: endOfMonth,
-      };
+      dateFilter.gte = startOfMonth;
+      dateFilter.lte = endOfMonth;
     }
 
     if (filters?.startDate) {
-      where.date = {
-        ...where.date,
-        gte: filters.startDate,
-      };
+      dateFilter.gte = filters.startDate;
     }
 
     if (filters?.endDate) {
-      where.date = {
-        ...where.date,
-        lte: filters.endDate,
-      };
+      dateFilter.lte = filters.endDate;
+    }
+
+    if (Object.keys(dateFilter).length > 0) {
+      where.date = dateFilter;
     }
 
     if (filters?.name) {
@@ -247,7 +241,7 @@ export class PrismaHolidayRepository implements IHolidayRepository {
     const startOfDay = startOfDayUTC(date);
     const endOfDay = endOfDayUTC(date);
 
-    const where: any = {
+    const where: Prisma.HolidayWhereInput = {
       date: {
         gte: startOfDay,
         lte: endOfDay,

@@ -1,6 +1,14 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { Appointment } from '../../domain/entities/Appointment';
 import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
+
+/**
+ * Payload de Prisma para una cita con sus servicios asociados incluidos
+ * (mismo include usado en todas las consultas de este repositorio)
+ */
+type AppointmentWithServices = Prisma.AppointmentGetPayload<{
+  include: { services: true };
+}>;
 
 /**
  * Implementación de AppointmentRepository usando Prisma ORM
@@ -294,7 +302,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   ): Promise<Appointment[]> {
     const endTime = new Date(dateTime.getTime() + duration * 60000);
 
-    const whereClause: any = {
+    const whereClause: Prisma.AppointmentWhereInput = {
       AND: [
         {
           dateTime: {
@@ -474,7 +482,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
    * @param appointmentData - Datos de la cita desde Prisma
    * @returns Entidad Appointment
    */
-  private mapToEntity(appointmentData: any): Appointment {
+  private mapToEntity(appointmentData: AppointmentWithServices): Appointment {
     return Appointment.fromPersistence(
       appointmentData.id,
       appointmentData.dateTime,
@@ -483,9 +491,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       appointmentData.clientId,
       appointmentData.scheduleId,
       appointmentData.statusId,
-      appointmentData.stylistId,
+      appointmentData.stylistId ?? undefined,
       appointmentData.confirmedAt ?? undefined,
-      appointmentData.services?.map((service: any) => service.id) || [],
+      appointmentData.services?.map((service) => service.id) || [],
       appointmentData.createdAt,
       appointmentData.updatedAt,
       appointmentData.cancellationReason ?? undefined,
