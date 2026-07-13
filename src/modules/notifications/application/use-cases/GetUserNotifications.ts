@@ -4,7 +4,7 @@ import { NotificationStatusEnum } from '../../domain/entities/NotificationStatus
 import { GetNotificationsFilterDto } from '../dto/request/GetNotificationsFilterDto';
 import { NotificationDto, NotificationListDto } from '../dto/response/NotificationDto';
 import { Notification, NotificationTypeEnum } from '../../domain/entities/Notification';
-import { ValidationError } from '../../../../shared/exceptions/ValidationError';
+import { assertValidUuid } from '../../../../shared/utils/validateUuid';
 
 /**
  * Caso de uso para obtener las notificaciones de un usuario
@@ -79,14 +79,7 @@ export class GetUserNotifications {
    * @throws ValidationError si el ID no es válido
    */
   private validateUserId(userId: string): void {
-    if (!userId || userId.trim().length === 0) {
-      throw new ValidationError('User ID is required');
-    }
-
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(userId)) {
-      throw new ValidationError('User ID must be a valid UUID');
-    }
+    assertValidUuid(userId, 'User ID');
   }
 
   /**

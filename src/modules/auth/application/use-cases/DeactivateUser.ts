@@ -7,7 +7,7 @@ import { AppointmentStatusEnum } from '../../../appointments/domain/entities/App
 import { DeactivateUserResponseDto } from '../dto/response/DeactivateUserResponseDto';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
-import { ValidationError } from '../../../../shared/exceptions/ValidationError';
+import { assertValidUuid } from '../../../../shared/utils/validateUuid';
 
 /**
  * Caso de uso para desactivar un usuario del sistema
@@ -80,14 +80,7 @@ export class DeactivateUser {
    * @throws ValidationError si el ID no es válido
    */
   private validateInput(userId: string): void {
-    if (!userId || userId.trim().length === 0) {
-      throw new ValidationError('User ID is required');
-    }
-
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(userId)) {
-      throw new ValidationError('User ID must be a valid UUID');
-    }
+    assertValidUuid(userId, 'User ID');
   }
 
   /**

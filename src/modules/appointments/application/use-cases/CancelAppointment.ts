@@ -8,6 +8,7 @@ import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
 import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 import { AppointmentStatusEnum } from '../../domain/entities/AppointmentStatus';
+import { assertValidUuid } from '../../../../shared/utils/validateUuid';
 
 /**
  * Caso de uso para cancelar una cita existente
@@ -77,23 +78,10 @@ export class CancelAppointment {
     requesterId: string,
   ): void {
     // Validar ID de cita
-    if (!appointmentId || appointmentId.trim().length === 0) {
-      throw new ValidationError('Appointment ID is required');
-    }
-
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(appointmentId)) {
-      throw new ValidationError('Appointment ID must be a valid UUID');
-    }
+    assertValidUuid(appointmentId, 'Appointment ID');
 
     // Validar ID del solicitante
-    if (!requesterId || requesterId.trim().length === 0) {
-      throw new ValidationError('Requester ID is required');
-    }
-
-    if (!uuidRegex.test(requesterId)) {
-      throw new ValidationError('Requester ID must be a valid UUID');
-    }
+    assertValidUuid(requesterId, 'Requester ID');
 
     // Validar razón de cancelación (si se proporciona)
     if (cancelDto.reason && cancelDto.reason.trim().length === 0) {

@@ -1,7 +1,7 @@
 import { Appointment } from '../../domain/entities/Appointment';
 import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
-import { ValidationError } from '../../../../shared/exceptions/ValidationError';
+import { assertValidUuid } from '../../../../shared/utils/validateUuid';
 import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 
 /**
@@ -50,15 +50,7 @@ export class GetAppointmentsByClient {
    * @throws ValidationError si el ID es inválido
    */
   private validateInput(clientId: string): void {
-    if (!clientId || clientId.trim().length === 0) {
-      throw new ValidationError('Client ID is required');
-    }
-
-    // Validar formato UUID (básico)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(clientId)) {
-      throw new ValidationError('Client ID must be a valid UUID');
-    }
+    assertValidUuid(clientId, 'Client ID');
   }
 
   /**

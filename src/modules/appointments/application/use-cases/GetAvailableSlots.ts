@@ -1,4 +1,5 @@
 import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
+import { Appointment } from '../../domain/entities/Appointment';
 import { IScheduleRepository } from '../../domain/repositories/IScheduleRepository';
 import { ScheduleAvailabilityService } from '../../domain/services/ScheduleAvailabilityService';
 import { GetAvailableSlotsDto } from '../dto/request/GetAvailableSlotsDto';
@@ -7,6 +8,7 @@ import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleError';
 import { DayOfWeekEnum } from '../../domain/entities/Schedule';
 import { startOfDayUTC } from '../../../../shared/utils/dateOnly';
+import { assertValidUuid } from '../../../../shared/utils/validateUuid';
 
 /**
  * Caso de uso para obtener slots de tiempo disponibles para agendar citas
@@ -95,19 +97,19 @@ export class GetAvailableSlots {
 
     // Validar stylistId si se proporciona
     if (request.stylistId) {
-      const uuidRegex =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(request.stylistId)) {
+      try {
+        assertValidUuid(request.stylistId, 'Stylist ID');
+      } catch {
         throw new ValidationError('Stylist ID must be a valid UUID');
       }
     }
 
     // Validar serviceIds si se proporcionan
     if (request.serviceIds && request.serviceIds.length > 0) {
-      const uuidRegex =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       for (const serviceId of request.serviceIds) {
-        if (!uuidRegex.test(serviceId)) {
+        try {
+          assertValidUuid(serviceId, 'Service ID');
+        } catch {
           throw new ValidationError('All service IDs must be valid UUIDs');
         }
       }
@@ -252,7 +254,7 @@ export class GetAvailableSlots {
    */
   private async calculateSlotAvailability(
     baseSlots: string[],
-    existingAppointments: any[],
+    existingAppointments: Appointment[],
     targetDate: Date,
     duration: number,
     stylistId?: string,
@@ -311,7 +313,7 @@ export class GetAvailableSlots {
   private checkForConflicts(
     slotStart: Date,
     slotEnd: Date,
-    appointments: any[],
+    appointments: Appointment[],
   ): { hasConflict: boolean; reason?: string } {
     for (const appointment of appointments) {
       const appointmentStart = appointment.dateTime;
@@ -346,7 +348,7 @@ export class GetAvailableSlots {
   private buildDayAvailabilityResponse(
     date: string,
     dayOfWeek: DayOfWeekEnum,
-    schedule: any,
+    schedule: { startTime: string; endTime: string },
     slots: AvailableSlotDto[],
   ): DayAvailabilityDto {
     const availableCount = slots.filter((slot) => slot.available).length;
