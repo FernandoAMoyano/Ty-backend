@@ -119,7 +119,10 @@ model Schedule {
   updatedAt    DateTime      @updatedAt
   holidayId    String?
   appointments Appointment[]
-  holiday      Holiday?      @relation(fields: [holidayId], references: [id])
+  // onDelete: SetNull explícito (F9) -- ya era el default implícito de Prisma para esta
+  // relación opcional (confirmado en la migración inicial), se declara explícito para
+  // documentar la intención y evitar drift si el default de Prisma cambiara a futuro
+  holiday      Holiday?      @relation(fields: [holidayId], references: [id], onDelete: SetNull)
 }
 
 model Holiday {

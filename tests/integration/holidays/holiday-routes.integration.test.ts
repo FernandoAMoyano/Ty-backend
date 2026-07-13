@@ -534,5 +534,43 @@ describe('Holidays Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
     });
+
+    // Debería desvincular (holidayId -> null) los Schedule asociados en vez de fallar (F9)
+    it('should set Schedule.holidayId to null instead of failing when deleting a referenced holiday', async () => {
+      const createHolidayResponse = await request(app)
+        .post('/api/v1/holidays')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'TEST Feriado con Schedule F9',
+          date: '2097-06-15',
+        });
+      expect(createHolidayResponse.status).toBe(201);
+      const holidayId = createHolidayResponse.body.data.id;
+
+      const schedule = await testPrisma.schedule.create({
+        data: {
+          dayOfWeek: 'WEDNESDAY',
+          startTime: '09:00',
+          endTime: '13:00',
+          holidayId,
+        },
+      });
+
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/holidays/${holidayId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(deleteResponse.status).toBe(200);
+      expect(deleteResponse.body.success).toBe(true);
+
+      const scheduleAfterDelete = await testPrisma.schedule.findUnique({
+        where: { id: schedule.id },
+      });
+
+      expect(scheduleAfterDelete).not.toBeNull();
+      expect(scheduleAfterDelete?.holidayId).toBeNull();
+
+      await testPrisma.schedule.delete({ where: { id: schedule.id } });
+    });
   });
 });
