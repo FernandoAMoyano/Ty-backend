@@ -3,6 +3,7 @@ import { CreateNotification } from '../../application/use-cases/CreateNotificati
 import { GetUserNotifications } from '../../application/use-cases/GetUserNotifications';
 import { GetNotificationById } from '../../application/use-cases/GetNotificationById';
 import { MarkNotificationAsRead } from '../../application/use-cases/MarkNotificationAsRead';
+import { MarkAllNotificationsAsRead } from '../../application/use-cases/MarkAllNotificationsAsRead';
 import { GetUnreadCount } from '../../application/use-cases/GetUnreadCount';
 import { NotificationTypeEnum } from '../../domain/entities/Notification';
 import { AuthenticatedRequest } from '../../../auth/presentation/middleware/AuthMiddleware';
@@ -20,6 +21,7 @@ export class NotificationController {
     private _getNotificationById: GetNotificationById,
     private _markNotificationAsRead: MarkNotificationAsRead,
     private _getUnreadCount: GetUnreadCount,
+    private _markAllNotificationsAsRead: MarkAllNotificationsAsRead,
   ) {}
 
   /**
@@ -178,21 +180,7 @@ export class NotificationController {
       throw new UnauthorizedError('Authentication required');
     }
 
-    const notifications = await this._getUserNotifications.execute(req.user.userId, { limit: 1000 });
-    const notificationIds = notifications.notifications.map((n) => n.id);
-
-    if (notificationIds.length === 0) {
-      return res.status(200).json({
-        success: true,
-        data: { updatedCount: 0 },
-        message: 'No notifications to mark as read',
-      });
-    }
-
-    const result = await this._markNotificationAsRead.execute(
-      { notificationIds },
-      req.user.userId,
-    );
+    const result = await this._markAllNotificationsAsRead.execute(req.user.userId);
 
     return res.status(200).json({
       success: true,

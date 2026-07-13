@@ -493,5 +493,36 @@ describe('Notifications Integration Tests', () => {
 
       expect(countResponse.body.data.unreadCount).toBe(0);
     });
+
+    // Debería devolver el conteo exacto de notificaciones actualizadas (F10)
+    it('should return the exact updatedCount for a user with 3 unread notifications', async () => {
+      // Usuario aislado para no interferir con notificaciones creadas en otros tests
+      const freshUser = await loginTestUser();
+
+      for (let i = 0; i < 3; i++) {
+        const createResponse = await request(app)
+          .post('/api/v1/notifications')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            type: 'SYSTEM',
+            message: `TEST F10 notification ${i}`,
+            userId: freshUser.user.id,
+          });
+        expect(createResponse.status).toBe(201);
+      }
+
+      const markAllResponse = await request(app)
+        .post('/api/v1/notifications/mark-all-read')
+        .set('Authorization', `Bearer ${freshUser.token}`);
+
+      expect(markAllResponse.status).toBe(200);
+      expect(markAllResponse.body.data.updatedCount).toBe(3);
+
+      const countResponse = await request(app)
+        .get('/api/v1/notifications/unread-count')
+        .set('Authorization', `Bearer ${freshUser.token}`);
+
+      expect(countResponse.body.data.unreadCount).toBe(0);
+    });
   });
 });

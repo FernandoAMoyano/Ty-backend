@@ -49,6 +49,7 @@ describe('CreateNotification Use Case', () => {
       countByUserId: jest.fn(),
       findByUserIdFiltered: jest.fn(),
       countByUserIdFiltered: jest.fn(),
+      updateStatusByUserId: jest.fn(),
     };
 
     // Mock NotificationStatusRepository

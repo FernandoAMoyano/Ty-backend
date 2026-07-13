@@ -141,4 +141,18 @@ export interface INotificationRepository {
     userId: string,
     filters: { excludeStatusId?: string; type?: NotificationTypeEnum },
   ): Promise<number>;
+
+  /**
+   * Actualiza el estado de todas las notificaciones de un usuario cuyo estado actual
+   * sea distinto al indicado (p.ej. marcar todas como leídas sin límite de cantidad)
+   * @param userId - ID del usuario
+   * @param fromStatusIdNot - ID de estado a excluir (las notificaciones que ya lo tengan no se tocan)
+   * @param newStatusId - Nuevo ID de estado a asignar
+   * @returns Promise con el número de notificaciones actualizadas
+   */
+  updateStatusByUserId(
+    userId: string,
+    fromStatusIdNot: string,
+    newStatusId: string,
+  ): Promise<number>;
 }

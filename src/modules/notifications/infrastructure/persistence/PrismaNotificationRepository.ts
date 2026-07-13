@@ -312,6 +312,32 @@ export class PrismaNotificationRepository implements INotificationRepository {
   }
 
   /**
+   * Actualiza el estado de todas las notificaciones de un usuario cuyo estado actual
+   * sea distinto al indicado
+   * @param userId - ID del usuario
+   * @param fromStatusIdNot - ID de estado a excluir
+   * @param newStatusId - Nuevo ID de estado a asignar
+   * @returns Promise con el número de notificaciones actualizadas
+   */
+  async updateStatusByUserId(
+    userId: string,
+    fromStatusIdNot: string,
+    newStatusId: string,
+  ): Promise<number> {
+    const result = await this.prisma.notification.updateMany({
+      where: {
+        userId,
+        statusId: { not: fromStatusIdNot },
+      },
+      data: {
+        statusId: newStatusId,
+      },
+    });
+
+    return result.count;
+  }
+
+  /**
    * Mapea un registro de Prisma a la entidad de dominio
    * @param prismaNotification - Registro de Prisma
    * @returns Entidad de dominio Notification
