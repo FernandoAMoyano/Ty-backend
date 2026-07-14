@@ -1,15 +1,18 @@
 import { Appointment } from '../../domain/entities/Appointment';
 import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
+import { PaginatedAppointmentsResponseDto } from '../dto/response/PaginatedAppointmentsResponseDto';
 import { assertValidUuid } from '../../../../shared/utils/validateUuid';
 import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 
 /**
- * Caso de uso para obtener todas las citas de un estilista específico
+ * Caso de uso para obtener todas las citas de un estilista específico, paginadas
  * Aplica control de acceso híbrido: ownership + role-based
  * - ADMIN: puede ver citas de cualquier estilista
  * - STYLIST: solo puede ver sus propias citas (stylistId === requesterId)
  * - CLIENT: ve citas del estilista donde es el cliente
+ * El filtro de ownership de CLIENT se aplica en el repositorio (WHERE), no en memoria,
+ * para que total/totalPages reflejen el filtro real (F17, corrige el mismo patrón de bug que F3)
  */
 export class GetAppointmentsByStylist {
   constructor(private appointmentRepository: IAppointmentRepository) {}
@@ -19,7 +22,9 @@ export class GetAppointmentsByStylist {
    * @param stylistId - ID único del estilista
    * @param requesterId - ID del usuario que realiza la consulta
    * @param requesterRole - Nombre del rol del usuario solicitante
-   * @returns Promise con array de DTOs de las citas del estilista
+   * @param page - Número de página (default 1)
+   * @param limit - Cantidad de resultados por página (default 20)
+   * @returns Promise con la página de citas del estilista y metadata de paginación
    * @throws ValidationError si el ID del estilista no es válido
    * @throws ForbiddenError si el usuario no tiene permisos
    */
@@ -27,21 +32,38 @@ export class GetAppointmentsByStylist {
     stylistId: string,
     requesterId: string,
     requesterRole: string,
-  ): Promise<AppointmentDto[]> {
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<PaginatedAppointmentsResponseDto> {
     // 1. Validar datos básicos
     this.validateInput(stylistId);
 
     // 2. Validar permisos de acceso
     this.validateAccessPermissions(stylistId, requesterId, requesterRole);
 
-    // 3. Buscar todas las citas del estilista en el repositorio
-    const appointments = await this.appointmentRepository.findByStylistId(stylistId);
+    // 3. Construir el filtro de ownership (mismo criterio que el filtrado en memoria que reemplaza)
+    const ownershipFilter =
+      requesterRole === 'CLIENT' ? { userId: requesterId, clientId: requesterId } : undefined;
 
-    // 4. Filtrar por ownership si es CLIENT
-    const filteredAppointments = this.filterByRole(appointments, requesterId, requesterRole);
+    // 4. Buscar la página de citas y el total, ambos con el mismo ownershipFilter
+    const offset = (page - 1) * limit;
+    const [appointments, total] = await Promise.all([
+      this.appointmentRepository.findByStylistIdPaginated(stylistId, limit, offset, ownershipFilter),
+      this.appointmentRepository.countByStylistId(stylistId, ownershipFilter),
+    ]);
 
-    // 5. Mapear a DTOs de respuesta
-    return filteredAppointments.map(appointment => this.mapToAppointmentDto(appointment));
+    // 5. Mapear a DTOs de respuesta y construir metadata de paginación
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      appointments: appointments.map(appointment => this.mapToAppointmentDto(appointment)),
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    };
   }
 
   /**
@@ -77,27 +99,6 @@ export class GetAppointmentsByStylist {
     }
 
     // CLIENT puede consultar cualquier estilista (se filtra en resultados)
-  }
-
-  /**
-   * Filtra las citas según el rol del solicitante
-   * CLIENT solo ve citas donde es el creador o el cliente
-   * @param appointments - Lista completa de citas
-   * @param requesterId - ID del usuario solicitante
-   * @param requesterRole - Nombre del rol del usuario
-   * @returns Lista filtrada de citas
-   */
-  private filterByRole(
-    appointments: Appointment[],
-    requesterId: string,
-    requesterRole: string,
-  ): Appointment[] {
-    if (requesterRole === 'CLIENT') {
-      return appointments.filter(
-        a => a.userId === requesterId || a.clientId === requesterId,
-      );
-    }
-    return appointments;
   }
 
   /**

@@ -173,18 +173,30 @@ export class AppointmentValidations {
 
   /**
    * Validaciones para buscar citas por cliente
-   * @description Valida que el parámetro clientId sea un UUID válido
+   * @description Valida que el parámetro clientId sea un UUID válido y los
+   * parámetros opcionales de paginación (F17, mismo patrón que payments/holidays)
    */
   static appointmentsByClient = [
     param('clientId').isUUID().withMessage('Client ID must be a valid UUID'),
+    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('Limit must be between 1 and 100'),
   ];
 
   /**
    * Validaciones para buscar citas por estilista
-   * @description Valida que el parámetro stylistId sea un UUID válido
+   * @description Valida que el parámetro stylistId sea un UUID válido y los
+   * parámetros opcionales de paginación (F17, mismo patrón que payments/holidays)
    */
   static appointmentsByStylist = [
     param('stylistId').isUUID().withMessage('Stylist ID must be a valid UUID'),
+    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('Limit must be between 1 and 100'),
   ];
 
   /**

@@ -27,6 +27,10 @@ describe('GetAppointmentsByClient Use Case', () => {
   const adminRequesterId = generateUuid();
   const adminRole = 'ADMIN';
 
+  // Paginación por defecto usada por el caso de uso (F17)
+  const defaultLimit = 20;
+  const defaultOffset = 0;
+
   // Crear appointments de ejemplo para los tests
   const createMockAppointment = (
     overrides: Partial<{
@@ -81,6 +85,10 @@ describe('GetAppointmentsByClient Use Case', () => {
       existsById: jest.fn(),
       findByClientId: jest.fn(),
       findByStylistId: jest.fn(),
+      findByClientIdPaginated: jest.fn(),
+      countByClientId: jest.fn(),
+      findByStylistIdPaginated: jest.fn(),
+      countByStylistId: jest.fn(),
       findByUserId: jest.fn(),
       findByStatusId: jest.fn(),
       findByDateRange: jest.fn(),
@@ -108,14 +116,33 @@ describe('GetAppointmentsByClient Use Case', () => {
     it('should get client appointments successfully', async () => {
       const appointment1 = createMockAppointment({ dateTime: getFutureDate(10), duration: 60 });
       const appointment2 = createMockAppointment({ dateTime: getFutureDate(20), duration: 90 });
-      mockAppointmentRepository.findByClientId.mockResolvedValue([appointment1, appointment2]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([
+        appointment1,
+        appointment2,
+      ]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(2);
 
       const result = await useCase.execute(validClientId, adminRequesterId, adminRole);
 
-      expect(mockAppointmentRepository.findByClientId).toHaveBeenCalledTimes(1);
-      expect(mockAppointmentRepository.findByClientId).toHaveBeenCalledWith(validClientId);
-      expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledTimes(1);
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledWith(
+        validClientId,
+        defaultLimit,
+        defaultOffset,
+        undefined,
+      );
+      expect(mockAppointmentRepository.countByClientId).toHaveBeenCalledWith(
+        validClientId,
+        undefined,
+      );
+      expect(result.appointments).toHaveLength(2);
+      expect(result.total).toBe(2);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(defaultLimit);
+      expect(result.totalPages).toBe(1);
+      expect(result.hasNextPage).toBe(false);
+      expect(result.hasPreviousPage).toBe(false);
+      expect(result.appointments[0]).toEqual({
         id: appointment1.id,
         dateTime: appointment1.dateTime.toISOString(),
         duration: appointment1.duration,
@@ -131,27 +158,32 @@ describe('GetAppointmentsByClient Use Case', () => {
       });
     });
 
-    // Debería retornar array vacío cuando cliente no tiene citas
-    it('should return empty array when client has no appointments', async () => {
-      mockAppointmentRepository.findByClientId.mockResolvedValue([]);
+    // Debería retornar página vacía cuando cliente no tiene citas
+    it('should return empty page when client has no appointments', async () => {
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
 
       const result = await useCase.execute(validClientId, adminRequesterId, adminRole);
 
-      expect(result).toEqual([]);
-      expect(result).toHaveLength(0);
+      expect(result.appointments).toEqual([]);
+      expect(result.total).toBe(0);
+      expect(result.totalPages).toBe(0);
+      expect(result.hasNextPage).toBe(false);
+      expect(result.hasPreviousPage).toBe(false);
     });
 
     // Debería mapear correctamente las citas confirmadas
     it('should correctly map confirmed appointments', async () => {
       const confirmedAt = new Date();
       const confirmedAppointment = createMockAppointment({ confirmedAt });
-      mockAppointmentRepository.findByClientId.mockResolvedValue([confirmedAppointment]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([confirmedAppointment]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(1);
 
       const result = await useCase.execute(validClientId, adminRequesterId, adminRole);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].confirmedAt).toBe(confirmedAt.toISOString());
-      expect(result[0].clientId).toBe(validClientId);
+      expect(result.appointments).toHaveLength(1);
+      expect(result.appointments[0].confirmedAt).toBe(confirmedAt.toISOString());
+      expect(result.appointments[0].clientId).toBe(validClientId);
     });
 
     // Debería manejar múltiples citas con diferentes duraciones
@@ -161,13 +193,14 @@ describe('GetAppointmentsByClient Use Case', () => {
         createMockAppointment({ duration: 60 }),
         createMockAppointment({ duration: 120 }),
       ];
-      mockAppointmentRepository.findByClientId.mockResolvedValue(appointments);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue(appointments);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(appointments.length);
 
       const result = await useCase.execute(validClientId, adminRequesterId, adminRole);
 
-      expect(result).toHaveLength(3);
-      expect(result.map((r) => r.duration)).toEqual([30, 60, 120]);
-      expect(result.every((r) => r.clientId === validClientId)).toBe(true);
+      expect(result.appointments).toHaveLength(3);
+      expect(result.appointments.map((r) => r.duration)).toEqual([30, 60, 120]);
+      expect(result.appointments.every((r) => r.clientId === validClientId)).toBe(true);
     });
 
     // Debería mapear correctamente todas las propiedades de la cita
@@ -186,12 +219,13 @@ describe('GetAppointmentsByClient Use Case', () => {
       appointment.createdAt = createdAt;
       appointment.updatedAt = updatedAt;
 
-      mockAppointmentRepository.findByClientId.mockResolvedValue([appointment]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([appointment]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(1);
 
       const result = await useCase.execute(validClientId, adminRequesterId, adminRole);
 
-      expect(result).toHaveLength(1);
-      const dto = result[0];
+      expect(result.appointments).toHaveLength(1);
+      const dto = result.appointments[0];
       expect(dto.id).toBe('specific-appointment-id');
       expect(dto.dateTime).toBe(specificDate.toISOString());
       expect(dto.duration).toBe(75);
@@ -205,28 +239,56 @@ describe('GetAppointmentsByClient Use Case', () => {
       expect(dto.statusId).toBe(validStatusId);
       expect(dto.serviceIds).toEqual(validServiceIds);
     });
+
+    // Debería calcular el offset correctamente para páginas distintas de la primera
+    it('should compute the correct offset for a non-first page', async () => {
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
+
+      await useCase.execute(validClientId, adminRequesterId, adminRole, 3, 10);
+
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledWith(
+        validClientId,
+        10,
+        20,
+        undefined,
+      );
+    });
   });
 
   describe('Access Control', () => {
     // Debería permitir acceso a ADMIN para cualquier cliente
     it('should allow ADMIN to view any client appointments', async () => {
-      mockAppointmentRepository.findByClientId.mockResolvedValue([]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
       const unrelatedAdminId = generateUuid();
 
       const result = await useCase.execute(validClientId, unrelatedAdminId, 'ADMIN');
 
-      expect(result).toEqual([]);
-      expect(mockAppointmentRepository.findByClientId).toHaveBeenCalledWith(validClientId);
+      expect(result.appointments).toEqual([]);
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledWith(
+        validClientId,
+        defaultLimit,
+        defaultOffset,
+        undefined,
+      );
     });
 
-    // Debería permitir al CLIENT ver sus propias citas
+    // Debería permitir al CLIENT ver sus propias citas sin ownershipFilter
     it('should allow CLIENT to view own appointments', async () => {
-      mockAppointmentRepository.findByClientId.mockResolvedValue([]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
 
       // CLIENT cuyo userId coincide con el clientId del parámetro
       const result = await useCase.execute(validClientId, validClientId, 'CLIENT');
 
-      expect(result).toEqual([]);
+      expect(result.appointments).toEqual([]);
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledWith(
+        validClientId,
+        defaultLimit,
+        defaultOffset,
+        undefined,
+      );
     });
 
     // Debería denegar al CLIENT ver citas de otro cliente
@@ -237,59 +299,97 @@ describe('GetAppointmentsByClient Use Case', () => {
         ForbiddenError,
       );
 
-      expect(mockAppointmentRepository.findByClientId).not.toHaveBeenCalled();
+      expect(mockAppointmentRepository.findByClientIdPaginated).not.toHaveBeenCalled();
     });
 
-    // Debería permitir al STYLIST consultar pero filtrar resultados
-    it('should allow STYLIST to query and filter to own assignments', async () => {
-      const otherStylistId = generateUuid();
+    // Debería permitir al STYLIST consultar aplicando el ownershipFilter en el repositorio
+    it('should allow STYLIST to query with the correct ownership filter', async () => {
       const ownAppointment = createMockAppointment({ stylistId: validStylistId });
-      const otherAppointment = createMockAppointment({ stylistId: otherStylistId });
-      mockAppointmentRepository.findByClientId.mockResolvedValue([
-        ownAppointment,
-        otherAppointment,
-      ]);
-
-      // STYLIST consulta: solo ve las citas donde es el estilista asignado
-      const result = await useCase.execute(validClientId, validStylistId, 'STYLIST');
-
-      expect(result).toHaveLength(1);
-      expect(result[0].stylistId).toBe(validStylistId);
-    });
-
-    // Debería retornar array vacío cuando STYLIST no tiene citas asignadas para ese cliente
-    it('should return empty array when STYLIST has no assigned appointments for client', async () => {
-      const otherStylistId = generateUuid();
-      const appointment = createMockAppointment({ stylistId: otherStylistId });
-      mockAppointmentRepository.findByClientId.mockResolvedValue([appointment]);
+      // El repositorio (mockeado) simula que la DB ya filtró por ownership
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([ownAppointment]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(1);
 
       const result = await useCase.execute(validClientId, validStylistId, 'STYLIST');
 
-      expect(result).toHaveLength(0);
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledWith(
+        validClientId,
+        defaultLimit,
+        defaultOffset,
+        { stylistId: validStylistId, userId: validStylistId },
+      );
+      expect(mockAppointmentRepository.countByClientId).toHaveBeenCalledWith(validClientId, {
+        stylistId: validStylistId,
+        userId: validStylistId,
+      });
+      expect(result.appointments).toHaveLength(1);
+      expect(result.appointments[0].stylistId).toBe(validStylistId);
     });
 
-    // Un STYLIST creador debe ver la cita aunque no sea el estilista asignado
-    it('should include appointments created by the stylist even if not assigned', async () => {
+    // Debería retornar página vacía cuando STYLIST no tiene citas asignadas para ese cliente
+    it('should return empty page when STYLIST has no assigned appointments for client', async () => {
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
+
+      const result = await useCase.execute(validClientId, validStylistId, 'STYLIST');
+
+      expect(result.appointments).toHaveLength(0);
+      expect(result.total).toBe(0);
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledWith(
+        validClientId,
+        defaultLimit,
+        defaultOffset,
+        { stylistId: validStylistId, userId: validStylistId },
+      );
+    });
+
+    // El ownershipFilter del STYLIST debe cubrir tanto al estilista asignado como al creador de la cita
+    it('should build an ownership filter covering both assigned stylist and creator', async () => {
       const creatorStylistId = generateUuid();
-      const assignedStylistId = generateUuid();
-      // El STYLIST creó la cita (userId) pero el estilista asignado es otro (stylistId)
       const appointmentCreatedByStylist = createMockAppointment({
         userId: creatorStylistId,
-        stylistId: assignedStylistId,
-      });
-      const unrelatedAppointment = createMockAppointment({
-        userId: generateUuid(),
         stylistId: generateUuid(),
       });
-      mockAppointmentRepository.findByClientId.mockResolvedValue([
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([
         appointmentCreatedByStylist,
-        unrelatedAppointment,
       ]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(1);
 
       const result = await useCase.execute(validClientId, creatorStylistId, 'STYLIST');
 
-      expect(result).toHaveLength(1);
-      expect(result[0].userId).toBe(creatorStylistId);
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledWith(
+        validClientId,
+        defaultLimit,
+        defaultOffset,
+        { stylistId: creatorStylistId, userId: creatorStylistId },
+      );
+      expect(result.appointments).toHaveLength(1);
+      expect(result.appointments[0].userId).toBe(creatorStylistId);
+    });
+  });
+
+  describe('Pagination Metadata (F17)', () => {
+    // El total y las páginas deben reflejar el filtro de ownership de STYLIST, no el total sin filtrar
+    it('should return pagination metadata consistent with the ownership filter', async () => {
+      // Simula que, sin filtro, el cliente tiene muchas más citas, pero el STYLIST
+      // solo tiene acceso a 3 de ellas. countByClientId debe recibir el ownershipFilter
+      // para que "total" refleje el subconjunto real y no el total global (bug de F3).
+      const filteredAppointments = [
+        createMockAppointment({ stylistId: validStylistId }),
+        createMockAppointment({ stylistId: validStylistId }),
+        createMockAppointment({ stylistId: validStylistId }),
+      ];
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue(filteredAppointments);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(3);
+
+      const result = await useCase.execute(validClientId, validStylistId, 'STYLIST', 1, 10);
+
+      expect(mockAppointmentRepository.countByClientId).toHaveBeenCalledWith(validClientId, {
+        stylistId: validStylistId,
+        userId: validStylistId,
+      });
+      expect(result.total).toBe(3);
+      expect(result.totalPages).toBe(1);
+      expect(result.appointments).toHaveLength(3);
     });
   });
 
@@ -299,7 +399,7 @@ describe('GetAppointmentsByClient Use Case', () => {
       await expect(useCase.execute('', adminRequesterId, adminRole)).rejects.toThrow(
         new ValidationError('Client ID is required'),
       );
-      expect(mockAppointmentRepository.findByClientId).not.toHaveBeenCalled();
+      expect(mockAppointmentRepository.findByClientIdPaginated).not.toHaveBeenCalled();
     });
 
     // Debería lanzar error para clientId nulo
@@ -307,7 +407,7 @@ describe('GetAppointmentsByClient Use Case', () => {
       await expect(useCase.execute(null as any, adminRequesterId, adminRole)).rejects.toThrow(
         new ValidationError('Client ID is required'),
       );
-      expect(mockAppointmentRepository.findByClientId).not.toHaveBeenCalled();
+      expect(mockAppointmentRepository.findByClientIdPaginated).not.toHaveBeenCalled();
     });
 
     // Debería lanzar error para clientId undefined
@@ -315,7 +415,7 @@ describe('GetAppointmentsByClient Use Case', () => {
       await expect(useCase.execute(undefined as any, adminRequesterId, adminRole)).rejects.toThrow(
         new ValidationError('Client ID is required'),
       );
-      expect(mockAppointmentRepository.findByClientId).not.toHaveBeenCalled();
+      expect(mockAppointmentRepository.findByClientIdPaginated).not.toHaveBeenCalled();
     });
 
     // Debería lanzar error para clientId solo con espacios
@@ -323,7 +423,7 @@ describe('GetAppointmentsByClient Use Case', () => {
       await expect(useCase.execute('   ', adminRequesterId, adminRole)).rejects.toThrow(
         new ValidationError('Client ID is required'),
       );
-      expect(mockAppointmentRepository.findByClientId).not.toHaveBeenCalled();
+      expect(mockAppointmentRepository.findByClientIdPaginated).not.toHaveBeenCalled();
     });
 
     // Debería lanzar error para formato UUID inválido
@@ -331,7 +431,7 @@ describe('GetAppointmentsByClient Use Case', () => {
       await expect(useCase.execute('invalid-uuid', adminRequesterId, adminRole)).rejects.toThrow(
         new ValidationError('Client ID must be a valid UUID'),
       );
-      expect(mockAppointmentRepository.findByClientId).not.toHaveBeenCalled();
+      expect(mockAppointmentRepository.findByClientIdPaginated).not.toHaveBeenCalled();
     });
 
     // Debería lanzar error para UUID con formato parcialmente correcto
@@ -339,18 +439,24 @@ describe('GetAppointmentsByClient Use Case', () => {
       await expect(
         useCase.execute('12345678-1234-1234-1234-12345678901', adminRequesterId, adminRole),
       ).rejects.toThrow(new ValidationError('Client ID must be a valid UUID'));
-      expect(mockAppointmentRepository.findByClientId).not.toHaveBeenCalled();
+      expect(mockAppointmentRepository.findByClientIdPaginated).not.toHaveBeenCalled();
     });
 
     // Debería aceptar UUID válido
     it('should accept valid UUID format', async () => {
       const validUuid = '550e8400-e29b-41d4-a716-446655440000';
-      mockAppointmentRepository.findByClientId.mockResolvedValue([]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
 
       const result = await useCase.execute(validUuid, adminRequesterId, adminRole);
 
-      expect(result).toEqual([]);
-      expect(mockAppointmentRepository.findByClientId).toHaveBeenCalledWith(validUuid);
+      expect(result.appointments).toEqual([]);
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledWith(
+        validUuid,
+        defaultLimit,
+        defaultOffset,
+        undefined,
+      );
     });
 
     // Debería aceptar diferentes formatos de UUID válidos
@@ -362,14 +468,23 @@ describe('GetAppointmentsByClient Use Case', () => {
         '6ba7b811-9dad-11d1-80b4-00c04fd430c8',
       ];
 
-      mockAppointmentRepository.findByClientId.mockResolvedValue([]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
 
       for (const uuid of validUuids) {
-        await expect(useCase.execute(uuid, adminRequesterId, adminRole)).resolves.toEqual([]);
-        expect(mockAppointmentRepository.findByClientId).toHaveBeenCalledWith(uuid);
+        const result = await useCase.execute(uuid, adminRequesterId, adminRole);
+        expect(result.appointments).toEqual([]);
+        expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledWith(
+          uuid,
+          defaultLimit,
+          defaultOffset,
+          undefined,
+        );
       }
 
-      expect(mockAppointmentRepository.findByClientId).toHaveBeenCalledTimes(validUuids.length);
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledTimes(
+        validUuids.length,
+      );
     });
   });
 
@@ -377,7 +492,8 @@ describe('GetAppointmentsByClient Use Case', () => {
     // Debería propagar errores del repository
     it('should propagate repository errors', async () => {
       const repositoryError = new Error('Database connection failed');
-      mockAppointmentRepository.findByClientId.mockRejectedValue(repositoryError);
+      mockAppointmentRepository.findByClientIdPaginated.mockRejectedValue(repositoryError);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
 
       await expect(useCase.execute(validClientId, adminRequesterId, adminRole)).rejects.toThrow(
         repositoryError,
@@ -387,7 +503,8 @@ describe('GetAppointmentsByClient Use Case', () => {
     // Debería manejar timeout del repository
     it('should handle repository timeout', async () => {
       const timeoutError = new Error('Query timeout');
-      mockAppointmentRepository.findByClientId.mockRejectedValue(timeoutError);
+      mockAppointmentRepository.findByClientIdPaginated.mockRejectedValue(timeoutError);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
 
       await expect(useCase.execute(validClientId, adminRequesterId, adminRole)).rejects.toThrow(
         'Query timeout',
@@ -397,10 +514,22 @@ describe('GetAppointmentsByClient Use Case', () => {
     // Debería manejar errores de red del repository
     it('should handle repository network errors', async () => {
       const networkError = new Error('Network error');
-      mockAppointmentRepository.findByClientId.mockRejectedValue(networkError);
+      mockAppointmentRepository.findByClientIdPaginated.mockRejectedValue(networkError);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
 
       await expect(useCase.execute(validClientId, adminRequesterId, adminRole)).rejects.toThrow(
         'Network error',
+      );
+    });
+
+    // Debería propagar errores del conteo aunque la búsqueda paginada resuelva
+    it('should propagate errors from the count query', async () => {
+      const countError = new Error('Count query failed');
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([]);
+      mockAppointmentRepository.countByClientId.mockRejectedValue(countError);
+
+      await expect(useCase.execute(validClientId, adminRequesterId, adminRole)).rejects.toThrow(
+        'Count query failed',
       );
     });
   });
@@ -409,36 +538,54 @@ describe('GetAppointmentsByClient Use Case', () => {
     // Debería llamar al repository con el clientId correcto
     it('should call repository with correct clientId', async () => {
       const testClientId = generateUuid();
-      mockAppointmentRepository.findByClientId.mockResolvedValue([]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
 
       await useCase.execute(testClientId, adminRequesterId, adminRole);
 
-      expect(mockAppointmentRepository.findByClientId).toHaveBeenCalledTimes(1);
-      expect(mockAppointmentRepository.findByClientId).toHaveBeenCalledWith(testClientId);
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledTimes(1);
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledWith(
+        testClientId,
+        defaultLimit,
+        defaultOffset,
+        undefined,
+      );
+      expect(mockAppointmentRepository.countByClientId).toHaveBeenCalledWith(
+        testClientId,
+        undefined,
+      );
     });
 
-    // Debería llamar al repository solo una vez
-    it('should call repository only once', async () => {
-      mockAppointmentRepository.findByClientId.mockResolvedValue([]);
+    // Debería llamar a los métodos paginados del repository solo una vez
+    it('should call repository methods only once', async () => {
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
 
       await useCase.execute(validClientId, adminRequesterId, adminRole);
 
-      expect(mockAppointmentRepository.findByClientId).toHaveBeenCalledTimes(1);
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledTimes(1);
+      expect(mockAppointmentRepository.countByClientId).toHaveBeenCalledTimes(1);
     });
 
-    // No debería llamar otros métodos del repository
+    // No debería llamar otros métodos del repository, en particular el finder no paginado
+    // (evita repetir el bug de F3: paginar/filtrar en memoria en vez de en el repositorio)
     it('should not call other repository methods', async () => {
-      mockAppointmentRepository.findByClientId.mockResolvedValue([]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(0);
 
       await useCase.execute(validClientId, adminRequesterId, adminRole);
 
-      expect(mockAppointmentRepository.findByClientId).toHaveBeenCalledTimes(1);
+      expect(mockAppointmentRepository.findByClientIdPaginated).toHaveBeenCalledTimes(1);
+      expect(mockAppointmentRepository.countByClientId).toHaveBeenCalledTimes(1);
+      expect(mockAppointmentRepository.findByClientId).not.toHaveBeenCalled();
       expect(mockAppointmentRepository.findById).not.toHaveBeenCalled();
       expect(mockAppointmentRepository.findAll).not.toHaveBeenCalled();
       expect(mockAppointmentRepository.save).not.toHaveBeenCalled();
       expect(mockAppointmentRepository.update).not.toHaveBeenCalled();
       expect(mockAppointmentRepository.delete).not.toHaveBeenCalled();
       expect(mockAppointmentRepository.findByStylistId).not.toHaveBeenCalled();
+      expect(mockAppointmentRepository.findByStylistIdPaginated).not.toHaveBeenCalled();
+      expect(mockAppointmentRepository.countByStylistId).not.toHaveBeenCalled();
     });
   });
 
@@ -453,34 +600,37 @@ describe('GetAppointmentsByClient Use Case', () => {
       appointment.createdAt = specificCreatedAt;
       appointment.updatedAt = specificUpdatedAt;
 
-      mockAppointmentRepository.findByClientId.mockResolvedValue([appointment]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([appointment]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(1);
 
       const result = await useCase.execute(validClientId, adminRequesterId, adminRole);
 
-      expect(result[0].dateTime).toBe(specificDateTime.toISOString());
-      expect(result[0].createdAt).toBe(specificCreatedAt.toISOString());
-      expect(result[0].updatedAt).toBe(specificUpdatedAt.toISOString());
+      expect(result.appointments[0].dateTime).toBe(specificDateTime.toISOString());
+      expect(result.appointments[0].createdAt).toBe(specificCreatedAt.toISOString());
+      expect(result.appointments[0].updatedAt).toBe(specificUpdatedAt.toISOString());
     });
 
     // Debería mapear confirmedAt cuando está presente
     it('should map confirmedAt when present', async () => {
       const confirmedAt = new Date('2024-01-15T09:00:00.000Z');
       const appointment = createMockAppointment({ confirmedAt });
-      mockAppointmentRepository.findByClientId.mockResolvedValue([appointment]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([appointment]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(1);
 
       const result = await useCase.execute(validClientId, adminRequesterId, adminRole);
 
-      expect(result[0].confirmedAt).toBe(confirmedAt.toISOString());
+      expect(result.appointments[0].confirmedAt).toBe(confirmedAt.toISOString());
     });
 
     // Debería mapear confirmedAt como undefined cuando no está presente
     it('should map confirmedAt as undefined when not present', async () => {
       const appointment = createMockAppointment({ confirmedAt: undefined });
-      mockAppointmentRepository.findByClientId.mockResolvedValue([appointment]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([appointment]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(1);
 
       const result = await useCase.execute(validClientId, adminRequesterId, adminRole);
 
-      expect(result[0].confirmedAt).toBeUndefined();
+      expect(result.appointments[0].confirmedAt).toBeUndefined();
     });
 
     // Debería mantener la estructura de arrays intacta
@@ -488,13 +638,14 @@ describe('GetAppointmentsByClient Use Case', () => {
       const customServiceIds = ['service1', 'service2', 'service3'];
       const appointment = createMockAppointment();
       appointment.serviceIds = customServiceIds;
-      mockAppointmentRepository.findByClientId.mockResolvedValue([appointment]);
+      mockAppointmentRepository.findByClientIdPaginated.mockResolvedValue([appointment]);
+      mockAppointmentRepository.countByClientId.mockResolvedValue(1);
 
       const result = await useCase.execute(validClientId, adminRequesterId, adminRole);
 
-      expect(result[0].serviceIds).toEqual(customServiceIds);
-      expect(Array.isArray(result[0].serviceIds)).toBe(true);
-      expect(result[0].serviceIds).toHaveLength(3);
+      expect(result.appointments[0].serviceIds).toEqual(customServiceIds);
+      expect(Array.isArray(result.appointments[0].serviceIds)).toBe(true);
+      expect(result.appointments[0].serviceIds).toHaveLength(3);
     });
   });
 });

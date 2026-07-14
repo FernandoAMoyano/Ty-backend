@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../src/app';
 import { testPrisma } from '../setup/database';
-import { loginAsAdmin, createTestUser } from '../setup/helpers';
+import { loginAsAdmin, createTestUser, createTestStylist } from '../setup/helpers';
 import {
   createTestAppointment,
   cleanupTestAppointments,
@@ -259,7 +259,7 @@ describe('Appointments Complete Flow E2E Tests', () => {
       expect(invalidUuidResponse.body.success).toBe(false);
     });
 
-    // Debería consultar citas por cliente
+    // Debería consultar citas por cliente, paginadas (F17)
     it('should query appointments by client', async () => {
       // 1. Consultar citas del cliente
       const response = await request(app)
@@ -267,12 +267,16 @@ describe('Appointments Complete Flow E2E Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // 2. Verificar respuesta es un array
+      // 2. Verificar respuesta es la página de citas con metadata de paginación
       expect(response.body.success).toBe(true);
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(Array.isArray(response.body.data.appointments)).toBe(true);
+      expect(response.body.data).toHaveProperty('total');
+      expect(response.body.data).toHaveProperty('page');
+      expect(response.body.data).toHaveProperty('limit');
+      expect(response.body.data).toHaveProperty('totalPages');
     });
 
-    // Debería consultar citas por estilista
+    // Debería consultar citas por estilista, paginadas (F17)
     it('should query appointments by stylist', async () => {
       // Solo ejecutar si el appointment tiene stylistId
       if (testAppointment.stylistId) {
@@ -282,9 +286,13 @@ describe('Appointments Complete Flow E2E Tests', () => {
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(200);
 
-        // 2. Verificar respuesta es un array
+        // 2. Verificar respuesta es la página de citas con metadata de paginación
         expect(response.body.success).toBe(true);
-        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(Array.isArray(response.body.data.appointments)).toBe(true);
+        expect(response.body.data).toHaveProperty('total');
+        expect(response.body.data).toHaveProperty('page');
+        expect(response.body.data).toHaveProperty('limit');
+        expect(response.body.data).toHaveProperty('totalPages');
       }
     });
   });
@@ -351,6 +359,58 @@ describe('Appointments Complete Flow E2E Tests', () => {
         .expect(403);
 
       expect(response.body.success).toBe(false);
+    });
+  });
+
+  describe('Pagination & Ownership (F17)', () => {
+    // Debería devolver solo el subconjunto de citas del STYLIST con un total preciso,
+    // no el total sin filtrar del cliente (evita repetir el bug de F3: paginar/filtrar
+    // en memoria después de traer todo, lo que hacía que total/totalPages mintieran)
+    it('should return only the STYLIST-owned subset with an accurate total', async () => {
+      // 1. Crear CLIENT dueño de todas las citas
+      const clientUser = await createTestUser('CLIENT');
+      const ownerClientId = clientUser.user?.id || clientUser.id;
+
+      // 2. Crear STYLIST bajo prueba, que solo debe ver 3 de las citas del cliente
+      // Nota: se usa createTestStylist() (roleName: 'STYLIST') en vez de createTestUser('STYLIST'),
+      // que envía roleId en lugar de roleName y por lo tanto siempre registra un CLIENT
+      // (bug preexistente del helper genérico, no relacionado con F17)
+      const stylistUser = await createTestStylist();
+      const stylistId = stylistUser.userId;
+      const stylistLoginResponse = await request(app).post('/api/v1/auth/login').send({
+        email: stylistUser.user.email,
+        password: 'TestPass123!',
+      });
+      const stylistToken = stylistLoginResponse.body.data.token;
+
+      // 3. Crear otro estilista no relacionado, dueño del resto de las citas del cliente
+      const otherStylistUser = await createTestStylist();
+      const otherStylistId = otherStylistUser.userId;
+
+      // 4. Crear 25 citas para el cliente: 3 asignadas al STYLIST bajo prueba, 22 a otro estilista
+      const ownedCount = 3;
+      const unrelatedCount = 22;
+      for (let i = 0; i < ownedCount; i++) {
+        await createTestAppointment({ clientId: ownerClientId, stylistId });
+      }
+      for (let i = 0; i < unrelatedCount; i++) {
+        await createTestAppointment({ clientId: ownerClientId, stylistId: otherStylistId });
+      }
+
+      // 5. El STYLIST consulta las citas del cliente, paginadas
+      const response = await request(app)
+        .get(`/api/v1/appointments/client/${ownerClientId}`)
+        .query({ page: 1, limit: 10 })
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .expect(200);
+
+      // 6. El total debe reflejar solo las 3 citas del STYLIST, no las 25 totales del cliente
+      expect(response.body.data.total).toBe(ownedCount);
+      expect(response.body.data.totalPages).toBe(1);
+      expect(response.body.data.appointments).toHaveLength(ownedCount);
+      expect(
+        response.body.data.appointments.every((a: any) => a.stylistId === stylistId),
+      ).toBe(true);
     });
   });
 

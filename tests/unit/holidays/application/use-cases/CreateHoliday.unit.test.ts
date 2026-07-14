@@ -30,6 +30,8 @@ describe('CreateHoliday Use Case', () => {
       findById: jest.fn(), findAll: jest.fn(), save: jest.fn(), update: jest.fn(),
       delete: jest.fn(), existsById: jest.fn(), findByClientId: jest.fn(),
       findByStylistId: jest.fn(), findByUserId: jest.fn(), findByStatusId: jest.fn(),
+      findByClientIdPaginated: jest.fn(), countByClientId: jest.fn(),
+      findByStylistIdPaginated: jest.fn(), countByStylistId: jest.fn(),
       findByClientAndDateRange: jest.fn(), findByStylistAndDateRange: jest.fn(),
       findConflictingAppointments: jest.fn(), findByScheduleId: jest.fn(),
       findByDate: jest.fn(), countByStatus: jest.fn(), countByDateRange: jest.fn(),

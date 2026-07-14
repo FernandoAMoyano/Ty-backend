@@ -89,14 +89,13 @@ export class AppointmentController {
   }
 
   /**
-   * Obtiene todas las citas de un cliente específico
-   * @route GET /appointments/client/:clientId
-   * @param req - Request de Express con ID de cliente en los parámetros
+   * Obtiene todas las citas de un cliente específico, paginadas
+   * @route GET /appointments/client/:clientId?page=&limit=
+   * @param req - Request de Express con ID de cliente en los parámetros y paginación en query
    * @param res - Response de Express
    * @returns Promise<Response>
    * @responseStatus 200 - Citas obtenidas exitosamente
    * @throws ValidationError si el ID de cliente no es válido
-   * @throws NotFoundError si el cliente no existe
    */
   async getAppointmentsByClient(req: AuthenticatedRequest, res: Response): Promise<Response> {
     if (!req.user?.userId || !req.user?.roleName) {
@@ -104,10 +103,13 @@ export class AppointmentController {
     }
 
     const { clientId } = req.params;
+    const { page, limit } = req.query;
     const result = await this.getAppointmentsByClientUseCase.execute(
       clientId,
       req.user.userId,
       req.user.roleName,
+      page ? parseInt(page as string, 10) : undefined,
+      limit ? parseInt(limit as string, 10) : undefined,
     );
 
     return res.status(200).json({
@@ -118,14 +120,13 @@ export class AppointmentController {
   }
 
   /**
-   * Obtiene todas las citas de un estilista específico
-   * @route GET /appointments/stylist/:stylistId
-   * @param req - Request de Express con ID de estilista en los parámetros
+   * Obtiene todas las citas de un estilista específico, paginadas
+   * @route GET /appointments/stylist/:stylistId?page=&limit=
+   * @param req - Request de Express con ID de estilista en los parámetros y paginación en query
    * @param res - Response de Express
    * @returns Promise<Response>
    * @responseStatus 200 - Citas obtenidas exitosamente
    * @throws ValidationError si el ID de estilista no es válido
-   * @throws NotFoundError si el estilista no existe
    */
   async getAppointmentsByStylist(req: AuthenticatedRequest, res: Response): Promise<Response> {
     if (!req.user?.userId || !req.user?.roleName) {
@@ -133,10 +134,13 @@ export class AppointmentController {
     }
 
     const { stylistId } = req.params;
+    const { page, limit } = req.query;
     const result = await this.getAppointmentsByStylistUseCase.execute(
       stylistId,
       req.user.userId,
       req.user.roleName,
+      page ? parseInt(page as string, 10) : undefined,
+      limit ? parseInt(limit as string, 10) : undefined,
     );
 
     return res.status(200).json({
