@@ -111,7 +111,7 @@ export class AuthContainer {
       this._deactivateUser,
     );
 
-    this._authMiddleware = new AuthMiddleware(jwtService);
+    this._authMiddleware = new AuthMiddleware(jwtService, roleRepository);
     this._authRoutes = new AuthRoutes(this._authController, this._authMiddleware);
   }
 
@@ -126,7 +126,7 @@ export class AuthContainer {
 
   /**
    * Obtiene el middleware de autenticación configurado
-   * @returns Instancia de AuthMiddleware con JwtService inyectado
+   * @returns Instancia de AuthMiddleware con JwtService e IRoleRepository inyectados
    */
   get authMiddleware(): AuthMiddleware {
     return this._authMiddleware;

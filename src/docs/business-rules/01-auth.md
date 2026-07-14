@@ -145,7 +145,7 @@ El `AuthMiddleware` protege las rutas que requieren autenticación. Expone dos m
 | Método | Descripción |
 |--------|-------------|
 | `authenticate` | Extrae y valida el JWT del header `Authorization: Bearer <token>`. Popula `req.user` con `userId`, `roleId` y `email` |
-| `authorize(roles[])` | Verifica que el rol del usuario autenticado esté dentro de los roles permitidos. Consulta la BD dinámicamente |
+| `authorize(roles[])` | Verifica que el rol del usuario autenticado esté dentro de los roles permitidos. Resuelve el nombre del rol vía `IRoleRepository`, cacheado en memoria (id→name) tras la primera consulta por rol |
 
 ---
 
