@@ -11,6 +11,14 @@ type AppointmentWithServices = Prisma.AppointmentGetPayload<{
 }>;
 
 /**
+ * ID imposible usado para forzar un WHERE que no matchea ninguna fila.
+ * Se usa cuando se pasó un ownershipFilter pero ninguno de sus campos
+ * tenía valor: en vez de degradar silenciosamente a "sin filtro" (F17,
+ * hallazgo de auditoría), la consulta falla cerrada devolviendo 0 filas.
+ */
+const NO_OWNERSHIP_MATCH_ID = '__no_ownership_filter_match__';
+
+/**
  * Implementación de AppointmentRepository usando Prisma ORM
  * Proporciona persistencia de datos de citas en base de datos relacional
  */
@@ -235,7 +243,15 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       or.push({ userId: ownershipFilter.userId });
     }
 
-    return { clientId, ...(or.length > 0 ? { OR: or } : {}) };
+    if (or.length === 0) {
+      // Se pasó un ownershipFilter pero sin ningún campo útil: fallar cerrado
+      // (0 resultados) en vez de degradar silenciosamente a "sin filtro", que
+      // expondría todas las citas del cliente a un requester que debía estar
+      // restringido (auditoría F17)
+      return { clientId, id: NO_OWNERSHIP_MATCH_ID };
+    }
+
+    return { clientId, OR: or };
   }
 
   /**
@@ -302,7 +318,15 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       or.push({ clientId: ownershipFilter.clientId });
     }
 
-    return { stylistId, ...(or.length > 0 ? { OR: or } : {}) };
+    if (or.length === 0) {
+      // Se pasó un ownershipFilter pero sin ningún campo útil: fallar cerrado
+      // (0 resultados) en vez de degradar silenciosamente a "sin filtro", que
+      // expondría todas las citas del estilista a un requester que debía estar
+      // restringido (auditoría F17)
+      return { stylistId, id: NO_OWNERSHIP_MATCH_ID };
+    }
+
+    return { stylistId, OR: or };
   }
 
   /**
