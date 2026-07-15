@@ -1646,7 +1646,10 @@ paths:
     get:
       tags: [Payments]
       summary: Obtener pagos de una cita
-      description: Lista todos los pagos asociados a una cita específica
+      description: >
+        Lista todos los pagos asociados a una cita específica. Accesible para
+        ADMIN sin restricción; STYLIST solo si es el estilista asignado a la
+        cita; CLIENT solo si es el cliente o el creador de la cita (F18).
       parameters:
         - name: appointmentId
           in: path
@@ -1684,6 +1687,9 @@ paths:
     get:
       tags: [Payments]
       summary: Obtener pago por ID
+      description: >
+        Accesible para ADMIN sin restricción; STYLIST solo si es el estilista
+        asignado a la cita del pago (F18).
       parameters:
         - name: id
           in: path
@@ -1772,7 +1778,9 @@ paths:
     post:
       tags: [Payments]
       summary: Procesar pago (Admin, Stylist)
-      description: Procesa un pago pendiente con el método de pago especificado
+      description: >
+        Procesa un pago pendiente con el método de pago especificado. STYLIST
+        solo puede procesar pagos de citas donde es el estilista asignado (F18).
       parameters:
         - name: id
           in: path
@@ -1877,7 +1885,10 @@ paths:
     post:
       tags: [Payments]
       summary: Cancelar pago (Admin, Stylist)
-      description: Cancela un pago pendiente. Solo se pueden cancelar pagos con estado PENDING.
+      description: >
+        Cancela un pago pendiente. Solo se pueden cancelar pagos con estado
+        PENDING. STYLIST solo puede cancelar pagos de citas donde es el
+        estilista asignado (F18).
       parameters:
         - name: id
           in: path

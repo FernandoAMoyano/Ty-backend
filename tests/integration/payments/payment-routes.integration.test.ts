@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../../../src/app';
-import { loginAsAdmin, loginTestUser } from '../../setup/helpers';
+import { loginAsAdmin, loginTestUser, createTestUser, createTestStylist } from '../../setup/helpers';
 import { createConfirmedTestAppointment } from '../../setup/appointments-helpers';
 
 // Tests de integración para el módulo de Pagos
@@ -8,6 +8,7 @@ describe('Payments Integration Tests', () => {
   let adminToken: string;
   let userToken: string;
   let stylistToken: string;
+  let stylistId: string;
   let testAppointmentId: string;
   let testPaymentId: string;
 
@@ -25,9 +26,12 @@ describe('Payments Integration Tests', () => {
       password: 'stylist123',
     });
     stylistToken = stylistResponse.body.data.token;
+    stylistId = stylistResponse.body.data.user.id;
 
-    // Crear una cita de prueba confirmada para los tests de pagos
-    const appointment = await createConfirmedTestAppointment();
+    // Crear una cita de prueba confirmada para los tests de pagos, asignada
+    // explícitamente al estilista de arriba (F18: los tests de "como estilista"
+    // más abajo dependen de que sea dueño real de la cita, ver ownership check)
+    const appointment = await createConfirmedTestAppointment({ stylistId });
     testAppointmentId = appointment.id;
   });
 
@@ -808,6 +812,177 @@ describe('Payments Integration Tests', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
+    });
+  });
+
+  // Ownership en payments (F18): STYLIST solo accede a pagos de sus propias
+  // citas; CLIENT dueño de la cita gana acceso de lectura vía
+  // GET /payments/appointment/:appointmentId; ADMIN sin restricción
+  describe('Ownership (F18)', () => {
+    let stylistAToken: string;
+    let stylistAId: string;
+    let stylistBToken: string;
+    let clientToken: string;
+    let clientId: string;
+    let ownAppointmentId: string;
+
+    beforeAll(async () => {
+      // STYLIST A: dueño real de la cita bajo prueba
+      const stylistA = await createTestStylist();
+      stylistAId = stylistA.userId;
+      const stylistALogin = await request(app).post('/api/v1/auth/login').send({
+        email: stylistA.user.email,
+        password: 'TestPass123!',
+      });
+      stylistAToken = stylistALogin.body.data.token;
+
+      // STYLIST B: ajeno a la cita, debe ser rechazado
+      const stylistB = await createTestStylist();
+      const stylistBLogin = await request(app).post('/api/v1/auth/login').send({
+        email: stylistB.user.email,
+        password: 'TestPass123!',
+      });
+      stylistBToken = stylistBLogin.body.data.token;
+
+      // CLIENT dueño de la cita
+      const clientUser = await createTestUser('CLIENT');
+      clientId = clientUser.user?.id || clientUser.id;
+      const clientLogin = await request(app).post('/api/v1/auth/login').send({
+        email: clientUser.user?.email || clientUser.email,
+        password: 'TestPass123!',
+      });
+      clientToken = clientLogin.body.data.token;
+
+      // Cita confirmada asignada a STYLIST A y al CLIENT de arriba
+      const appointment = await createConfirmedTestAppointment({
+        stylistId: stylistAId,
+        clientId,
+        userId: clientId,
+      });
+      ownAppointmentId = appointment.id;
+    });
+
+    // STYLIST ajeno a la cita no debe poder procesar el pago (403 vía ownership check)
+    it('should reject process by a stylist who does not own the appointment', async () => {
+      const createResponse = await request(app)
+        .post('/api/v1/payments')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ amount: 40.0, appointmentId: ownAppointmentId });
+
+      const response = await request(app)
+        .post(`/api/v1/payments/${createResponse.body.data.id}/process`)
+        .set('Authorization', `Bearer ${stylistBToken}`)
+        .send({ method: 'CASH' });
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+
+    // STYLIST ajeno a la cita no debe poder cancelar el pago (403 vía ownership check)
+    it('should reject cancel by a stylist who does not own the appointment', async () => {
+      const createResponse = await request(app)
+        .post('/api/v1/payments')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ amount: 40.0, appointmentId: ownAppointmentId });
+
+      const response = await request(app)
+        .post(`/api/v1/payments/${createResponse.body.data.id}/cancel`)
+        .set('Authorization', `Bearer ${stylistBToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+
+    // STYLIST ajeno a la cita no puede reembolsar (la ruta ya es ADMIN-only a
+    // nivel de middleware, pero se documenta el comportamiento esperado)
+    it('should reject refund by a stylist who does not own the appointment', async () => {
+      const createResponse = await request(app)
+        .post('/api/v1/payments')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ amount: 40.0, appointmentId: ownAppointmentId });
+
+      await request(app)
+        .post(`/api/v1/payments/${createResponse.body.data.id}/process`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ method: 'CASH' });
+
+      const response = await request(app)
+        .post(`/api/v1/payments/${createResponse.body.data.id}/refund`)
+        .set('Authorization', `Bearer ${stylistBToken}`)
+        .send({});
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+
+    // El STYLIST dueño real de la cita sí puede procesar su propio pago
+    it('should allow the owning stylist to process a payment for their own appointment', async () => {
+      const createResponse = await request(app)
+        .post('/api/v1/payments')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ amount: 40.0, appointmentId: ownAppointmentId });
+
+      const response = await request(app)
+        .post(`/api/v1/payments/${createResponse.body.data.id}/process`)
+        .set('Authorization', `Bearer ${stylistAToken}`)
+        .send({ method: 'CASH' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.status).toBe('COMPLETED');
+    });
+
+    // El CLIENT dueño de la cita gana acceso de lectura a sus pagos (F18, alcance b)
+    it('should allow the owning client to view payments via GET /payments/appointment/:appointmentId', async () => {
+      const createResponse = await request(app)
+        .post('/api/v1/payments')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ amount: 40.0, appointmentId: ownAppointmentId });
+
+      const response = await request(app)
+        .get(`/api/v1/payments/appointment/${ownAppointmentId}`)
+        .set('Authorization', `Bearer ${clientToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(
+        response.body.data.some((p: any) => p.id === createResponse.body.data.id),
+      ).toBe(true);
+    });
+
+    // Un CLIENT ajeno a la cita no debe poder ver sus pagos
+    it('should reject an unrelated client from viewing another appointment payments', async () => {
+      const otherClientUser = await createTestUser('CLIENT');
+      const otherClientLogin = await request(app).post('/api/v1/auth/login').send({
+        email: otherClientUser.user?.email || otherClientUser.email,
+        password: 'TestPass123!',
+      });
+      const otherClientToken = otherClientLogin.body.data.token;
+
+      const response = await request(app)
+        .get(`/api/v1/payments/appointment/${ownAppointmentId}`)
+        .set('Authorization', `Bearer ${otherClientToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+
+    // ADMIN mantiene acceso sin restricción, sin importar la cita
+    it('should allow ADMIN unrestricted access regardless of ownership', async () => {
+      const createResponse = await request(app)
+        .post('/api/v1/payments')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ amount: 40.0, appointmentId: ownAppointmentId });
+
+      const getResponse = await request(app)
+        .get(`/api/v1/payments/${createResponse.body.data.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(getResponse.status).toBe(200);
+
+      const cancelResponse = await request(app)
+        .post(`/api/v1/payments/${createResponse.body.data.id}/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(cancelResponse.status).toBe(200);
     });
   });
 });
