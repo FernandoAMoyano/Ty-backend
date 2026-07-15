@@ -230,6 +230,44 @@ describe('Notifications Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
     });
+
+    // Debería paginar correctamente cuando se combina unreadOnly con limit,
+    // reflejando el total filtrado y no el total sin filtrar (regresión F3)
+    it('should paginate correctly when combining unreadOnly with limit', async () => {
+      // Crear un usuario aislado para no interferir con notificaciones de otros tests
+      const isolatedUser = await loginTestUser();
+
+      const createNotification = async () =>
+        request(app)
+          .post('/api/v1/notifications')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            type: 'SYSTEM',
+            message: 'Notificación para test de paginación F3',
+            userId: isolatedUser.user.id,
+          });
+
+      const created = await Promise.all([
+        createNotification(),
+        createNotification(),
+        createNotification(),
+      ]);
+      const notificationIds = created.map((r) => r.body.data.id);
+
+      // Marcar 1 de las 3 como leída
+      await request(app)
+        .patch(`/api/v1/notifications/${notificationIds[0]}/read`)
+        .set('Authorization', `Bearer ${isolatedUser.token}`);
+
+      const response = await request(app)
+        .get('/api/v1/notifications?unreadOnly=true&limit=1')
+        .set('Authorization', `Bearer ${isolatedUser.token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.notifications.length).toBe(1);
+      expect(response.body.data.total).toBe(2);
+      expect(response.body.data.totalPages).toBe(2);
+    });
   });
 
   describe('GET /api/v1/notifications/unread-count - Get Unread Count', () => {
@@ -452,6 +490,37 @@ describe('Notifications Integration Tests', () => {
       const countResponse = await request(app)
         .get('/api/v1/notifications/unread-count')
         .set('Authorization', `Bearer ${userToken}`);
+
+      expect(countResponse.body.data.unreadCount).toBe(0);
+    });
+
+    // Debería devolver el conteo exacto de notificaciones actualizadas (F10)
+    it('should return the exact updatedCount for a user with 3 unread notifications', async () => {
+      // Usuario aislado para no interferir con notificaciones creadas en otros tests
+      const freshUser = await loginTestUser();
+
+      for (let i = 0; i < 3; i++) {
+        const createResponse = await request(app)
+          .post('/api/v1/notifications')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            type: 'SYSTEM',
+            message: `TEST F10 notification ${i}`,
+            userId: freshUser.user.id,
+          });
+        expect(createResponse.status).toBe(201);
+      }
+
+      const markAllResponse = await request(app)
+        .post('/api/v1/notifications/mark-all-read')
+        .set('Authorization', `Bearer ${freshUser.token}`);
+
+      expect(markAllResponse.status).toBe(200);
+      expect(markAllResponse.body.data.updatedCount).toBe(3);
+
+      const countResponse = await request(app)
+        .get('/api/v1/notifications/unread-count')
+        .set('Authorization', `Bearer ${freshUser.token}`);
 
       expect(countResponse.body.data.unreadCount).toBe(0);
     });

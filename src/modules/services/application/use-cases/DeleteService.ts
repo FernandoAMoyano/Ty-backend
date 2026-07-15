@@ -5,7 +5,7 @@ import { BusinessRuleError } from '../../../../shared/exceptions/BusinessRuleErr
 
 /**
  * Caso de uso para eliminar permanentemente un servicio del sistema
- * Valida que no existan citas activas antes de eliminar
+ * Valida que no existan citas asociadas (activas o históricas) antes de eliminar
  */
 export class DeleteService {
   constructor(
@@ -18,7 +18,11 @@ export class DeleteService {
    * @param id - ID único del servicio a eliminar
    * @returns Promise que se resuelve cuando la eliminación es exitosa
    * @throws NotFoundError si el servicio no existe
-   * @throws BusinessRuleError si el servicio tiene citas activas
+   * @throws BusinessRuleError si el servicio tiene citas asociadas (activas o históricas)
+   * @description El hard-delete borra en cascada la relación M2M _AppointmentToService,
+   * por lo que se bloquea si existe CUALQUIER cita asociada (no solo activas) para no
+   * destruir el registro histórico de servicios de citas ya completadas/canceladas.
+   * Para retirar un servicio con historial, usar PATCH /services/:id/deactivate (F8).
    */
   async execute(id: string): Promise<void> {
     const exists = await this.serviceRepository.existsById(id);
@@ -26,11 +30,11 @@ export class DeleteService {
       throw new NotFoundError('Service', id);
     }
 
-    // Validar que no existan citas activas con este servicio
-    const hasActiveAppointments = await this.appointmentRepository.existsActiveByServiceId(id);
-    if (hasActiveAppointments) {
+    // Validar que no existan citas asociadas (activas o históricas) con este servicio
+    const hasAssociatedAppointments = await this.appointmentRepository.existsByServiceId(id);
+    if (hasAssociatedAppointments) {
       throw new BusinessRuleError(
-        'Cannot delete service: it has active appointments',
+        'Cannot delete service: it has associated appointments (use deactivate instead)',
       );
     }
 

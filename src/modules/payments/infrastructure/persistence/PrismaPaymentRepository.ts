@@ -1,4 +1,4 @@
-import { PrismaClient, PaymentStatus, PaymentMethod } from '@prisma/client';
+import { Prisma, PrismaClient, PaymentStatus, PaymentMethod } from '@prisma/client';
 import { Payment, PaymentStatusEnum, PaymentMethodEnum } from '../../domain/entities/Payment';
 import {
   IPaymentRepository,
@@ -65,7 +65,7 @@ export class PrismaPaymentRepository implements IPaymentRepository {
     const limit = pagination?.limit || 20;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.PaymentWhereInput = {};
 
     if (filters?.status) {
       where.status = filters.status as PaymentStatus;
@@ -76,13 +76,14 @@ export class PrismaPaymentRepository implements IPaymentRepository {
     }
 
     if (filters?.startDate || filters?.endDate) {
-      where.createdAt = {};
+      const createdAtFilter: Prisma.DateTimeFilter = {};
       if (filters?.startDate) {
-        where.createdAt.gte = filters.startDate;
+        createdAtFilter.gte = filters.startDate;
       }
       if (filters?.endDate) {
-        where.createdAt.lte = filters.endDate;
+        createdAtFilter.lte = filters.endDate;
       }
+      where.createdAt = createdAtFilter;
     }
 
     const [data, total] = await Promise.all([
@@ -225,7 +226,7 @@ export class PrismaPaymentRepository implements IPaymentRepository {
   /**
    * Convierte datos de Prisma a entidad de dominio
    */
-  private toDomain(data: any): Payment {
+  private toDomain(data: Prisma.PaymentGetPayload<object>): Payment {
     return new Payment({
       id: data.id,
       amount: Number(data.amount),

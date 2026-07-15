@@ -1,3 +1,5 @@
+import { startOfDayUTC } from '../../../../shared/utils/dateOnly';
+
 /**
  * Interface para las propiedades del feriado
  */
@@ -57,35 +59,35 @@ export class Holiday {
   }
 
   /**
-   * Obtiene el año del feriado
+   * Obtiene el año del feriado (UTC)
    */
   get year(): number {
-    return this._date.getFullYear();
+    return this._date.getUTCFullYear();
   }
 
   /**
-   * Obtiene el mes del feriado (1-12)
+   * Obtiene el mes del feriado (1-12, UTC)
    */
   get month(): number {
-    return this._date.getMonth() + 1;
+    return this._date.getUTCMonth() + 1;
   }
 
   /**
-   * Obtiene el día del mes del feriado
+   * Obtiene el día del mes del feriado (UTC)
    */
   get day(): number {
-    return this._date.getDate();
+    return this._date.getUTCDate();
   }
 
   /**
-   * Verifica si el feriado es en una fecha específica
+   * Verifica si el feriado es en una fecha específica (comparación UTC)
    * @param date - Fecha a comparar
    */
   isOnDate(date: Date): boolean {
     return (
-      this._date.getFullYear() === date.getFullYear() &&
-      this._date.getMonth() === date.getMonth() &&
-      this._date.getDate() === date.getDate()
+      this._date.getUTCFullYear() === date.getUTCFullYear() &&
+      this._date.getUTCMonth() === date.getUTCMonth() &&
+      this._date.getUTCDate() === date.getUTCDate()
     );
   }
 
@@ -93,10 +95,8 @@ export class Holiday {
    * Verifica si el feriado ya pasó
    */
   get isPast(): boolean {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const holidayDate = new Date(this._date);
-    holidayDate.setHours(0, 0, 0, 0);
+    const today = startOfDayUTC(new Date());
+    const holidayDate = startOfDayUTC(this._date);
     return holidayDate < today;
   }
 
@@ -112,10 +112,8 @@ export class Holiday {
    * Verifica si el feriado es futuro
    */
   get isFuture(): boolean {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const holidayDate = new Date(this._date);
-    holidayDate.setHours(0, 0, 0, 0);
+    const today = startOfDayUTC(new Date());
+    const holidayDate = startOfDayUTC(this._date);
     return holidayDate > today;
   }
 

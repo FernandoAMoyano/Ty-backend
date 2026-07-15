@@ -128,6 +128,10 @@ describe('ConfirmAppointment Use Case', () => {
       existsById: jest.fn(),
       findByClientId: jest.fn(),
       findByStylistId: jest.fn(),
+      findByClientIdPaginated: jest.fn(),
+      countByClientId: jest.fn(),
+      findByStylistIdPaginated: jest.fn(),
+      countByStylistId: jest.fn(),
       findByUserId: jest.fn(),
       findByStatusId: jest.fn(),
       findByDateRange: jest.fn(),
@@ -140,7 +144,7 @@ describe('ConfirmAppointment Use Case', () => {
       countByDateRange: jest.fn(),
       findUpcomingAppointments: jest.fn(),
       findPendingConfirmation: jest.fn(),
-      existsActiveByServiceId: jest.fn(),
+      existsByServiceId: jest.fn(),
     };
 
     mockAppointmentStatusRepository = {

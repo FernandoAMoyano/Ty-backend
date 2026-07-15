@@ -55,6 +55,9 @@ describe('GetUserNotifications Use Case', () => {
       deleteByUserId: jest.fn(),
       existsById: jest.fn(),
       countByUserId: jest.fn(),
+      findByUserIdFiltered: jest.fn(),
+      countByUserIdFiltered: jest.fn(),
+      updateStatusByUserId: jest.fn(),
     };
 
     mockNotificationStatusRepository = {
@@ -88,8 +91,8 @@ describe('GetUserNotifications Use Case', () => {
         createMockNotification(),
       ];
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue(notifications);
-      mockNotificationRepository.countByUserId.mockResolvedValue(3);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue(notifications);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(3);
 
       // Act
       const result = await useCase.execute(validUserId);
@@ -109,8 +112,8 @@ describe('GetUserNotifications Use Case', () => {
       // Arrange
       const notifications = [createMockNotification(), createMockNotification()];
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue(notifications);
-      mockNotificationRepository.countByUserId.mockResolvedValue(10);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue(notifications);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(10);
 
       // Act
       const result = await useCase.execute(validUserId, { page: 2, limit: 2 });
@@ -123,7 +126,12 @@ describe('GetUserNotifications Use Case', () => {
       expect(result.hasNextPage).toBe(true);
       expect(result.hasPreviousPage).toBe(true);
       // limit=2, offset=(2-1)*2=2
-      expect(mockNotificationRepository.findByUserIdPaginated).toHaveBeenCalledWith(validUserId, 2, 2);
+      expect(mockNotificationRepository.findByUserIdFiltered).toHaveBeenCalledWith(
+        validUserId,
+        {},
+        2,
+        2,
+      );
     });
 
     // Debería filtrar por tipo de notificación
@@ -133,16 +141,18 @@ describe('GetUserNotifications Use Case', () => {
         createMockNotification({ type: NotificationTypeEnum.PROMOTIONAL }),
       ];
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdAndType.mockResolvedValue(notifications);
-      mockNotificationRepository.countByUserId.mockResolvedValue(1);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue(notifications);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(1);
 
       // Act
       const result = await useCase.execute(validUserId, { type: NotificationTypeEnum.PROMOTIONAL });
 
       // Assert
-      expect(mockNotificationRepository.findByUserIdAndType).toHaveBeenCalledWith(
+      expect(mockNotificationRepository.findByUserIdFiltered).toHaveBeenCalledWith(
         validUserId,
-        NotificationTypeEnum.PROMOTIONAL,
+        { type: NotificationTypeEnum.PROMOTIONAL },
+        20,
+        0,
       );
       expect(result.notifications[0].type).toBe(NotificationTypeEnum.PROMOTIONAL);
     });
@@ -152,17 +162,22 @@ describe('GetUserNotifications Use Case', () => {
       // Arrange
       const notifications = [
         createMockNotification({ statusId: pendingStatusId }),
-        createMockNotification({ statusId: readStatusId }),
         createMockNotification({ statusId: pendingStatusId }),
       ];
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserId.mockResolvedValue(notifications);
-      mockNotificationRepository.countByUserId.mockResolvedValue(3);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue(notifications);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(2);
 
       // Act
       const result = await useCase.execute(validUserId, { unreadOnly: true });
 
       // Assert
+      expect(mockNotificationRepository.findByUserIdFiltered).toHaveBeenCalledWith(
+        validUserId,
+        { excludeStatusId: readStatusId },
+        20,
+        0,
+      );
       expect(result.notifications).toHaveLength(2);
       result.notifications.forEach(n => {
         expect(n.statusId).not.toBe(readStatusId);
@@ -177,8 +192,8 @@ describe('GetUserNotifications Use Case', () => {
         createMockNotification({ statusId: pendingStatusId }),
       ];
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue(notifications);
-      mockNotificationRepository.countByUserId.mockResolvedValue(2);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue(notifications);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(2);
 
       // Act
       const result = await useCase.execute(validUserId);
@@ -192,8 +207,8 @@ describe('GetUserNotifications Use Case', () => {
     it('should return empty list if no notifications', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(0);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(0);
 
       // Act
       const result = await useCase.execute(validUserId);
@@ -209,13 +224,19 @@ describe('GetUserNotifications Use Case', () => {
       // Arrange
       const notifications = [createMockNotification()];
       mockNotificationStatusRepository.findByName.mockResolvedValue(null);
-      mockNotificationRepository.findByUserId.mockResolvedValue(notifications);
-      mockNotificationRepository.countByUserId.mockResolvedValue(1);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue(notifications);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(1);
 
       // Act
       const result = await useCase.execute(validUserId, { unreadOnly: true });
 
-      // Assert
+      // Assert: sin estado READ no hay excludeStatusId que aplicar
+      expect(mockNotificationRepository.findByUserIdFiltered).toHaveBeenCalledWith(
+        validUserId,
+        {},
+        20,
+        0,
+      );
       expect(result.notifications).toHaveLength(1);
     });
   });
@@ -225,8 +246,8 @@ describe('GetUserNotifications Use Case', () => {
     it('should calculate hasNextPage correctly', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([createMockNotification()]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(25);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([createMockNotification()]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(25);
 
       // Act
       const result = await useCase.execute(validUserId, { page: 1, limit: 10 });
@@ -240,8 +261,8 @@ describe('GetUserNotifications Use Case', () => {
     it('should calculate hasPreviousPage correctly', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([createMockNotification()]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(25);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([createMockNotification()]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(25);
 
       // Act
       const result = await useCase.execute(validUserId, { page: 2, limit: 10 });
@@ -254,8 +275,8 @@ describe('GetUserNotifications Use Case', () => {
     it('should handle last page correctly', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([createMockNotification()]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(25);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([createMockNotification()]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(25);
 
       // Act
       const result = await useCase.execute(validUserId, { page: 3, limit: 10 });
@@ -269,15 +290,20 @@ describe('GetUserNotifications Use Case', () => {
     it('should calculate offset correctly', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(0);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(0);
 
       // Act
       await useCase.execute(validUserId, { page: 3, limit: 10 });
 
       // Assert
       // offset = (page - 1) * limit = (3 - 1) * 10 = 20
-      expect(mockNotificationRepository.findByUserIdPaginated).toHaveBeenCalledWith(validUserId, 10, 20);
+      expect(mockNotificationRepository.findByUserIdFiltered).toHaveBeenCalledWith(
+        validUserId,
+        {},
+        10,
+        20,
+      );
     });
   });
 
@@ -307,8 +333,8 @@ describe('GetUserNotifications Use Case', () => {
     it('should accept valid UUID', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(0);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(0);
 
       // Act & Assert
       await expect(useCase.execute(validUserId)).resolves.not.toThrow();
@@ -320,7 +346,7 @@ describe('GetUserNotifications Use Case', () => {
     it('should propagate repository errors', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockRejectedValue(new Error('Database error'));
+      mockNotificationRepository.findByUserIdFiltered.mockRejectedValue(new Error('Database error'));
 
       // Act & Assert
       await expect(useCase.execute(validUserId)).rejects.toThrow('Database error');
@@ -329,8 +355,8 @@ describe('GetUserNotifications Use Case', () => {
     // Debería propagar errores del status repository
     it('should propagate status repository errors', async () => {
       // Arrange
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(0);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(0);
       mockNotificationStatusRepository.findByName.mockRejectedValue(new Error('Status error'));
 
       // Act & Assert
@@ -343,39 +369,49 @@ describe('GetUserNotifications Use Case', () => {
     it('should call repository with correct parameters (limit, offset)', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(0);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(0);
 
       // Act
       await useCase.execute(validUserId, { page: 2, limit: 15 });
 
       // Assert
       // offset = (2 - 1) * 15 = 15
-      expect(mockNotificationRepository.findByUserIdPaginated).toHaveBeenCalledWith(validUserId, 15, 15);
-      expect(mockNotificationRepository.countByUserId).toHaveBeenCalledWith(validUserId);
+      expect(mockNotificationRepository.findByUserIdFiltered).toHaveBeenCalledWith(
+        validUserId,
+        {},
+        15,
+        15,
+      );
+      expect(mockNotificationRepository.countByUserIdFiltered).toHaveBeenCalledWith(validUserId, {});
     });
 
     // Debería usar valores por defecto cuando no se proporcionan filtros
     it('should use default values when no filters provided', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(0);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(0);
 
       // Act
       await useCase.execute(validUserId);
 
       // Assert
       // default: page=1, limit=20, offset=0
-      expect(mockNotificationRepository.findByUserIdPaginated).toHaveBeenCalledWith(validUserId, 20, 0);
+      expect(mockNotificationRepository.findByUserIdFiltered).toHaveBeenCalledWith(
+        validUserId,
+        {},
+        20,
+        0,
+      );
     });
 
     // Debería buscar estado READ para determinar isRead
     it('should fetch READ status to determine isRead', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(0);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(0);
 
       // Act
       await useCase.execute(validUserId);
@@ -384,37 +420,84 @@ describe('GetUserNotifications Use Case', () => {
       expect(mockNotificationStatusRepository.findByName).toHaveBeenCalledWith(NotificationStatusEnum.READ);
     });
 
-    // Debería usar findByUserId cuando unreadOnly es true
-    it('should use findByUserId when unreadOnly is true', async () => {
+    // Debería aplicar paginación cuando se filtra por unreadOnly
+    it('should apply pagination when filtering by unreadOnly', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserId.mockResolvedValue([]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(0);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([createMockNotification()]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(1);
 
       // Act
-      await useCase.execute(validUserId, { unreadOnly: true });
+      await useCase.execute(validUserId, { unreadOnly: true, page: 1, limit: 1 });
 
       // Assert
-      expect(mockNotificationRepository.findByUserId).toHaveBeenCalledWith(validUserId);
-      expect(mockNotificationRepository.findByUserIdPaginated).not.toHaveBeenCalled();
+      expect(mockNotificationRepository.findByUserIdFiltered).toHaveBeenCalledWith(
+        validUserId,
+        { excludeStatusId: readStatusId },
+        1,
+        0,
+      );
+      expect(mockNotificationRepository.findByUserId).not.toHaveBeenCalled();
     });
 
-    // Debería usar findByUserIdAndType cuando type está definido
-    it('should use findByUserIdAndType when type is defined', async () => {
+    // Debería combinar unreadOnly y type
+    it('should combine unreadOnly and type filters', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdAndType.mockResolvedValue([]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(0);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(0);
+
+      // Act
+      await useCase.execute(validUserId, { unreadOnly: true, type: NotificationTypeEnum.SYSTEM });
+
+      // Assert
+      expect(mockNotificationRepository.findByUserIdFiltered).toHaveBeenCalledWith(
+        validUserId,
+        { excludeStatusId: readStatusId, type: NotificationTypeEnum.SYSTEM },
+        20,
+        0,
+      );
+      expect(mockNotificationRepository.countByUserIdFiltered).toHaveBeenCalledWith(
+        validUserId,
+        { excludeStatusId: readStatusId, type: NotificationTypeEnum.SYSTEM },
+      );
+    });
+
+    // El total debe reflejar los filtros aplicados
+    it('should return total consistent with applied filters', async () => {
+      // Arrange: el repo filtrado devuelve un total distinto del total sin filtrar
+      mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([createMockNotification()]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(1);
+      mockNotificationRepository.countByUserId.mockResolvedValue(50); // total sin filtrar, no debe usarse
+
+      // Act
+      const result = await useCase.execute(validUserId, { unreadOnly: true, limit: 1 });
+
+      // Assert
+      expect(result.total).toBe(1);
+      expect(result.totalPages).toBe(1);
+      expect(mockNotificationRepository.countByUserId).not.toHaveBeenCalled();
+    });
+
+    // Debería usar findByUserIdFiltered cuando type está definido
+    it('should use findByUserIdFiltered when type is defined', async () => {
+      // Arrange
+      mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(0);
 
       // Act
       await useCase.execute(validUserId, { type: NotificationTypeEnum.SYSTEM });
 
       // Assert
-      expect(mockNotificationRepository.findByUserIdAndType).toHaveBeenCalledWith(
+      expect(mockNotificationRepository.findByUserIdFiltered).toHaveBeenCalledWith(
         validUserId,
-        NotificationTypeEnum.SYSTEM,
+        { type: NotificationTypeEnum.SYSTEM },
+        20,
+        0,
       );
-      expect(mockNotificationRepository.findByUserIdPaginated).not.toHaveBeenCalled();
+      expect(mockNotificationRepository.findByUserIdAndType).not.toHaveBeenCalled();
     });
   });
 
@@ -423,8 +506,8 @@ describe('GetUserNotifications Use Case', () => {
     it('should return object with complete pagination structure', async () => {
       // Arrange
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(0);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(0);
 
       // Act
       const result = await useCase.execute(validUserId);
@@ -445,8 +528,8 @@ describe('GetUserNotifications Use Case', () => {
       const createdAt = new Date('2024-01-15T10:00:00.000Z');
       const notification = createMockNotification({ createdAt });
       mockNotificationStatusRepository.findByName.mockResolvedValue(mockReadStatus);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([notification]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(1);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([notification]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(1);
 
       // Act
       const result = await useCase.execute(validUserId);
@@ -467,8 +550,8 @@ describe('GetUserNotifications Use Case', () => {
       // Arrange
       const notification = createMockNotification();
       mockNotificationStatusRepository.findByName.mockResolvedValue(null);
-      mockNotificationRepository.findByUserIdPaginated.mockResolvedValue([notification]);
-      mockNotificationRepository.countByUserId.mockResolvedValue(1);
+      mockNotificationRepository.findByUserIdFiltered.mockResolvedValue([notification]);
+      mockNotificationRepository.countByUserIdFiltered.mockResolvedValue(1);
 
       // Act
       const result = await useCase.execute(validUserId);

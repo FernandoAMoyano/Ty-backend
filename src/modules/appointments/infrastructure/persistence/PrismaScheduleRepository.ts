@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { Schedule, DayOfWeekEnum } from '../../domain/entities/Schedule';
 import { IScheduleRepository } from '../../domain/repositories/IScheduleRepository';
 
@@ -296,7 +296,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     endTime: string,
     excludeScheduleId?: string,
   ): Promise<Schedule[]> {
-    const whereClause: any = {
+    const whereClause: Prisma.ScheduleWhereInput = {
       dayOfWeek,
       OR: [
         {

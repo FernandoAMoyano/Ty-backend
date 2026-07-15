@@ -98,12 +98,18 @@ export class PaymentContainer {
       this._appointmentRepository,
       this._appointmentStatusRepository,
     );
-    this._getPaymentById = new GetPaymentById(this._paymentRepository);
-    this._getPaymentsByAppointment = new GetPaymentsByAppointment(this._paymentRepository);
+    this._getPaymentById = new GetPaymentById(
+      this._paymentRepository,
+      this._appointmentRepository,
+    );
+    this._getPaymentsByAppointment = new GetPaymentsByAppointment(
+      this._paymentRepository,
+      this._appointmentRepository,
+    );
     this._getPayments = new GetPayments(this._paymentRepository);
-    this._processPayment = new ProcessPayment(this._paymentRepository);
-    this._refundPayment = new RefundPayment(this._paymentRepository);
-    this._cancelPayment = new CancelPayment(this._paymentRepository);
+    this._processPayment = new ProcessPayment(this._paymentRepository, this._appointmentRepository);
+    this._refundPayment = new RefundPayment(this._paymentRepository, this._appointmentRepository);
+    this._cancelPayment = new CancelPayment(this._paymentRepository, this._appointmentRepository);
     this._getPaymentStatistics = new GetPaymentStatistics(this._paymentRepository);
     this._updatePayment = new UpdatePayment(this._paymentRepository);
 

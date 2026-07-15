@@ -1,4 +1,4 @@
-import { body } from 'express-validator';
+import { body, param } from 'express-validator';
 
 /**
  * Validaciones para el módulo de autenticación
@@ -114,5 +114,12 @@ export class AuthValidations {
       .withMessage('New password must be at least 8 characters')
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
       .withMessage('New password must contain at least one uppercase, one lowercase, and one number'),
+  ];
+
+  /**
+   * Validación para desactivar un usuario (F11)
+   */
+  static deactivateUser = [
+    param('id').isUUID().withMessage('User ID must be a valid UUID'),
   ];
 }

@@ -27,6 +27,7 @@ jobs:
           --health-retries=5
 
     env:
+      TZ: UTC
       NODE_ENV: test
       PORT: 3000
       DB_HOST: localhost

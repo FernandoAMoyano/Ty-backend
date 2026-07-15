@@ -1,11 +1,29 @@
 import { GetPaymentById } from '../../../../../src/modules/payments/application/use-cases/GetPaymentById';
 import { IPaymentRepository } from '../../../../../src/modules/payments/domain/repositories/IPaymentRepository';
+import { IAppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
 import { Payment, PaymentStatusEnum, PaymentMethodEnum } from '../../../../../src/modules/payments/domain/entities/Payment';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
+import { ForbiddenError } from '../../../../../src/shared/exceptions/ForbiddenError';
 
 describe('GetPaymentById Use Case', () => {
   let getPaymentById: GetPaymentById;
   let mockPaymentRepository: jest.Mocked<IPaymentRepository>;
+  let mockAppointmentRepository: jest.Mocked<IAppointmentRepository>;
+
+  // Constantes de permisos -- tests existentes usan ADMIN para bypass de ownership
+  const adminRequesterId = 'admin-requester-id';
+  const adminRole = 'ADMIN';
+
+  const validStylistId = '123e4567-e89b-12d3-a456-426614174010';
+  const validClientId = '123e4567-e89b-12d3-a456-426614174011';
+  const validUserId = '123e4567-e89b-12d3-a456-426614174012';
+
+  const mockAppointment = {
+    id: '123e4567-e89b-12d3-a456-426614174001',
+    stylistId: validStylistId,
+    clientId: validClientId,
+    userId: validUserId,
+  };
 
   const mockPayment = new Payment({
     id: '123e4567-e89b-12d3-a456-426614174000',
@@ -13,7 +31,7 @@ describe('GetPaymentById Use Case', () => {
     status: PaymentStatusEnum.COMPLETED,
     method: PaymentMethodEnum.CREDIT_CARD,
     paymentDate: new Date('2025-01-15T12:00:00Z'),
-    appointmentId: '123e4567-e89b-12d3-a456-426614174001',
+    appointmentId: mockAppointment.id,
     createdAt: new Date('2025-01-15T10:00:00Z'),
     updatedAt: new Date('2025-01-15T12:00:00Z'),
   });
@@ -30,14 +48,18 @@ describe('GetPaymentById Use Case', () => {
       getTotalByAppointment: jest.fn(),
     };
 
-    getPaymentById = new GetPaymentById(mockPaymentRepository);
+    mockAppointmentRepository = {
+      findById: jest.fn(),
+    } as unknown as jest.Mocked<IAppointmentRepository>;
+
+    getPaymentById = new GetPaymentById(mockPaymentRepository, mockAppointmentRepository);
   });
 
   // Debería retornar un pago existente
   it('should return an existing payment', async () => {
     mockPaymentRepository.findById.mockResolvedValue(mockPayment);
 
-    const result = await getPaymentById.execute(mockPayment.id);
+    const result = await getPaymentById.execute(mockPayment.id, adminRequesterId, adminRole);
 
     expect(result.id).toBe(mockPayment.id);
     expect(result.amount).toBe(100.50);
@@ -52,7 +74,9 @@ describe('GetPaymentById Use Case', () => {
     const nonExistentId = '999e4567-e89b-12d3-a456-426614174999';
     mockPaymentRepository.findById.mockResolvedValue(null);
 
-    await expect(getPaymentById.execute(nonExistentId)).rejects.toThrow(NotFoundError);
+    await expect(
+      getPaymentById.execute(nonExistentId, adminRequesterId, adminRole),
+    ).rejects.toThrow(NotFoundError);
     expect(mockPaymentRepository.findById).toHaveBeenCalledWith(nonExistentId);
   });
 
@@ -60,7 +84,7 @@ describe('GetPaymentById Use Case', () => {
   it('should return all payment fields', async () => {
     mockPaymentRepository.findById.mockResolvedValue(mockPayment);
 
-    const result = await getPaymentById.execute(mockPayment.id);
+    const result = await getPaymentById.execute(mockPayment.id, adminRequesterId, adminRole);
 
     expect(result).toEqual({
       id: mockPayment.id,
@@ -82,17 +106,90 @@ describe('GetPaymentById Use Case', () => {
       status: PaymentStatusEnum.PENDING,
       method: null,
       paymentDate: null,
-      appointmentId: '123e4567-e89b-12d3-a456-426614174001',
+      appointmentId: mockAppointment.id,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
     mockPaymentRepository.findById.mockResolvedValue(pendingPayment);
 
-    const result = await getPaymentById.execute(pendingPayment.id);
+    const result = await getPaymentById.execute(pendingPayment.id, adminRequesterId, adminRole);
 
     expect(result.status).toBe(PaymentStatusEnum.PENDING);
     expect(result.method).toBeNull();
     expect(result.paymentDate).toBeNull();
+  });
+
+  describe('Ownership (F18)', () => {
+    // Debería permitir a ADMIN ver cualquier pago sin necesidad de resolver la cita
+    it('should allow ADMIN to view any payment without resolving the appointment', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(mockPayment);
+
+      const result = await getPaymentById.execute(mockPayment.id, 'any-admin-id', 'ADMIN');
+
+      expect(result.id).toBe(mockPayment.id);
+      expect(mockAppointmentRepository.findById).not.toHaveBeenCalled();
+    });
+
+    // Debería permitir al STYLIST dueño de la cita ver el pago
+    it('should allow the owning stylist to view the payment', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(mockPayment);
+      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment as any);
+
+      const result = await getPaymentById.execute(mockPayment.id, validStylistId, 'STYLIST');
+
+      expect(result.id).toBe(mockPayment.id);
+      expect(mockAppointmentRepository.findById).toHaveBeenCalledWith(mockAppointment.id);
+    });
+
+    // STYLIST ajeno a la cita no debe poder acceder al pago
+    it('should throw ForbiddenError when stylist does not own the appointment', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(mockPayment);
+      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment as any);
+
+      await expect(
+        getPaymentById.execute(mockPayment.id, 'other-stylist-id', 'STYLIST'),
+      ).rejects.toThrow(ForbiddenError);
+    });
+
+    // CLIENT dueño de la cita debe poder ver el pago
+    it('should allow the owning client to view the payment', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(mockPayment);
+      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment as any);
+
+      const result = await getPaymentById.execute(mockPayment.id, validClientId, 'CLIENT');
+
+      expect(result.id).toBe(mockPayment.id);
+    });
+
+    // El creador de la cita (userId) también debe poder ver el pago, aunque no sea el clientId
+    it('should allow the appointment creator (userId) to view the payment', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(mockPayment);
+      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment as any);
+
+      const result = await getPaymentById.execute(mockPayment.id, validUserId, 'CLIENT');
+
+      expect(result.id).toBe(mockPayment.id);
+    });
+
+    // CLIENT ajeno a la cita no debe poder ver el pago
+    it('should throw ForbiddenError when the client does not own the appointment', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(mockPayment);
+      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment as any);
+
+      await expect(
+        getPaymentById.execute(mockPayment.id, 'other-client-id', 'CLIENT'),
+      ).rejects.toThrow(ForbiddenError);
+    });
+
+    // Debería lanzar NotFoundError si la cita asociada al pago ya no existe
+    it('should throw NotFoundError when the associated appointment no longer exists', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(mockPayment);
+      mockAppointmentRepository.findById.mockResolvedValue(null);
+
+      await expect(
+        getPaymentById.execute(mockPayment.id, validStylistId, 'STYLIST'),
+      ).rejects.toThrow(NotFoundError);
+    });
   });
 });

@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from '../../../auth/presentation/middleware/AuthMiddleware';
+import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
 import { AssignServiceToStylist } from '../../application/use-cases/AssignServiceToStylist';
 import { UpdateStylistService } from '../../application/use-cases/UpdateStylistService';
 import { RemoveServiceFromStylist } from '../../application/use-cases/RemoveServiceFromStylist';
@@ -33,11 +35,19 @@ export class StylistServiceController {
    * @route POST /services/stylists/:stylistId/services
    * @responseStatus 201 - Servicio asignado exitosamente
    */
-  assignServiceToStylist = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  assignServiceToStylist = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
+      if (!req.user?.userId || !req.user?.roleName) {
+        throw new UnauthorizedError('Authentication required');
+      }
       const { stylistId } = req.params;
       const assignDto: AssignServiceDto = req.body;
-      const assignment = await this._assignServiceToStylist.execute(stylistId, assignDto);
+      const assignment = await this._assignServiceToStylist.execute(
+        stylistId,
+        assignDto,
+        req.user.userId,
+        req.user.roleName,
+      );
       res.status(201).json({ success: true, message: 'Service assigned to stylist successfully', data: assignment });
     } catch (error) {
       next(error);
@@ -49,11 +59,20 @@ export class StylistServiceController {
    * @route PUT /services/stylists/:stylistId/services/:serviceId
    * @responseStatus 200 - Asignación actualizada exitosamente
    */
-  updateStylistService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  updateStylistService = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
+      if (!req.user?.userId || !req.user?.roleName) {
+        throw new UnauthorizedError('Authentication required');
+      }
       const { stylistId, serviceId } = req.params;
       const updateDto: UpdateStylistServiceDto = req.body;
-      const assignment = await this._updateStylistService.execute(stylistId, serviceId, updateDto);
+      const assignment = await this._updateStylistService.execute(
+        stylistId,
+        serviceId,
+        updateDto,
+        req.user.userId,
+        req.user.roleName,
+      );
       res.status(200).json({ success: true, message: 'Stylist service updated successfully', data: assignment });
     } catch (error) {
       next(error);
@@ -65,10 +84,18 @@ export class StylistServiceController {
    * @route DELETE /services/stylists/:stylistId/services/:serviceId
    * @responseStatus 200 - Servicio removido exitosamente
    */
-  removeServiceFromStylist = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  removeServiceFromStylist = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
+      if (!req.user?.userId || !req.user?.roleName) {
+        throw new UnauthorizedError('Authentication required');
+      }
       const { stylistId, serviceId } = req.params;
-      await this._removeServiceFromStylist.execute(stylistId, serviceId);
+      await this._removeServiceFromStylist.execute(
+        stylistId,
+        serviceId,
+        req.user.userId,
+        req.user.roleName,
+      );
       res.status(200).json({ success: true, message: 'Service removed from stylist successfully' });
     } catch (error) {
       next(error);

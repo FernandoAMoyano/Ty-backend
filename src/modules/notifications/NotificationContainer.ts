@@ -15,6 +15,7 @@ import { CreateNotification } from './application/use-cases/CreateNotification';
 import { GetUserNotifications } from './application/use-cases/GetUserNotifications';
 import { GetNotificationById } from './application/use-cases/GetNotificationById';
 import { MarkNotificationAsRead } from './application/use-cases/MarkNotificationAsRead';
+import { MarkAllNotificationsAsRead } from './application/use-cases/MarkAllNotificationsAsRead';
 import { GetUnreadCount } from './application/use-cases/GetUnreadCount';
 
 // Presentation
@@ -41,6 +42,7 @@ export class NotificationContainer {
   private _getNotificationById: GetNotificationById;
   private _markNotificationAsRead: MarkNotificationAsRead;
   private _getUnreadCount: GetUnreadCount;
+  private _markAllNotificationsAsRead: MarkAllNotificationsAsRead;
 
   // Presentation
   private _notificationController: NotificationController;
@@ -108,6 +110,11 @@ export class NotificationContainer {
       this._notificationStatusRepository,
     );
 
+    this._markAllNotificationsAsRead = new MarkAllNotificationsAsRead(
+      this._notificationRepository,
+      this._notificationStatusRepository,
+    );
+
     // 3. Inicializar controller
     this._notificationController = new NotificationController(
       this._createNotification,
@@ -115,6 +122,7 @@ export class NotificationContainer {
       this._getNotificationById,
       this._markNotificationAsRead,
       this._getUnreadCount,
+      this._markAllNotificationsAsRead,
     );
 
     // 4. Inicializar routes
@@ -186,6 +194,14 @@ export class NotificationContainer {
    */
   get getUnreadCount(): GetUnreadCount {
     return this._getUnreadCount;
+  }
+
+  /**
+   * Obtiene el caso de uso para marcar todas las notificaciones de un usuario como leídas
+   * @returns Instancia del use case MarkAllNotificationsAsRead
+   */
+  get markAllNotificationsAsRead(): MarkAllNotificationsAsRead {
+    return this._markAllNotificationsAsRead;
   }
 
   // =====================

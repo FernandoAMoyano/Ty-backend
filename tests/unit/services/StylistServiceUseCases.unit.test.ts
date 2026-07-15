@@ -16,6 +16,7 @@ import { ValidationError } from '../../../src/shared/exceptions/ValidationError'
 import { NotFoundError } from '../../../src/shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../src/shared/exceptions/ConflictError';
 import { BusinessRuleError } from '../../../src/shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../src/shared/exceptions/ForbiddenError';
 
 describe('StylistService Use Cases', () => {
   let mockStylistServiceRepository: jest.Mocked<IStylistServiceRepository>;
@@ -93,7 +94,7 @@ describe('StylistService Use Cases', () => {
       mockStylistServiceRepository.existsAssignment.mockResolvedValue(false);
       mockStylistServiceRepository.save.mockResolvedValue(mockStylistService);
 
-      const result = await assignServiceToStylist.execute('stylist-id', assignDto);
+      const result = await assignServiceToStylist.execute('stylist-id', assignDto, 'stylist-id', 'STYLIST');
 
       expect(mockUserRoleValidationService.ensureUserHasRole).toHaveBeenCalledWith(
         'stylist-id',
@@ -110,21 +111,28 @@ describe('StylistService Use Cases', () => {
       mockUserRoleValidationService.ensureUserHasRole.mockRejectedValue(
         new NotFoundError('Stylist', 'non-existent-stylist'),
       );
-      await expect(assignServiceToStylist.execute('non-existent-stylist', assignDto)).rejects.toThrow(NotFoundError);
+      await expect(
+        assignServiceToStylist.execute('non-existent-stylist', assignDto, 'non-existent-stylist', 'STYLIST'),
+      ).rejects.toThrow(NotFoundError);
     });
 
     // Cobertura faltante: AssignServiceToStylist valida esto antes de tocar
     // el UserRoleValidationService, pero no tenia ningun test que lo cubriera
     it('should throw ValidationError if serviceId is missing', async () => {
       await expect(
-        assignServiceToStylist.execute('stylist-id', { serviceId: '' }),
+        assignServiceToStylist.execute('stylist-id', { serviceId: '' }, 'stylist-id', 'STYLIST'),
       ).rejects.toThrow(ValidationError);
       expect(mockUserRoleValidationService.ensureUserHasRole).not.toHaveBeenCalled();
     });
 
     it('should throw ValidationError if customPrice is negative', async () => {
       await expect(
-        assignServiceToStylist.execute('stylist-id', { serviceId: 'service-id', customPrice: -100 }),
+        assignServiceToStylist.execute(
+          'stylist-id',
+          { serviceId: 'service-id', customPrice: -100 },
+          'stylist-id',
+          'STYLIST',
+        ),
       ).rejects.toThrow(ValidationError);
       expect(mockUserRoleValidationService.ensureUserHasRole).not.toHaveBeenCalled();
     });
@@ -132,7 +140,9 @@ describe('StylistService Use Cases', () => {
     it('should throw NotFoundError if service not found', async () => {
       mockUserRoleValidationService.ensureUserHasRole.mockResolvedValue(undefined);
       mockServiceRepository.findById.mockResolvedValue(null);
-      await expect(assignServiceToStylist.execute('stylist-id', assignDto)).rejects.toThrow(NotFoundError);
+      await expect(
+        assignServiceToStylist.execute('stylist-id', assignDto, 'stylist-id', 'STYLIST'),
+      ).rejects.toThrow(NotFoundError);
     });
 
     it('should throw BusinessRuleError if service is inactive', async () => {
@@ -142,7 +152,9 @@ describe('StylistService Use Cases', () => {
       mockUserRoleValidationService.ensureUserHasRole.mockResolvedValue(undefined);
       mockServiceRepository.findById.mockResolvedValue(mockService);
 
-      await expect(assignServiceToStylist.execute('stylist-id', assignDto)).rejects.toThrow(BusinessRuleError);
+      await expect(
+        assignServiceToStylist.execute('stylist-id', assignDto, 'stylist-id', 'STYLIST'),
+      ).rejects.toThrow(BusinessRuleError);
     });
 
     // Estandarizado via UserRoleValidationService: antes lanzaba ValidationError (400),
@@ -151,7 +163,9 @@ describe('StylistService Use Cases', () => {
       mockUserRoleValidationService.ensureUserHasRole.mockRejectedValue(
         new BusinessRuleError('The specified user is not a stylist'),
       );
-      await expect(assignServiceToStylist.execute('stylist-id', assignDto)).rejects.toThrow(BusinessRuleError);
+      await expect(
+        assignServiceToStylist.execute('stylist-id', assignDto, 'stylist-id', 'STYLIST'),
+      ).rejects.toThrow(BusinessRuleError);
     });
 
     it('should throw ConflictError if assignment already exists', async () => {
@@ -161,7 +175,32 @@ describe('StylistService Use Cases', () => {
       mockServiceRepository.findById.mockResolvedValue(mockService);
       mockStylistServiceRepository.existsAssignment.mockResolvedValue(true);
 
-      await expect(assignServiceToStylist.execute('stylist-id', assignDto)).rejects.toThrow(ConflictError);
+      await expect(
+        assignServiceToStylist.execute('stylist-id', assignDto, 'stylist-id', 'STYLIST'),
+      ).rejects.toThrow(ConflictError);
+    });
+
+    // Debería lanzar ForbiddenError si un estilista opera sobre otro estilista
+    it('should throw ForbiddenError when a stylist operates on another stylist', async () => {
+      await expect(
+        assignServiceToStylist.execute('stylist-id', assignDto, 'other-stylist-id', 'STYLIST'),
+      ).rejects.toThrow(ForbiddenError);
+      expect(mockUserRoleValidationService.ensureUserHasRole).not.toHaveBeenCalled();
+    });
+
+    // Debería permitir a ADMIN operar sobre cualquier estilista
+    it('should allow ADMIN to operate on any stylist', async () => {
+      const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
+      const mockStylistService = StylistService.create('stylist-id', 'service-id', 3000);
+
+      mockUserRoleValidationService.ensureUserHasRole.mockResolvedValue(undefined);
+      mockServiceRepository.findById.mockResolvedValue(mockService);
+      mockStylistServiceRepository.existsAssignment.mockResolvedValue(false);
+      mockStylistServiceRepository.save.mockResolvedValue(mockStylistService);
+
+      const result = await assignServiceToStylist.execute('stylist-id', assignDto, 'admin-id', 'ADMIN');
+
+      expect(result.stylistId).toBe('stylist-id');
     });
   });
 
@@ -230,7 +269,13 @@ describe('StylistService Use Cases', () => {
       mockServiceRepository.findById.mockResolvedValue(mockService);
       mockStylistServiceRepository.update.mockResolvedValue(mockStylistService);
 
-      const result = await updateStylistService.execute('stylist-id', 'service-id', updateDto);
+      const result = await updateStylistService.execute(
+        'stylist-id',
+        'service-id',
+        updateDto,
+        'stylist-id',
+        'STYLIST',
+      );
 
       expect(mockStylistServiceRepository.findByStylistAndService).toHaveBeenCalledWith('stylist-id', 'service-id');
       expect(mockStylistServiceRepository.update).toHaveBeenCalled();
@@ -240,7 +285,37 @@ describe('StylistService Use Cases', () => {
 
     it('should throw NotFoundError if assignment not found', async () => {
       mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(null);
-      await expect(updateStylistService.execute('stylist-id', 'service-id', updateDto)).rejects.toThrow(NotFoundError);
+      await expect(
+        updateStylistService.execute('stylist-id', 'service-id', updateDto, 'stylist-id', 'STYLIST'),
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    // Debería lanzar ForbiddenError si un estilista opera sobre otro estilista
+    it('should throw ForbiddenError when a stylist operates on another stylist', async () => {
+      await expect(
+        updateStylistService.execute('stylist-id', 'service-id', updateDto, 'other-stylist-id', 'STYLIST'),
+      ).rejects.toThrow(ForbiddenError);
+      expect(mockStylistServiceRepository.findByStylistAndService).not.toHaveBeenCalled();
+    });
+
+    // Debería permitir a ADMIN operar sobre cualquier estilista
+    it('should allow ADMIN to operate on any stylist', async () => {
+      const mockStylistService = StylistService.create('stylist-id', 'service-id', 3000);
+      const mockService = Service.create('category-id', 'Hair Cut', 'Description', 45, 15, 2500);
+
+      mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(mockStylistService);
+      mockServiceRepository.findById.mockResolvedValue(mockService);
+      mockStylistServiceRepository.update.mockResolvedValue(mockStylistService);
+
+      const result = await updateStylistService.execute(
+        'stylist-id',
+        'service-id',
+        updateDto,
+        'admin-id',
+        'ADMIN',
+      );
+
+      expect(result.customPrice).toBe(3500);
     });
   });
 
@@ -255,7 +330,7 @@ describe('StylistService Use Cases', () => {
       mockStylistServiceRepository.existsAssignment.mockResolvedValue(true);
       mockStylistServiceRepository.delete.mockResolvedValue();
 
-      await removeServiceFromStylist.execute('stylist-id', 'service-id');
+      await removeServiceFromStylist.execute('stylist-id', 'service-id', 'stylist-id', 'STYLIST');
 
       expect(mockStylistServiceRepository.existsAssignment).toHaveBeenCalledWith('stylist-id', 'service-id');
       expect(mockStylistServiceRepository.delete).toHaveBeenCalledWith('stylist-id', 'service-id');
@@ -263,7 +338,27 @@ describe('StylistService Use Cases', () => {
 
     it('should throw NotFoundError if assignment not found', async () => {
       mockStylistServiceRepository.existsAssignment.mockResolvedValue(false);
-      await expect(removeServiceFromStylist.execute('stylist-id', 'service-id')).rejects.toThrow(NotFoundError);
+      await expect(
+        removeServiceFromStylist.execute('stylist-id', 'service-id', 'stylist-id', 'STYLIST'),
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    // Debería lanzar ForbiddenError si un estilista opera sobre otro estilista
+    it('should throw ForbiddenError when a stylist operates on another stylist', async () => {
+      await expect(
+        removeServiceFromStylist.execute('stylist-id', 'service-id', 'other-stylist-id', 'STYLIST'),
+      ).rejects.toThrow(ForbiddenError);
+      expect(mockStylistServiceRepository.existsAssignment).not.toHaveBeenCalled();
+    });
+
+    // Debería permitir a ADMIN operar sobre cualquier estilista
+    it('should allow ADMIN to operate on any stylist', async () => {
+      mockStylistServiceRepository.existsAssignment.mockResolvedValue(true);
+      mockStylistServiceRepository.delete.mockResolvedValue();
+
+      await removeServiceFromStylist.execute('stylist-id', 'service-id', 'admin-id', 'ADMIN');
+
+      expect(mockStylistServiceRepository.delete).toHaveBeenCalledWith('stylist-id', 'service-id');
     });
   });
 

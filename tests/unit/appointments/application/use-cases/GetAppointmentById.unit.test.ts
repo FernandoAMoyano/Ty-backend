@@ -84,6 +84,10 @@ describe('GetAppointmentById Use Case', () => {
       // Consultas específicas del negocio
       findByClientId: jest.fn(),
       findByStylistId: jest.fn(),
+      findByClientIdPaginated: jest.fn(),
+      countByClientId: jest.fn(),
+      findByStylistIdPaginated: jest.fn(),
+      countByStylistId: jest.fn(),
       findByUserId: jest.fn(),
       findByStatusId: jest.fn(),
 
@@ -104,7 +108,7 @@ describe('GetAppointmentById Use Case', () => {
       countByDateRange: jest.fn(),
       findUpcomingAppointments: jest.fn(),
       findPendingConfirmation: jest.fn(),
-      existsActiveByServiceId: jest.fn(),
+      existsByServiceId: jest.fn(),
     };
 
     // Crear instancia del caso de uso con el mock

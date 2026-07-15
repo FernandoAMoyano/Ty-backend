@@ -8,6 +8,7 @@ import { CreateHolidayDto } from '../dto/request/CreateHolidayDto';
 import { HolidayResponseDto, HolidayResponseMapper } from '../dto/response/HolidayResponseDto';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
+import { parseDateOnlyUTC, startOfDayUTC, endOfDayUTC } from '../../../../shared/utils/dateOnly';
 
 /**
  * Caso de uso: Crear feriado
@@ -28,7 +29,7 @@ export class CreateHoliday {
    * @throws Error si ya existe un feriado en la fecha especificada
    */
   async execute(dto: CreateHolidayDto): Promise<HolidayResponseDto> {
-    const date = new Date(dto.date);
+    const date = parseDateOnlyUTC(dto.date);
 
     // Verificar si ya existe un feriado en esa fecha
     const existingHoliday = await this.holidayRepository.existsByDate(date);
@@ -77,12 +78,9 @@ export class CreateHoliday {
 
     if (activeStatusIds.length === 0) return;
 
-    // Buscar citas del día (inicio y fin del día del feriado)
-    const startOfDay = new Date(holidayDate);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(holidayDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Buscar citas del día (inicio y fin del día del feriado, en UTC)
+    const startOfDay = startOfDayUTC(holidayDate);
+    const endOfDay = endOfDayUTC(holidayDate);
 
     const appointments = await this.appointmentRepository.findByDateRange(startOfDay, endOfDay);
 

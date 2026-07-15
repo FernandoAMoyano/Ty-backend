@@ -122,6 +122,43 @@ describe('Holiday Entity', () => {
     });
   });
 
+  describe('UTC Date Handling (F7 regression)', () => {
+    // El feriado del 1 de enero debe reportar año/mes/día correctos sin importar el offset local
+    it('should report year/month/day in UTC even at day boundaries', () => {
+      const newYearHoliday = new Holiday({
+        ...validHolidayProps,
+        date: new Date('2026-01-01T00:00:00.000Z'),
+      });
+
+      expect(newYearHoliday.year).toBe(2026);
+      expect(newYearHoliday.month).toBe(1);
+      expect(newYearHoliday.day).toBe(1);
+    });
+
+    // isOnDate debe comparar componentes en UTC, no en hora local
+    it('should compare isOnDate using UTC components', () => {
+      const holiday = new Holiday({
+        ...validHolidayProps,
+        date: new Date('2026-01-01T00:00:00.000Z'),
+      });
+
+      expect(holiday.isOnDate(new Date('2026-01-01T23:00:00.000Z'))).toBe(true);
+      expect(holiday.isOnDate(new Date('2025-12-31T23:00:00.000Z'))).toBe(false);
+    });
+
+    // isPast/isFuture deben comparar contra el inicio del día actual en UTC
+    it('should compare isPast/isFuture against UTC start-of-day', () => {
+      const almostMidnightUTC = new Date('2020-01-01T23:59:59.999Z');
+      const pastHoliday = new Holiday({
+        ...validHolidayProps,
+        date: almostMidnightUTC,
+      });
+
+      expect(pastHoliday.isPast).toBe(true);
+      expect(pastHoliday.isFuture).toBe(false);
+    });
+  });
+
   describe('updateName', () => {
     // Debería actualizar el nombre correctamente
     it('should update name correctly', () => {

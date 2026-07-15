@@ -209,7 +209,7 @@ export class PrismaUserRepository implements IUserRepository {
     });
 
     return usersData.map(
-      (userData: any) =>
+      (userData) =>
         new User(
           userData.id,
           userData.roleId,
@@ -239,7 +239,7 @@ export class PrismaUserRepository implements IUserRepository {
     });
 
     return usersData.map(
-      (userData: any) =>
+      (userData) =>
         new User(
           userData.id,
           userData.roleId,

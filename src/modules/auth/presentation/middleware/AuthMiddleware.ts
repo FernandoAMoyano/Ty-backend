@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../../application/services/JwtService';
 import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
 import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
-import { prisma } from '../../../../shared/config/Prisma';
+import { IRoleRepository } from '../../domain/repositories/IRoleRepository';
 
 /**
  * Interfaz extendida de Request que incluye información del usuario autenticado
@@ -27,7 +27,17 @@ export interface AuthenticatedRequest extends Request {
  * Valida tokens JWT y verifica permisos de usuario basados en roles
  */
 export class AuthMiddleware {
-  constructor(private jwtService: JwtService) {}
+  /**
+   * Cache en memoria de roles (id -> name), poblada de forma perezosa.
+   * Los roles son una tabla estática que no cambia en runtime, por lo que
+   * evita una query a la base de datos en cada request autorizado (F15).
+   */
+  private readonly roleNameCache = new Map<string, string>();
+
+  constructor(
+    private jwtService: JwtService,
+    private roleRepository: IRoleRepository,
+  ) {}
 
   /**
    * Middleware de autenticación que valida tokens JWT en las peticiones
@@ -79,17 +89,14 @@ export class AuthMiddleware {
           throw new UnauthorizedError('Authentication required');
         }
 
-        // Obtener el rol del usuario desde la base de datos usando el cliente compartido
-        const userRole = await prisma.role.findUnique({
-          where: { id: req.user.roleId }
-        });
+        const roleName = await this.getRoleName(req.user.roleId);
 
-        if (!userRole || !allowedRoles.includes(userRole.name)) {
+        if (!roleName || !allowedRoles.includes(roleName)) {
           throw new ForbiddenError('Insufficient permissions');
         }
 
         // Adjuntar nombre del rol para que los controllers/use cases puedan usarlo
-        req.user.roleName = userRole.name;
+        req.user.roleName = roleName;
 
         next();
       } catch (error) {
@@ -97,4 +104,27 @@ export class AuthMiddleware {
       }
     };
   };
+
+  /**
+   * Resuelve el nombre del rol a partir de su ID, usando una cache en memoria
+   * @param roleId - ID del rol a resolver
+   * @returns Nombre del rol, o undefined si el rol no existe
+   * @description Los roles son una tabla estática (ADMIN/CLIENT/STYLIST) que no
+   * cambia en runtime, por lo que solo se consulta el repositorio una vez por
+   * roleId; las siguientes resoluciones se sirven desde el Map en memoria (F15)
+   */
+  private async getRoleName(roleId: string): Promise<string | undefined> {
+    const cached = this.roleNameCache.get(roleId);
+    if (cached) {
+      return cached;
+    }
+
+    const role = await this.roleRepository.findById(roleId);
+    if (!role) {
+      return undefined;
+    }
+
+    this.roleNameCache.set(roleId, role.name);
+    return role.name;
+  }
 }

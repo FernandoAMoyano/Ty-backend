@@ -57,6 +57,9 @@ describe('MarkNotificationAsRead Use Case', () => {
       deleteByUserId: jest.fn(),
       existsById: jest.fn(),
       countByUserId: jest.fn(),
+      findByUserIdFiltered: jest.fn(),
+      countByUserIdFiltered: jest.fn(),
+      updateStatusByUserId: jest.fn(),
     };
 
     mockNotificationStatusRepository = {

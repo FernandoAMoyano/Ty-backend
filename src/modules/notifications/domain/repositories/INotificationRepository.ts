@@ -115,4 +115,44 @@ export interface INotificationRepository {
    * @returns Promise con el conteo total de notificaciones
    */
   countByUserId(userId: string): Promise<number>;
+
+  /**
+   * Obtiene las notificaciones de un usuario aplicando filtros y paginación en la misma consulta
+   * @param userId - ID del usuario
+   * @param filters - Filtros opcionales: excludeStatusId (para unreadOnly) y/o type
+   * @param limit - Cantidad máxima de resultados
+   * @param offset - Cantidad de resultados a saltar
+   * @returns Promise con array de notificaciones filtradas y paginadas
+   */
+  findByUserIdFiltered(
+    userId: string,
+    filters: { excludeStatusId?: string; type?: NotificationTypeEnum },
+    limit: number,
+    offset: number,
+  ): Promise<Notification[]>;
+
+  /**
+   * Cuenta las notificaciones de un usuario que cumplen los mismos filtros que findByUserIdFiltered
+   * @param userId - ID del usuario
+   * @param filters - Filtros opcionales: excludeStatusId (para unreadOnly) y/o type
+   * @returns Promise con el conteo total filtrado
+   */
+  countByUserIdFiltered(
+    userId: string,
+    filters: { excludeStatusId?: string; type?: NotificationTypeEnum },
+  ): Promise<number>;
+
+  /**
+   * Actualiza el estado de todas las notificaciones de un usuario cuyo estado actual
+   * sea distinto al indicado (p.ej. marcar todas como leídas sin límite de cantidad)
+   * @param userId - ID del usuario
+   * @param fromStatusIdNot - ID de estado a excluir (las notificaciones que ya lo tengan no se tocan)
+   * @param newStatusId - Nuevo ID de estado a asignar
+   * @returns Promise con el número de notificaciones actualizadas
+   */
+  updateStatusByUserId(
+    userId: string,
+    fromStatusIdNot: string,
+    newStatusId: string,
+  ): Promise<number>;
 }

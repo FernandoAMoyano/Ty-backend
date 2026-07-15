@@ -17,6 +17,10 @@ export class DeleteHoliday {
    * @param id - ID del feriado a eliminar
    * @returns true si se eliminó correctamente
    * @throws NotFoundError si no se encuentra el feriado
+   * @description Los Schedule que referencian este feriado (Schedule.holidayId) no se
+   * tocan explícitamente acá: la FK tiene onDelete: SetNull (schema.prisma), así que la
+   * base de datos los desvincula automáticamente (holidayId -> null) al borrar el
+   * feriado, sin necesidad de lógica adicional en este use case (F9)
    */
   async execute(id: string): Promise<boolean> {
     // Verificar que el feriado existe
@@ -29,7 +33,7 @@ export class DeleteHoliday {
     // Eliminar las excepciones de horario asociadas
     await this.scheduleExceptionRepository.deleteByHolidayId(id);
 
-    // Eliminar el feriado
+    // Eliminar el feriado (los Schedule asociados quedan con holidayId = null vía FK SetNull)
     return this.holidayRepository.delete(id);
   }
 }

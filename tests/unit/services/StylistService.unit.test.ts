@@ -5,7 +5,7 @@ describe('StylistService Entity', () => {
   const validData = {
     stylistId: 'stylist-id',
     serviceId: 'service-id',
-    customPrice: 3000, // $30.00 en centavos
+    customPrice: 3000, // $30.00 en centavos (patrón Stripe, ver F2)
   };
 
   describe('Creation', () => {
@@ -29,8 +29,16 @@ describe('StylistService Entity', () => {
     it('should create stylist service without custom price', () => {
       const stylistService = StylistService.create(validData.stylistId, validData.serviceId);
 
-      expect(stylistService.customPrice).toBeUndefined();
+      expect(stylistService.customPrice).toBeNull();
       expect(stylistService.isOffering).toBe(true);
+    });
+
+    // customPrice 0 debe ser un precio válido, no "sin precio"
+    it('should treat customPrice 0 as a valid price', () => {
+      const stylistService = StylistService.create(validData.stylistId, validData.serviceId, 0);
+
+      expect(stylistService.customPrice).toBe(0);
+      expect(stylistService.hasCustomPrice()).toBe(true);
     });
 
     // Debería lanzar error si el ID del estilista está vacío
@@ -78,8 +86,18 @@ describe('StylistService Entity', () => {
 
     // Debería remover precio personalizado
     it('should remove custom price', () => {
-      stylistService.updatePrice(undefined);
-      expect(stylistService.customPrice).toBeUndefined();
+      stylistService.updatePrice(null);
+      expect(stylistService.customPrice).toBeNull();
+    });
+
+    // updatePrice(null) debe limpiar el precio custom
+    it('should clear custom price when updating with null', () => {
+      expect(stylistService.hasCustomPrice()).toBe(true);
+
+      stylistService.updatePrice(null);
+
+      expect(stylistService.customPrice).toBeNull();
+      expect(stylistService.hasCustomPrice()).toBe(false);
     });
 
     // Debería lanzar error al actualizar a precio negativo
@@ -97,22 +115,29 @@ describe('StylistService Entity', () => {
 
     // Debería obtener precio efectivo sin precio personalizado
     it('should get effective price without custom price', () => {
-      stylistService.updatePrice(undefined);
+      stylistService.updatePrice(null);
       const basePrice = 2500;
       expect(stylistService.getEffectivePrice(basePrice)).toBe(basePrice);
     });
 
-    // Debería formatear el precio correctamente
+    // Debería formatear el precio correctamente (customPrice se guarda en centavos)
     it('should format price correctly', () => {
       const basePrice = 2500;
       expect(stylistService.getFormattedPrice(basePrice)).toBe('30.00');
+    });
+
+    // Debería dividir por 100 al formatear el precio base, ya que se guarda en centavos
+    it('should divide by 100 when formatting the base price, since it is stored in cents', () => {
+      stylistService.updatePrice(null);
+      const basePrice = 2500;
+      expect(stylistService.getFormattedPrice(basePrice)).toBe('25.00');
     });
 
     // Debería verificar si tiene precio personalizado
     it('should check if has custom price', () => {
       expect(stylistService.hasCustomPrice()).toBe(true);
 
-      stylistService.updatePrice(undefined);
+      stylistService.updatePrice(null);
       expect(stylistService.hasCustomPrice()).toBe(false);
     });
   });

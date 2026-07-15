@@ -403,6 +403,464 @@ describe('AppointmentRepository Integration Tests', () => {
     });
   });
 
+  describe('findByClientIdPaginated / countByClientId (F17)', () => {
+    it('should paginate appointments for a client ordered by dateTime desc', async () => {
+      const baseDate = new Date();
+      baseDate.setDate(baseDate.getDate() + 7);
+
+      for (let i = 0; i < 5; i++) {
+        const dateTime = new Date(baseDate);
+        dateTime.setHours(dateTime.getHours() + i);
+        const appointment = Appointment.create(
+          dateTime,
+          60,
+          testUserId,
+          testClientId,
+          testScheduleId,
+          testStatusId,
+          testStylistId,
+          [],
+        );
+        await repository.save(appointment);
+      }
+
+      const page1 = await repository.findByClientIdPaginated(testClientId, 2, 0);
+      const page2 = await repository.findByClientIdPaginated(testClientId, 2, 2);
+
+      expect(page1).toHaveLength(2);
+      expect(page2).toHaveLength(2);
+      // Orden desc por dateTime: el primero de la página 1 debe ser el más reciente
+      expect(page1[0].dateTime.getTime()).toBeGreaterThan(page1[1].dateTime.getTime());
+      // No debe haber solapamiento entre páginas
+      const page1Ids = page1.map((a) => a.id);
+      const page2Ids = page2.map((a) => a.id);
+      expect(page1Ids.some((id) => page2Ids.includes(id))).toBe(false);
+    });
+
+    it('should count all appointments for a client without ownership filter', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+      const appointment = Appointment.create(
+        futureDate,
+        60,
+        testUserId,
+        testClientId,
+        testScheduleId,
+        testStatusId,
+        testStylistId,
+        [],
+      );
+      await repository.save(appointment);
+
+      const total = await repository.countByClientId(testClientId);
+      expect(total).toBeGreaterThanOrEqual(1);
+    });
+
+    // Verifica que el ownershipFilter se aplique en el WHERE de la consulta (DB-level),
+    // no filtrando en memoria después de traer todo (el bug que corrige F17, mismo patrón que F3)
+    it('should apply the STYLIST ownership filter at the DB level, not in memory', async () => {
+      const otherStylistUser = await createTestUser('STYLIST');
+      const otherStylistId = otherStylistUser.user?.id || otherStylistUser.id;
+
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
+      // Cita asignada al testStylistId (debe aparecer con el filtro)
+      const ownAppointment = Appointment.create(
+        futureDate,
+        60,
+        testUserId,
+        testClientId,
+        testScheduleId,
+        testStatusId,
+        testStylistId,
+        [],
+      );
+      await repository.save(ownAppointment);
+
+      // Cita asignada a otro estilista (NO debe aparecer con el filtro)
+      const otherDate = new Date(futureDate);
+      otherDate.setHours(otherDate.getHours() + 1);
+      const otherAppointment = Appointment.create(
+        otherDate,
+        60,
+        testUserId,
+        testClientId,
+        testScheduleId,
+        testStatusId,
+        otherStylistId,
+        [],
+      );
+      await repository.save(otherAppointment);
+
+      const ownershipFilter = { stylistId: testStylistId, userId: testStylistId };
+
+      const filteredAppointments = await repository.findByClientIdPaginated(
+        testClientId,
+        10,
+        0,
+        ownershipFilter,
+      );
+      const filteredTotal = await repository.countByClientId(testClientId, ownershipFilter);
+
+      expect(filteredAppointments.some((a) => a.id === ownAppointment.id)).toBe(true);
+      expect(filteredAppointments.some((a) => a.id === otherAppointment.id)).toBe(false);
+      expect(filteredTotal).toBe(filteredAppointments.length);
+    });
+
+    // Combina ownershipFilter + paginación multi-página: el filtro debe seguir aplicado
+    // consistentemente en cada página, no solo en la primera (hallazgo de auditoría de F17)
+    it('should keep the ownership filter consistent across multiple pages', async () => {
+      const otherStylistUser = await createTestUser('STYLIST');
+      const otherStylistId = otherStylistUser.user?.id || otherStylistUser.id;
+
+      const baseDate = new Date();
+      baseDate.setDate(baseDate.getDate() + 7);
+
+      // 5 citas asignadas al testStylistId (deben aparecer con el filtro)
+      for (let i = 0; i < 5; i++) {
+        const dateTime = new Date(baseDate);
+        dateTime.setHours(dateTime.getHours() + i);
+        await repository.save(
+          Appointment.create(
+            dateTime,
+            60,
+            testUserId,
+            testClientId,
+            testScheduleId,
+            testStatusId,
+            testStylistId,
+            [],
+          ),
+        );
+      }
+
+      // 2 citas de otro estilista (NO deben aparecer con el filtro)
+      for (let i = 0; i < 2; i++) {
+        const dateTime = new Date(baseDate);
+        dateTime.setHours(dateTime.getHours() + 10 + i);
+        await repository.save(
+          Appointment.create(
+            dateTime,
+            60,
+            testUserId,
+            testClientId,
+            testScheduleId,
+            testStatusId,
+            otherStylistId,
+            [],
+          ),
+        );
+      }
+
+      const ownershipFilter = { stylistId: testStylistId, userId: testStylistId };
+
+      const page1 = await repository.findByClientIdPaginated(testClientId, 2, 0, ownershipFilter);
+      const page2 = await repository.findByClientIdPaginated(testClientId, 2, 2, ownershipFilter);
+      const page3 = await repository.findByClientIdPaginated(testClientId, 2, 4, ownershipFilter);
+      const total = await repository.countByClientId(testClientId, ownershipFilter);
+
+      expect(total).toBe(5);
+      expect(page1).toHaveLength(2);
+      expect(page2).toHaveLength(2);
+      expect(page3).toHaveLength(1);
+
+      const allIds = [...page1, ...page2, ...page3].map((a) => a.id);
+      // Sin duplicados entre páginas y todas pertenecen al estilista filtrado
+      expect(new Set(allIds).size).toBe(5);
+      expect(
+        [...page1, ...page2, ...page3].every((a) => a.stylistId === testStylistId),
+      ).toBe(true);
+    });
+
+    // Si se pasa un ownershipFilter sin ningún campo útil (ambos undefined), la consulta
+    // debe fallar cerrada (0 resultados) en vez de degradar a "sin filtro" (hallazgo de
+    // auditoría de F17: evita que un STYLIST vea todas las citas del cliente sin restricción)
+    it('should fail closed (return no results) when the ownership filter has no usable fields', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
+      const appointment = Appointment.create(
+        futureDate,
+        60,
+        testUserId,
+        testClientId,
+        testScheduleId,
+        testStatusId,
+        testStylistId,
+        [],
+      );
+      await repository.save(appointment);
+
+      const emptyOwnershipFilter = {};
+
+      const results = await repository.findByClientIdPaginated(
+        testClientId,
+        10,
+        0,
+        emptyOwnershipFilter,
+      );
+      const total = await repository.countByClientId(testClientId, emptyOwnershipFilter);
+
+      expect(results).toEqual([]);
+      expect(total).toBe(0);
+    });
+
+    // page mayor al total de páginas disponibles debe devolver una página vacía,
+    // no un error, y el total debe seguir reflejando el conteo real
+    it('should return an empty page when page exceeds totalPages, with an accurate total', async () => {
+      const baseDate = new Date();
+      baseDate.setDate(baseDate.getDate() + 7);
+
+      for (let i = 0; i < 3; i++) {
+        const dateTime = new Date(baseDate);
+        dateTime.setHours(dateTime.getHours() + i);
+        const appointment = Appointment.create(
+          dateTime,
+          60,
+          testUserId,
+          testClientId,
+          testScheduleId,
+          testStatusId,
+          testStylistId,
+          [],
+        );
+        await repository.save(appointment);
+      }
+
+      // Solo hay 3 citas; pedimos la página 5 con limit 10 (offset 40)
+      const results = await repository.findByClientIdPaginated(testClientId, 10, 40);
+      const total = await repository.countByClientId(testClientId);
+
+      expect(results).toEqual([]);
+      expect(total).toBe(3);
+    });
+  });
+
+  describe('findByStylistIdPaginated / countByStylistId (F17)', () => {
+    it('should paginate appointments for a stylist ordered by dateTime desc', async () => {
+      const baseDate = new Date();
+      baseDate.setDate(baseDate.getDate() + 7);
+
+      for (let i = 0; i < 5; i++) {
+        const dateTime = new Date(baseDate);
+        dateTime.setHours(dateTime.getHours() + i);
+        const appointment = Appointment.create(
+          dateTime,
+          60,
+          testUserId,
+          testClientId,
+          testScheduleId,
+          testStatusId,
+          testStylistId,
+          [],
+        );
+        await repository.save(appointment);
+      }
+
+      const page1 = await repository.findByStylistIdPaginated(testStylistId, 2, 0);
+      const page2 = await repository.findByStylistIdPaginated(testStylistId, 2, 2);
+
+      expect(page1).toHaveLength(2);
+      expect(page2).toHaveLength(2);
+      expect(page1[0].dateTime.getTime()).toBeGreaterThan(page1[1].dateTime.getTime());
+    });
+
+    // Verifica que el ownershipFilter se aplique en el WHERE de la consulta (DB-level),
+    // no filtrando en memoria después de traer todo (el bug que corrige F17, mismo patrón que F3)
+    it('should apply the CLIENT ownership filter at the DB level, not in memory', async () => {
+      const otherClientUser = await createTestUser('CLIENT');
+      const otherClientId = otherClientUser.user?.id || otherClientUser.id;
+
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
+      // Cita del testClientId con el testStylistId (debe aparecer con el filtro)
+      const ownAppointment = Appointment.create(
+        futureDate,
+        60,
+        testUserId,
+        testClientId,
+        testScheduleId,
+        testStatusId,
+        testStylistId,
+        [],
+      );
+      await repository.save(ownAppointment);
+
+      // Cita de otro cliente con el mismo estilista (NO debe aparecer con el filtro)
+      const otherDate = new Date(futureDate);
+      otherDate.setHours(otherDate.getHours() + 1);
+      const otherAppointment = Appointment.create(
+        otherDate,
+        60,
+        testUserId,
+        otherClientId,
+        testScheduleId,
+        testStatusId,
+        testStylistId,
+        [],
+      );
+      await repository.save(otherAppointment);
+
+      const ownershipFilter = { userId: testClientId, clientId: testClientId };
+
+      const filteredAppointments = await repository.findByStylistIdPaginated(
+        testStylistId,
+        10,
+        0,
+        ownershipFilter,
+      );
+      const filteredTotal = await repository.countByStylistId(testStylistId, ownershipFilter);
+
+      expect(filteredAppointments.some((a) => a.id === ownAppointment.id)).toBe(true);
+      expect(filteredAppointments.some((a) => a.id === otherAppointment.id)).toBe(false);
+      expect(filteredTotal).toBe(filteredAppointments.length);
+    });
+
+    // Combina ownershipFilter + paginación multi-página: el filtro debe seguir aplicado
+    // consistentemente en cada página, no solo en la primera (hallazgo de auditoría de F17)
+    it('should keep the ownership filter consistent across multiple pages', async () => {
+      const otherClientUser = await createTestUser('CLIENT');
+      const otherClientId = otherClientUser.user?.id || otherClientUser.id;
+
+      const baseDate = new Date();
+      baseDate.setDate(baseDate.getDate() + 7);
+
+      // 5 citas del testClientId con el testStylistId (deben aparecer con el filtro)
+      for (let i = 0; i < 5; i++) {
+        const dateTime = new Date(baseDate);
+        dateTime.setHours(dateTime.getHours() + i);
+        await repository.save(
+          Appointment.create(
+            dateTime,
+            60,
+            testUserId,
+            testClientId,
+            testScheduleId,
+            testStatusId,
+            testStylistId,
+            [],
+          ),
+        );
+      }
+
+      // 2 citas de otro cliente con el mismo estilista (NO deben aparecer con el filtro)
+      for (let i = 0; i < 2; i++) {
+        const dateTime = new Date(baseDate);
+        dateTime.setHours(dateTime.getHours() + 10 + i);
+        await repository.save(
+          Appointment.create(
+            dateTime,
+            60,
+            testUserId,
+            otherClientId,
+            testScheduleId,
+            testStatusId,
+            testStylistId,
+            [],
+          ),
+        );
+      }
+
+      const ownershipFilter = { userId: testClientId, clientId: testClientId };
+
+      const page1 = await repository.findByStylistIdPaginated(
+        testStylistId,
+        2,
+        0,
+        ownershipFilter,
+      );
+      const page2 = await repository.findByStylistIdPaginated(
+        testStylistId,
+        2,
+        2,
+        ownershipFilter,
+      );
+      const page3 = await repository.findByStylistIdPaginated(
+        testStylistId,
+        2,
+        4,
+        ownershipFilter,
+      );
+      const total = await repository.countByStylistId(testStylistId, ownershipFilter);
+
+      expect(total).toBe(5);
+      expect(page1).toHaveLength(2);
+      expect(page2).toHaveLength(2);
+      expect(page3).toHaveLength(1);
+
+      const allIds = [...page1, ...page2, ...page3].map((a) => a.id);
+      expect(new Set(allIds).size).toBe(5);
+      expect(
+        [...page1, ...page2, ...page3].every((a) => a.clientId === testClientId),
+      ).toBe(true);
+    });
+
+    // Si se pasa un ownershipFilter sin ningún campo útil (ambos undefined), la consulta
+    // debe fallar cerrada (0 resultados) en vez de degradar a "sin filtro" (hallazgo de
+    // auditoría de F17: evita que un CLIENT vea todas las citas del estilista sin restricción)
+    it('should fail closed (return no results) when the ownership filter has no usable fields', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
+      const appointment = Appointment.create(
+        futureDate,
+        60,
+        testUserId,
+        testClientId,
+        testScheduleId,
+        testStatusId,
+        testStylistId,
+        [],
+      );
+      await repository.save(appointment);
+
+      const emptyOwnershipFilter = {};
+
+      const results = await repository.findByStylistIdPaginated(
+        testStylistId,
+        10,
+        0,
+        emptyOwnershipFilter,
+      );
+      const total = await repository.countByStylistId(testStylistId, emptyOwnershipFilter);
+
+      expect(results).toEqual([]);
+      expect(total).toBe(0);
+    });
+
+    // page mayor al total de páginas disponibles debe devolver una página vacía,
+    // no un error, y el total debe seguir reflejando el conteo real
+    it('should return an empty page when page exceeds totalPages, with an accurate total', async () => {
+      const baseDate = new Date();
+      baseDate.setDate(baseDate.getDate() + 7);
+
+      for (let i = 0; i < 3; i++) {
+        const dateTime = new Date(baseDate);
+        dateTime.setHours(dateTime.getHours() + i);
+        const appointment = Appointment.create(
+          dateTime,
+          60,
+          testUserId,
+          testClientId,
+          testScheduleId,
+          testStatusId,
+          testStylistId,
+          [],
+        );
+        await repository.save(appointment);
+      }
+
+      // Solo hay 3 citas; pedimos la página 5 con limit 10 (offset 40)
+      const results = await repository.findByStylistIdPaginated(testStylistId, 10, 40);
+      const total = await repository.countByStylistId(testStylistId);
+
+      expect(results).toEqual([]);
+      expect(total).toBe(3);
+    });
+  });
+
   describe('findConflictingAppointments', () => {
     it('should find conflicting appointments', async () => {
       const conflictDate = new Date();

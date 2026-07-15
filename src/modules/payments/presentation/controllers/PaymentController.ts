@@ -10,6 +10,7 @@ import { GetPaymentStatistics } from '../../application/use-cases/GetPaymentStat
 import { UpdatePayment } from '../../application/use-cases/UpdatePayment';
 import { PaymentMethodEnum, PaymentStatusEnum } from '../../domain/entities/Payment';
 import { AuthenticatedRequest } from '../../../auth/presentation/middleware/AuthMiddleware';
+import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
 
 /**
  * Controlador para el módulo de pagos
@@ -56,16 +57,21 @@ export class PaymentController {
   /**
    * Obtiene un pago por ID
    * @route GET /payments/:id
-   * @param req - Request con ID del pago en params
+   * @param req - Request autenticado con ID del pago en params
    * @param res - Response de Express
    * @returns Promise con el pago encontrado
    * @responseStatus 200 - Pago obtenido exitosamente
    * @throws NotFoundError si el pago no existe
+   * @throws ForbiddenError si el usuario no tiene permisos sobre la cita del pago
    */
   async getById(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId || !req.user?.roleName) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
     const { id } = req.params;
 
-    const payment = await this._getPaymentById.execute(id);
+    const payment = await this._getPaymentById.execute(id, req.user.userId, req.user.roleName);
 
     return res.status(200).json({
       success: true,
@@ -77,15 +83,26 @@ export class PaymentController {
   /**
    * Obtiene los pagos de una cita
    * @route GET /payments/appointment/:appointmentId
-   * @param req - Request con ID de la cita en params
+   * @param req - Request autenticado con ID de la cita en params. Accesible
+   * para ADMIN, STYLIST (dueño de la cita) y CLIENT (dueño de la cita, F18)
    * @param res - Response de Express
    * @returns Promise con la lista de pagos de la cita
    * @responseStatus 200 - Pagos obtenidos exitosamente
+   * @throws NotFoundError si la cita no existe (para STYLIST/CLIENT)
+   * @throws ForbiddenError si el usuario no tiene permisos sobre la cita
    */
   async getByAppointment(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId || !req.user?.roleName) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
     const { appointmentId } = req.params;
 
-    const payments = await this._getPaymentsByAppointment.execute(appointmentId);
+    const payments = await this._getPaymentsByAppointment.execute(
+      appointmentId,
+      req.user.userId,
+      req.user.roleName,
+    );
 
     return res.status(200).json({
       success: true,
@@ -124,21 +141,30 @@ export class PaymentController {
   /**
    * Procesa (completa) un pago
    * @route POST /payments/:id/process
-   * @param req - Request con ID del pago y método de pago en el body
+   * @param req - Request autenticado con ID del pago y método de pago en el body
    * @param res - Response de Express
    * @returns Promise con el pago procesado
    * @responseStatus 200 - Pago procesado exitosamente
    * @throws NotFoundError si el pago no existe
+   * @throws ForbiddenError si el usuario no tiene permisos sobre la cita del pago
    * @throws BusinessRuleError si el pago no puede ser procesado
    */
   async process(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId || !req.user?.roleName) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
     const { id } = req.params;
     const { method } = req.body;
 
-    const payment = await this._processPayment.execute({
-      paymentId: id,
-      method: method as PaymentMethodEnum,
-    });
+    const payment = await this._processPayment.execute(
+      {
+        paymentId: id,
+        method: method as PaymentMethodEnum,
+      },
+      req.user.userId,
+      req.user.roleName,
+    );
 
     return res.status(200).json({
       success: true,
@@ -150,21 +176,30 @@ export class PaymentController {
   /**
    * Reembolsa un pago completado
    * @route POST /payments/:id/refund
-   * @param req - Request con ID del pago y razón del reembolso en el body
+   * @param req - Request autenticado con ID del pago y razón del reembolso en el body
    * @param res - Response de Express
    * @returns Promise con el pago reembolsado
    * @responseStatus 200 - Pago reembolsado exitosamente
    * @throws NotFoundError si el pago no existe
+   * @throws ForbiddenError si el usuario no tiene permisos sobre la cita del pago
    * @throws BusinessRuleError si el pago no puede ser reembolsado
    */
   async refund(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId || !req.user?.roleName) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
     const { id } = req.params;
     const { reason } = req.body;
 
-    const payment = await this._refundPayment.execute({
-      paymentId: id,
-      reason,
-    });
+    const payment = await this._refundPayment.execute(
+      {
+        paymentId: id,
+        reason,
+      },
+      req.user.userId,
+      req.user.roleName,
+    );
 
     return res.status(200).json({
       success: true,
@@ -176,17 +211,22 @@ export class PaymentController {
   /**
    * Cancela un pago pendiente
    * @route POST /payments/:id/cancel
-   * @param req - Request con ID del pago en params
+   * @param req - Request autenticado con ID del pago en params
    * @param res - Response de Express
    * @returns Promise con el pago cancelado
    * @responseStatus 200 - Pago cancelado exitosamente
    * @throws NotFoundError si el pago no existe
+   * @throws ForbiddenError si el usuario no tiene permisos sobre la cita del pago
    * @throws BusinessRuleError si el pago no puede ser cancelado
    */
   async cancel(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId || !req.user?.roleName) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
     const { id } = req.params;
 
-    const payment = await this._cancelPayment.execute(id);
+    const payment = await this._cancelPayment.execute(id, req.user.userId, req.user.roleName);
 
     return res.status(200).json({
       success: true,

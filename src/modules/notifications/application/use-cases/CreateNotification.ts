@@ -7,6 +7,7 @@ import { CreateNotificationDto } from '../dto/request/CreateNotificationDto';
 import { NotificationDto } from '../dto/response/NotificationDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
+import { assertValidUuid } from '../../../../shared/utils/validateUuid';
 
 /**
  * Caso de uso para crear una nueva notificación
@@ -78,14 +79,7 @@ export class CreateNotification {
       throw new ValidationError('Notification message is too long (max 1000 characters)');
     }
 
-    if (!dto.userId || dto.userId.trim().length === 0) {
-      throw new ValidationError('User ID is required');
-    }
-
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(dto.userId)) {
-      throw new ValidationError('User ID must be a valid UUID');
-    }
+    assertValidUuid(dto.userId, 'User ID');
   }
 
   /**

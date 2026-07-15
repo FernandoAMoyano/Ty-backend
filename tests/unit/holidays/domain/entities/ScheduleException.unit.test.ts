@@ -138,6 +138,31 @@ describe('ScheduleException Entity', () => {
     });
   });
 
+  describe('UTC Date Handling (F7 regression)', () => {
+    // isOnDate debe comparar componentes en UTC, no en hora local
+    it('should compare isOnDate using UTC components', () => {
+      const exception = new ScheduleException({
+        ...validExceptionProps,
+        exceptionDate: new Date('2026-01-01T00:00:00.000Z'),
+      });
+
+      expect(exception.isOnDate(new Date('2026-01-01T23:00:00.000Z'))).toBe(true);
+      expect(exception.isOnDate(new Date('2025-12-31T23:00:00.000Z'))).toBe(false);
+    });
+
+    // isPast/isFuture deben comparar contra el inicio del día actual en UTC
+    it('should compare isPast/isFuture against UTC start-of-day', () => {
+      const almostMidnightUTC = new Date('2020-01-01T23:59:59.999Z');
+      const pastException = new ScheduleException({
+        ...validExceptionProps,
+        exceptionDate: almostMidnightUTC,
+      });
+
+      expect(pastException.isPast).toBe(true);
+      expect(pastException.isFuture).toBe(false);
+    });
+  });
+
   describe('durationInMinutes', () => {
     // Debería calcular la duración correctamente
     it('should calculate duration correctly', () => {

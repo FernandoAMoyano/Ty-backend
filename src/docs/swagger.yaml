@@ -143,6 +143,10 @@ paths:
     post:
       tags: [Authentication]
       summary: Renovar token de acceso
+      description: >-
+        Renueva el par de tokens a partir de un refresh token válido. Un token corrupto o
+        expirado devuelve 401. Si el usuario asociado tiene un rol inexistente (corrupción de
+        datos referencial), devuelve 404 en vez de enmascararlo como 401.
       security: []
       requestBody:
         required: true
@@ -166,6 +170,8 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
         '429':
           $ref: '#/components/responses/Error429'
 
@@ -674,6 +680,13 @@ paths:
     delete:
       tags: [Services]
       summary: Eliminar servicio
+      description: >
+        Elimina permanentemente (hard-delete) el servicio. No es posible eliminar un
+        servicio que tenga cualquier cita asociada, activa o histórica (PENDING,
+        CONFIRMED, COMPLETED o CANCELLED): el hard-delete borra en cascada la relación
+        con las citas, lo que destruiría el registro histórico de servicios de citas ya
+        completadas. Para retirar un servicio con historial de citas, usar
+        `PATCH /services/:id/deactivate` en su lugar.
       parameters:
         - name: id
           in: path
@@ -930,6 +943,9 @@ paths:
     put:
       tags: [Stylist Services]
       summary: Actualizar relación estilista-servicio
+      description: >-
+        Envía `customPrice: null` explícito para restablecer el precio base del servicio
+        (elimina el precio personalizado). Omitir el campo deja el precio personalizado sin cambios.
       parameters:
         - $ref: '#/components/parameters/StylistIdParam'
         - name: serviceId
@@ -947,7 +963,9 @@ paths:
               properties:
                 customPrice:
                   type: number
+                  nullable: true
                   example: 40.00
+                  description: "null restablece el precio base"
                 isOffering:
                   type: boolean
                   example: true
@@ -1172,6 +1190,7 @@ paths:
     get:
       tags: [Appointments]
       summary: Obtener citas de un cliente
+      description: Lista paginada de las citas del cliente. Si el requester es STYLIST, el resultado (y el total) se restringe a las citas donde es el estilista asignado o el creador.
       parameters:
         - name: clientId
           in: path
@@ -1179,43 +1198,130 @@ paths:
           schema:
             type: string
             example: "123e4567-e89b-12d3-a456-426614174000"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+            example: 20
       responses:
         '200':
           description: Citas del cliente obtenidas exitosamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Client appointments retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      appointments:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Appointment'
+                      total:
+                        type: integer
+                        example: 3
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 20
+                      totalPages:
+                        type: integer
+                        example: 1
+                      hasNextPage:
+                        type: boolean
+                        example: false
+                      hasPreviousPage:
+                        type: boolean
+                        example: false
         '400':
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
 
   /appointments/stylist/{stylistId}:
     get:
       tags: [Appointments]
       summary: Obtener citas de un estilista
+      description: Lista paginada de las citas del estilista. Si el requester es CLIENT, el resultado (y el total) se restringe a las citas donde es el cliente o el creador.
       parameters:
         - $ref: '#/components/parameters/StylistIdParam'
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            example: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+            example: 20
       responses:
         '200':
           description: Citas del estilista obtenidas exitosamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Stylist appointments retrieved successfully"
+                  data:
+                    type: object
+                    properties:
+                      appointments:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Appointment'
+                      total:
+                        type: integer
+                        example: 3
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 20
+                      totalPages:
+                        type: integer
+                        example: 1
+                      hasNextPage:
+                        type: boolean
+                        example: false
+                      hasPreviousPage:
+                        type: boolean
+                        example: false
         '400':
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
-        '404':
-          $ref: '#/components/responses/Error404'
 
   /appointments/{id}:
     get:
@@ -1540,7 +1646,10 @@ paths:
     get:
       tags: [Payments]
       summary: Obtener pagos de una cita
-      description: Lista todos los pagos asociados a una cita específica
+      description: >
+        Lista todos los pagos asociados a una cita específica. Accesible para
+        ADMIN sin restricción; STYLIST solo si es el estilista asignado a la
+        cita; CLIENT solo si es el cliente o el creador de la cita (F18).
       parameters:
         - name: appointmentId
           in: path
@@ -1578,6 +1687,9 @@ paths:
     get:
       tags: [Payments]
       summary: Obtener pago por ID
+      description: >
+        Accesible para ADMIN sin restricción; STYLIST solo si es el estilista
+        asignado a la cita del pago (F18).
       parameters:
         - name: id
           in: path
@@ -1666,7 +1778,9 @@ paths:
     post:
       tags: [Payments]
       summary: Procesar pago (Admin, Stylist)
-      description: Procesa un pago pendiente con el método de pago especificado
+      description: >
+        Procesa un pago pendiente con el método de pago especificado. STYLIST
+        solo puede procesar pagos de citas donde es el estilista asignado (F18).
       parameters:
         - name: id
           in: path
@@ -1771,7 +1885,10 @@ paths:
     post:
       tags: [Payments]
       summary: Cancelar pago (Admin, Stylist)
-      description: Cancela un pago pendiente. Solo se pueden cancelar pagos con estado PENDING.
+      description: >
+        Cancela un pago pendiente. Solo se pueden cancelar pagos con estado
+        PENDING. STYLIST solo puede cancelar pagos de citas donde es el
+        estilista asignado (F18).
       parameters:
         - name: id
           in: path
@@ -2712,6 +2829,7 @@ components:
         price:
           type: integer
           example: 2500
+          description: "Precio en centavos (unidad monetaria minima, patron Stripe)"
         formattedPrice:
           type: string
           example: "25.00"
@@ -2749,7 +2867,9 @@ components:
           example: 2500
         customPrice:
           type: integer
+          nullable: true
           example: 3000
+          description: "Precio personalizado del estilista en centavos. null si no tiene (usa el precio base)."
         effectivePrice:
           type: integer
           example: 3000

@@ -81,8 +81,8 @@ Los servicios representan los tratamientos y procedimientos ofrecidos por el sal
 
 | Regla             | Descripción                                                                                                                                                                                                                                |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Sin citas activas | No se puede eliminar un servicio que tenga citas en estado no terminal (PENDING, CONFIRMED). El use case `DeleteService` valida esto consultando `IAppointmentRepository.existsActiveByServiceId()` y lanza `BusinessRuleError` si existen |
-| Alternativa       | Se recomienda desactivar en lugar de eliminar                                                                                                                                                                                              |
+| Sin citas asociadas | No se puede eliminar (hard-delete) un servicio que tenga **cualquier** cita asociada, activa o histórica (PENDING, CONFIRMED, COMPLETED o CANCELLED). El hard-delete borra en cascada la relación M2M `_AppointmentToService`, lo que destruiría el registro histórico de servicios de citas ya completadas. El use case `DeleteService` valida esto consultando `IAppointmentRepository.existsByServiceId()` y lanza `BusinessRuleError` si existen |
+| Alternativa         | Usar `PATCH /services/:id/deactivate` para retirar un servicio que tiene historial de citas                                                                                                                                                    |
 
 ### 4.5 Asignación a Estilistas (Stylist-Service)
 

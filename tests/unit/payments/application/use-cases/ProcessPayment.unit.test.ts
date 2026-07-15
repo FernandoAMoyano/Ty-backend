@@ -1,12 +1,29 @@
 import { ProcessPayment } from '../../../../../src/modules/payments/application/use-cases/ProcessPayment';
 import { IPaymentRepository } from '../../../../../src/modules/payments/domain/repositories/IPaymentRepository';
+import { IAppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
 import { Payment, PaymentStatusEnum, PaymentMethodEnum } from '../../../../../src/modules/payments/domain/entities/Payment';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
 import { BusinessRuleError } from '../../../../../src/shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../../../src/shared/exceptions/ForbiddenError';
 
 describe('ProcessPayment Use Case', () => {
   let processPayment: ProcessPayment;
   let mockPaymentRepository: jest.Mocked<IPaymentRepository>;
+  let mockAppointmentRepository: jest.Mocked<IAppointmentRepository>;
+
+  // Constantes de permisos -- tests existentes usan ADMIN para bypass de ownership
+  const adminRequesterId = 'admin-requester-id';
+  const adminRole = 'ADMIN';
+
+  const validStylistId = '123e4567-e89b-12d3-a456-426614174010';
+  const validAppointmentId = '123e4567-e89b-12d3-a456-426614174001';
+
+  const mockAppointment = {
+    id: validAppointmentId,
+    stylistId: validStylistId,
+    clientId: '123e4567-e89b-12d3-a456-426614174011',
+    userId: '123e4567-e89b-12d3-a456-426614174012',
+  };
 
   beforeEach(() => {
     mockPaymentRepository = {
@@ -20,7 +37,11 @@ describe('ProcessPayment Use Case', () => {
       getTotalByAppointment: jest.fn(),
     };
 
-    processPayment = new ProcessPayment(mockPaymentRepository);
+    mockAppointmentRepository = {
+      findById: jest.fn(),
+    } as unknown as jest.Mocked<IAppointmentRepository>;
+
+    processPayment = new ProcessPayment(mockPaymentRepository, mockAppointmentRepository);
   });
 
   // Debería procesar un pago pendiente exitosamente
@@ -31,7 +52,7 @@ describe('ProcessPayment Use Case', () => {
       status: PaymentStatusEnum.PENDING,
       method: null,
       paymentDate: null,
-      appointmentId: '123e4567-e89b-12d3-a456-426614174001',
+      appointmentId: validAppointmentId,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -39,10 +60,14 @@ describe('ProcessPayment Use Case', () => {
     mockPaymentRepository.findById.mockResolvedValue(pendingPayment);
     mockPaymentRepository.update.mockImplementation(async (payment) => payment);
 
-    const result = await processPayment.execute({
-      paymentId: pendingPayment.id,
-      method: PaymentMethodEnum.CREDIT_CARD,
-    });
+    const result = await processPayment.execute(
+      {
+        paymentId: pendingPayment.id,
+        method: PaymentMethodEnum.CREDIT_CARD,
+      },
+      adminRequesterId,
+      adminRole,
+    );
 
     expect(result.status).toBe(PaymentStatusEnum.COMPLETED);
     expect(result.method).toBe(PaymentMethodEnum.CREDIT_CARD);
@@ -55,10 +80,14 @@ describe('ProcessPayment Use Case', () => {
     mockPaymentRepository.findById.mockResolvedValue(null);
 
     await expect(
-      processPayment.execute({
-        paymentId: 'non-existent-id',
-        method: PaymentMethodEnum.CASH,
-      }),
+      processPayment.execute(
+        {
+          paymentId: 'non-existent-id',
+          method: PaymentMethodEnum.CASH,
+        },
+        adminRequesterId,
+        adminRole,
+      ),
     ).rejects.toThrow(NotFoundError);
 
     expect(mockPaymentRepository.update).not.toHaveBeenCalled();
@@ -72,7 +101,7 @@ describe('ProcessPayment Use Case', () => {
       status: PaymentStatusEnum.COMPLETED,
       method: PaymentMethodEnum.CASH,
       paymentDate: new Date(),
-      appointmentId: '123e4567-e89b-12d3-a456-426614174001',
+      appointmentId: validAppointmentId,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -80,10 +109,14 @@ describe('ProcessPayment Use Case', () => {
     mockPaymentRepository.findById.mockResolvedValue(completedPayment);
 
     await expect(
-      processPayment.execute({
-        paymentId: completedPayment.id,
-        method: PaymentMethodEnum.CREDIT_CARD,
-      }),
+      processPayment.execute(
+        {
+          paymentId: completedPayment.id,
+          method: PaymentMethodEnum.CREDIT_CARD,
+        },
+        adminRequesterId,
+        adminRole,
+      ),
     ).rejects.toThrow(BusinessRuleError);
 
     expect(mockPaymentRepository.update).not.toHaveBeenCalled();
@@ -106,7 +139,7 @@ describe('ProcessPayment Use Case', () => {
         status: PaymentStatusEnum.PENDING,
         method: null,
         paymentDate: null,
-        appointmentId: '123e4567-e89b-12d3-a456-426614174001',
+        appointmentId: validAppointmentId,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -114,10 +147,14 @@ describe('ProcessPayment Use Case', () => {
       mockPaymentRepository.findById.mockResolvedValue(pendingPayment);
       mockPaymentRepository.update.mockImplementation(async (payment) => payment);
 
-      const result = await processPayment.execute({
-        paymentId: pendingPayment.id,
-        method,
-      });
+      const result = await processPayment.execute(
+        {
+          paymentId: pendingPayment.id,
+          method,
+        },
+        adminRequesterId,
+        adminRole,
+      );
 
       expect(result.method).toBe(method);
       expect(result.status).toBe(PaymentStatusEnum.COMPLETED);
@@ -132,7 +169,7 @@ describe('ProcessPayment Use Case', () => {
       status: PaymentStatusEnum.REFUNDED,
       method: PaymentMethodEnum.CREDIT_CARD,
       paymentDate: new Date(),
-      appointmentId: '123e4567-e89b-12d3-a456-426614174001',
+      appointmentId: validAppointmentId,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -140,10 +177,14 @@ describe('ProcessPayment Use Case', () => {
     mockPaymentRepository.findById.mockResolvedValue(refundedPayment);
 
     await expect(
-      processPayment.execute({
-        paymentId: refundedPayment.id,
-        method: PaymentMethodEnum.CASH,
-      }),
+      processPayment.execute(
+        {
+          paymentId: refundedPayment.id,
+          method: PaymentMethodEnum.CASH,
+        },
+        adminRequesterId,
+        adminRole,
+      ),
     ).rejects.toThrow(BusinessRuleError);
   });
 
@@ -155,7 +196,7 @@ describe('ProcessPayment Use Case', () => {
       status: PaymentStatusEnum.FAILED,
       method: null,
       paymentDate: null,
-      appointmentId: '123e4567-e89b-12d3-a456-426614174001',
+      appointmentId: validAppointmentId,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -163,10 +204,110 @@ describe('ProcessPayment Use Case', () => {
     mockPaymentRepository.findById.mockResolvedValue(failedPayment);
 
     await expect(
-      processPayment.execute({
-        paymentId: failedPayment.id,
-        method: PaymentMethodEnum.CASH,
-      }),
+      processPayment.execute(
+        {
+          paymentId: failedPayment.id,
+          method: PaymentMethodEnum.CASH,
+        },
+        adminRequesterId,
+        adminRole,
+      ),
     ).rejects.toThrow(BusinessRuleError);
+  });
+
+  describe('Ownership (F18)', () => {
+    // Payment.markAsCompleted() muta la entidad en el lugar, así que cada test
+    // necesita su propia instancia -- reusar una sola entre tests contaminaría
+    // el estado (un test la deja COMPLETED y el siguiente ya no puede procesarla)
+    let pendingPayment: Payment;
+
+    beforeEach(() => {
+      pendingPayment = new Payment({
+        id: '123e4567-e89b-12d3-a456-426614174099',
+        amount: 100.00,
+        status: PaymentStatusEnum.PENDING,
+        method: null,
+        paymentDate: null,
+        appointmentId: validAppointmentId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    });
+
+    // Debería permitir a ADMIN procesar cualquier pago sin resolver la cita
+    it('should allow ADMIN to process any payment without resolving the appointment', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(pendingPayment);
+      mockPaymentRepository.update.mockImplementation(async (payment) => payment);
+
+      const result = await processPayment.execute(
+        { paymentId: pendingPayment.id, method: PaymentMethodEnum.CASH },
+        'any-admin-id',
+        'ADMIN',
+      );
+
+      expect(result.status).toBe(PaymentStatusEnum.COMPLETED);
+      expect(mockAppointmentRepository.findById).not.toHaveBeenCalled();
+    });
+
+    // Debería permitir al STYLIST dueño de la cita procesar el pago
+    it('should allow the owning stylist to process the payment', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(pendingPayment);
+      mockPaymentRepository.update.mockImplementation(async (payment) => payment);
+      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment as any);
+
+      const result = await processPayment.execute(
+        { paymentId: pendingPayment.id, method: PaymentMethodEnum.CASH },
+        validStylistId,
+        'STYLIST',
+      );
+
+      expect(result.status).toBe(PaymentStatusEnum.COMPLETED);
+    });
+
+    // STYLIST ajeno a la cita no debe poder acceder al pago
+    it('should throw ForbiddenError when stylist does not own the appointment', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(pendingPayment);
+      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment as any);
+
+      await expect(
+        processPayment.execute(
+          { paymentId: pendingPayment.id, method: PaymentMethodEnum.CASH },
+          'other-stylist-id',
+          'STYLIST',
+        ),
+      ).rejects.toThrow(ForbiddenError);
+
+      expect(mockPaymentRepository.update).not.toHaveBeenCalled();
+    });
+
+    // CLIENT no tiene acceso a esta operación bajo ninguna circunstancia
+    it('should throw ForbiddenError for CLIENT regardless of ownership', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(pendingPayment);
+
+      await expect(
+        processPayment.execute(
+          { paymentId: pendingPayment.id, method: PaymentMethodEnum.CASH },
+          mockAppointment.clientId,
+          'CLIENT',
+        ),
+      ).rejects.toThrow(ForbiddenError);
+
+      expect(mockAppointmentRepository.findById).not.toHaveBeenCalled();
+      expect(mockPaymentRepository.update).not.toHaveBeenCalled();
+    });
+
+    // Debería lanzar NotFoundError si la cita asociada al pago ya no existe
+    it('should throw NotFoundError when the associated appointment no longer exists', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(pendingPayment);
+      mockAppointmentRepository.findById.mockResolvedValue(null);
+
+      await expect(
+        processPayment.execute(
+          { paymentId: pendingPayment.id, method: PaymentMethodEnum.CASH },
+          validStylistId,
+          'STYLIST',
+        ),
+      ).rejects.toThrow(NotFoundError);
+    });
   });
 });

@@ -43,7 +43,6 @@ model Category {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   services    Service[]
-  testField String?
 }
 
 model Service {
@@ -52,7 +51,7 @@ model Service {
   description       String
   duration          Int
   durationVariation Int           @default(0)
-  price             Decimal       @db.Decimal(10, 2)
+  price             Int           // Precio en centavos (unidad monetaria minima), patron Stripe -- ver F2
   isActive          Boolean       @default(true)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
@@ -67,7 +66,7 @@ model StylistService {
   id           String   @id @default(uuid())
   stylistId    String
   serviceId    String
-  customPrice  Decimal? @db.Decimal(10, 2)
+  customPrice  Int?     // Precio personalizado en centavos -- ver F2/F5
   isOffering   Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -119,7 +118,10 @@ model Schedule {
   updatedAt    DateTime      @updatedAt
   holidayId    String?
   appointments Appointment[]
-  holiday      Holiday?      @relation(fields: [holidayId], references: [id])
+  // onDelete: SetNull explícito (F9) -- ya era el default implícito de Prisma para esta
+  // relación opcional (confirmado en la migración inicial), se declara explícito para
+  // documentar la intención y evitar drift si el default de Prisma cambiara a futuro
+  holiday      Holiday?      @relation(fields: [holidayId], references: [id], onDelete: SetNull)
 }
 
 model Holiday {

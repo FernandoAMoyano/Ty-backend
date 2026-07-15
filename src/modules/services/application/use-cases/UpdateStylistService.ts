@@ -3,6 +3,7 @@ import { IStylistServiceRepository } from '../../domain/repositories/IStylistSer
 import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
+import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 import { UpdateStylistServiceDto } from '../dto/request/UpdateStylistServiceDto';
 import { StylistServiceDto } from '../dto/response/StylistServiceDto';
 
@@ -24,18 +25,25 @@ export class UpdateStylistService {
    * @returns Promise con los datos de la asignación actualizada
    * @throws NotFoundError si la asignación o el servicio no existen
    * @throws ValidationError si los datos son inválidos
+   * @throws ForbiddenError si un STYLIST intenta operar sobre otro estilista
    */
   async execute(
     stylistId: string,
     serviceId: string,
     updateDto: UpdateStylistServiceDto,
+    requesterId: string,
+    requesterRole: string,
   ): Promise<StylistServiceDto> {
-    if (updateDto.customPrice !== undefined && updateDto.customPrice < 0) {
+    if (updateDto.customPrice !== undefined && updateDto.customPrice !== null && updateDto.customPrice < 0) {
       throw new ValidationError('Custom price cannot be negative');
     }
 
     if (Object.keys(updateDto).length === 0) {
       throw new ValidationError('At least one field must be provided for update');
+    }
+
+    if (requesterRole !== 'ADMIN' && stylistId !== requesterId) {
+      throw new ForbiddenError('You can only manage your own service assignments');
     }
 
     const stylistService = await this.stylistServiceRepository.findByStylistAndService(

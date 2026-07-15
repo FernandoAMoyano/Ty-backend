@@ -1,6 +1,22 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { Appointment } from '../../domain/entities/Appointment';
 import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
+
+/**
+ * Payload de Prisma para una cita con sus servicios asociados incluidos
+ * (mismo include usado en todas las consultas de este repositorio)
+ */
+type AppointmentWithServices = Prisma.AppointmentGetPayload<{
+  include: { services: true };
+}>;
+
+/**
+ * ID imposible usado para forzar un WHERE que no matchea ninguna fila.
+ * Se usa cuando se pasó un ownershipFilter pero ninguno de sus campos
+ * tenía valor: en vez de degradar silenciosamente a "sin filtro" (F17,
+ * hallazgo de auditoría), la consulta falla cerrada devolviendo 0 filas.
+ */
+const NO_OWNERSHIP_MATCH_ID = '__no_ownership_filter_match__';
 
 /**
  * Implementación de AppointmentRepository usando Prisma ORM
@@ -164,6 +180,156 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   }
 
   /**
+   * Busca citas de un cliente de forma paginada, aplicando el ownershipFilter
+   * directamente en el WHERE (no en memoria -- ver F17/F3)
+   * @param clientId - ID único del cliente
+   * @param limit - Cantidad máxima de resultados
+   * @param offset - Cantidad de resultados a saltar
+   * @param ownershipFilter - Restricción adicional (OR) cuando el requester
+   * es un STYLIST que solo puede ver las citas donde es el estilista
+   * asignado o el creador
+   * @returns Promise que resuelve con la página de citas del cliente
+   */
+  async findByClientIdPaginated(
+    clientId: string,
+    limit: number,
+    offset: number,
+    ownershipFilter?: { stylistId?: string; userId?: string },
+  ): Promise<Appointment[]> {
+    const where = this.buildClientOwnershipWhere(clientId, ownershipFilter);
+
+    const appointmentsData = await this.prisma.appointment.findMany({
+      where,
+      include: {
+        services: true,
+      },
+      orderBy: { dateTime: 'desc' },
+      skip: offset,
+      take: limit,
+    });
+
+    return appointmentsData.map((data) => this.mapToEntity(data));
+  }
+
+  /**
+   * Cuenta las citas de un cliente aplicando el mismo ownershipFilter que
+   * findByClientIdPaginated, para que total/totalPages reflejen el filtro
+   * real y no el total sin filtrar (ver F17/F3)
+   */
+  async countByClientId(
+    clientId: string,
+    ownershipFilter?: { stylistId?: string; userId?: string },
+  ): Promise<number> {
+    const where = this.buildClientOwnershipWhere(clientId, ownershipFilter);
+    return this.prisma.appointment.count({ where });
+  }
+
+  /**
+   * Construye el WHERE compartido entre findByClientIdPaginated y countByClientId
+   */
+  private buildClientOwnershipWhere(
+    clientId: string,
+    ownershipFilter?: { stylistId?: string; userId?: string },
+  ): Prisma.AppointmentWhereInput {
+    if (!ownershipFilter) {
+      return { clientId };
+    }
+
+    const or: Prisma.AppointmentWhereInput[] = [];
+    if (ownershipFilter.stylistId) {
+      or.push({ stylistId: ownershipFilter.stylistId });
+    }
+    if (ownershipFilter.userId) {
+      or.push({ userId: ownershipFilter.userId });
+    }
+
+    if (or.length === 0) {
+      // Se pasó un ownershipFilter pero sin ningún campo útil: fallar cerrado
+      // (0 resultados) en vez de degradar silenciosamente a "sin filtro", que
+      // expondría todas las citas del cliente a un requester que debía estar
+      // restringido (auditoría F17)
+      return { clientId, id: NO_OWNERSHIP_MATCH_ID };
+    }
+
+    return { clientId, OR: or };
+  }
+
+  /**
+   * Busca citas de un estilista de forma paginada, aplicando el ownershipFilter
+   * directamente en el WHERE (no en memoria -- ver F17/F3)
+   * @param stylistId - ID único del estilista
+   * @param limit - Cantidad máxima de resultados
+   * @param offset - Cantidad de resultados a saltar
+   * @param ownershipFilter - Restricción adicional (OR) cuando el requester
+   * es un CLIENT que solo puede ver las citas donde es el cliente o el
+   * creador
+   * @returns Promise que resuelve con la página de citas del estilista
+   */
+  async findByStylistIdPaginated(
+    stylistId: string,
+    limit: number,
+    offset: number,
+    ownershipFilter?: { userId?: string; clientId?: string },
+  ): Promise<Appointment[]> {
+    const where = this.buildStylistOwnershipWhere(stylistId, ownershipFilter);
+
+    const appointmentsData = await this.prisma.appointment.findMany({
+      where,
+      include: {
+        services: true,
+      },
+      orderBy: { dateTime: 'desc' },
+      skip: offset,
+      take: limit,
+    });
+
+    return appointmentsData.map((data) => this.mapToEntity(data));
+  }
+
+  /**
+   * Cuenta las citas de un estilista aplicando el mismo ownershipFilter que
+   * findByStylistIdPaginated, para que total/totalPages reflejen el filtro
+   * real y no el total sin filtrar (ver F17/F3)
+   */
+  async countByStylistId(
+    stylistId: string,
+    ownershipFilter?: { userId?: string; clientId?: string },
+  ): Promise<number> {
+    const where = this.buildStylistOwnershipWhere(stylistId, ownershipFilter);
+    return this.prisma.appointment.count({ where });
+  }
+
+  /**
+   * Construye el WHERE compartido entre findByStylistIdPaginated y countByStylistId
+   */
+  private buildStylistOwnershipWhere(
+    stylistId: string,
+    ownershipFilter?: { userId?: string; clientId?: string },
+  ): Prisma.AppointmentWhereInput {
+    if (!ownershipFilter) {
+      return { stylistId };
+    }
+
+    const or: Prisma.AppointmentWhereInput[] = [];
+    if (ownershipFilter.userId) {
+      or.push({ userId: ownershipFilter.userId });
+    }
+    if (ownershipFilter.clientId) {
+      or.push({ clientId: ownershipFilter.clientId });
+    }
+
+    if (or.length === 0) {
+      // Se pasó un ownershipFilter pero sin ningún campo útil: fallar cerrado
+      // (0 resultados) en vez de degradar silenciosamente a "sin filtro", que
+      // expondría todas las citas del estilista a un requester que debía estar
+      // restringido (auditoría F17)
+      return { stylistId, id: NO_OWNERSHIP_MATCH_ID };
+    }
+
+    return { stylistId, OR: or };
+  }
+
+  /**
    * Busca todas las citas creadas por un usuario específico
    * @param userId - ID único del usuario creador
    * @returns Promise que resuelve con un array de citas del usuario
@@ -294,7 +460,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   ): Promise<Appointment[]> {
     const endTime = new Date(dateTime.getTime() + duration * 60000);
 
-    const whereClause: any = {
+    const whereClause: Prisma.AppointmentWhereInput = {
       AND: [
         {
           dateTime: {
@@ -450,20 +616,19 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   }
 
   /**
-   * Verifica si existen citas activas (no canceladas ni completadas) para un servicio
+   * Verifica si existe cualquier cita (activa o histórica) asociada a un servicio
    * @param serviceId - ID del servicio a verificar
-   * @returns Promise que resuelve con true si existen citas activas
+   * @returns Promise que resuelve con true si existe al menos una cita asociada
+   * @description Sin filtro de status: a diferencia de una validación de "citas activas",
+   * esto también detecta citas COMPLETADAS o CANCELADAS, ya que el hard-delete de un
+   * Service borra en cascada la relación M2M _AppointmentToService y destruiría el
+   * registro histórico de servicios de esas citas (ver F8)
    */
-  async existsActiveByServiceId(serviceId: string): Promise<boolean> {
+  async existsByServiceId(serviceId: string): Promise<boolean> {
     const count = await this.prisma.appointment.count({
       where: {
         services: {
           some: { id: serviceId },
-        },
-        status: {
-          name: {
-            notIn: ['CANCELLED', 'COMPLETED'],
-          },
         },
       },
     });
@@ -475,7 +640,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
    * @param appointmentData - Datos de la cita desde Prisma
    * @returns Entidad Appointment
    */
-  private mapToEntity(appointmentData: any): Appointment {
+  private mapToEntity(appointmentData: AppointmentWithServices): Appointment {
     return Appointment.fromPersistence(
       appointmentData.id,
       appointmentData.dateTime,
@@ -484,9 +649,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       appointmentData.clientId,
       appointmentData.scheduleId,
       appointmentData.statusId,
-      appointmentData.stylistId,
+      appointmentData.stylistId ?? undefined,
       appointmentData.confirmedAt ?? undefined,
-      appointmentData.services?.map((service: any) => service.id) || [],
+      appointmentData.services?.map((service) => service.id) || [],
       appointmentData.createdAt,
       appointmentData.updatedAt,
       appointmentData.cancellationReason ?? undefined,

@@ -24,9 +24,12 @@ describe('Payments Complete Flow E2E Tests', () => {
       password: 'stylist123',
     });
     stylistToken = stylistResponse.body.data.token;
+    const stylistId = stylistResponse.body.data.user.id;
 
-    // Crear una cita de prueba confirmada para los tests E2E de pagos
-    const appointment = await createConfirmedTestAppointment();
+    // Crear una cita de prueba confirmada para los tests E2E de pagos, asignada
+    // explícitamente al estilista de arriba (F18: el flujo de permisos más abajo
+    // depende de que sea dueño real de la cita, ver ownership check)
+    const appointment = await createConfirmedTestAppointment({ stylistId });
     testAppointmentId = appointment.id;
   });
 

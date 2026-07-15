@@ -144,7 +144,7 @@ describe('Service Entity', () => {
   });
 
   describe('Price formatting', () => {
-    // Debería formatear el precio correctamente
+    // Debería formatear el precio correctamente (price se almacena en centavos, patrón Stripe)
     it('should format price correctly', () => {
       const service = Service.create(
         validServiceData.categoryId,
@@ -156,6 +156,20 @@ describe('Service Entity', () => {
       );
 
       expect(service.getFormattedPrice()).toBe('25.50');
+    });
+
+    // Debería dividir por 100 al formatear, ya que price se guarda en centavos
+    it('should divide by 100 when formatting, since price is stored in cents', () => {
+      const service = Service.create(
+        validServiceData.categoryId,
+        validServiceData.name,
+        validServiceData.description,
+        validServiceData.duration,
+        validServiceData.durationVariation,
+        2500, // $25.00 en centavos
+      );
+
+      expect(service.getFormattedPrice()).toBe('25.00');
     });
   });
 

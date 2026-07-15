@@ -4,6 +4,7 @@ import { UpdateScheduleExceptionDto } from '../dto/request/UpdateScheduleExcepti
 import { ScheduleExceptionResponseDto, ScheduleExceptionResponseMapper } from '../dto/response/ScheduleExceptionResponseDto';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
+import { parseDateOnlyUTC } from '../../../../shared/utils/dateOnly';
 
 /**
  * Caso de uso: Actualizar excepción de horario
@@ -34,7 +35,7 @@ export class UpdateScheduleException {
 
     // Si se actualiza la fecha, verificar que no exista otra excepción en esa fecha
     if (dto.exceptionDate) {
-      const newDate = new Date(dto.exceptionDate);
+      const newDate = parseDateOnlyUTC(dto.exceptionDate);
       const existingException = await this.scheduleExceptionRepository.existsByDate(newDate, id);
       if (existingException) {
         throw new ConflictError('A schedule exception already exists on the specified date');

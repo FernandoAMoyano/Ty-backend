@@ -2,12 +2,30 @@ import request from 'supertest';
 import app from '../../../src/app';
 import {
   loginAsAdmin,
+  createTestUser,
   createTestCategory,
   createTestService,
   cleanupTestData,
   validateServiceResponse,
   generateValidServiceData,
 } from '../../setup/helpers';
+import { createTestAppointment } from '../../setup/appointments-helpers';
+import { testPrisma } from '../../setup/database';
+
+/**
+ * Login de un usuario de test recién creado con la contraseña fija de test
+ */
+const loginAs = async (email: string): Promise<string> => {
+  const response = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email, password: 'TestPass123!' });
+
+  if (response.status !== 200) {
+    throw new Error(`Login falló: ${response.status}`);
+  }
+
+  return response.body.data.token;
+};
 
 describe('Service Management Integration Tests', () => {
   let adminToken: string;
@@ -53,7 +71,7 @@ describe('Service Management Integration Tests', () => {
       expect(service.description).toBe(serviceData.description);
       expect(service.duration).toBe(serviceData.duration);
       expect(service.durationVariation).toBe(serviceData.durationVariation);
-      expect(service.price).toBe(5000); // Precio en centavos
+      expect(service.price).toBe(5000); // Precio en centavos (patron Stripe, F2)
       expect(service.formattedPrice).toBe('50.00');
       expect(service.isActive).toBe(true);
       expect(service.category.id).toBe(testCategoryId);
@@ -285,7 +303,7 @@ describe('Service Management Integration Tests', () => {
       expect(response.body.data.description).toBe(updateData.description);
       expect(response.body.data.duration).toBe(updateData.duration);
       expect(response.body.data.durationVariation).toBe(updateData.durationVariation);
-      expect(response.body.data.price).toBe(4500); // Precio en centavos
+      expect(response.body.data.price).toBe(4500); // Precio en centavos (patron Stripe, F2)
       validateServiceResponse(response.body.data);
     });
 
@@ -404,6 +422,61 @@ describe('Service Management Integration Tests', () => {
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('Service not found');
     });
+
+    // Debería rechazar el borrado si el servicio tiene una cita histórica completada (F8)
+    it('should reject deletion when service has a completed historical appointment, and allow deactivate instead', async () => {
+      const completedStatus = await testPrisma.appointmentStatus.findFirst({
+        where: { name: 'COMPLETED' },
+      });
+      if (!completedStatus) {
+        throw new Error('COMPLETED status not found in database. Ensure seed data is loaded.');
+      }
+
+      await createTestAppointment({
+        statusId: completedStatus.id,
+        serviceIds: [testServiceId],
+      });
+
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(422);
+
+      expect(deleteResponse.body.success).toBe(false);
+      expect(deleteResponse.body.message).toContain('associated appointments');
+
+      const deactivateResponse = await request(app)
+        .patch(`/api/v1/services/${testServiceId}/deactivate`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(deactivateResponse.body.success).toBe(true);
+
+      // El servicio sigue existiendo (desactivado), no fue borrado
+      await request(app).get(`/api/v1/services/${testServiceId}`).expect(200);
+    });
+
+    // Debería rechazar el borrado también si la cita histórica está cancelada (F8)
+    it('should reject deletion when service has a cancelled historical appointment', async () => {
+      const cancelledStatus = await testPrisma.appointmentStatus.findFirst({
+        where: { name: 'CANCELLED' },
+      });
+      if (!cancelledStatus) {
+        throw new Error('CANCELLED status not found in database. Ensure seed data is loaded.');
+      }
+
+      await createTestAppointment({
+        statusId: cancelledStatus.id,
+        serviceIds: [testServiceId],
+      });
+
+      const response = await request(app)
+        .delete(`/api/v1/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(422);
+
+      expect(response.body.success).toBe(false);
+    });
   });
 
   describe('Authorization Tests', () => {
@@ -443,6 +516,78 @@ describe('Service Management Integration Tests', () => {
       await request(app).patch(`/api/v1/services/${testServiceId}/activate`).expect(401);
 
       await request(app).delete(`/api/v1/services/${testServiceId}`).expect(401);
+    });
+
+    // Debería rechazar operaciones de escritura para un usuario CLIENT (F14)
+    it('should reject write operations for a CLIENT user (403)', async () => {
+      const clientUser = await createTestUser('CLIENT');
+      const clientToken = await loginAs(clientUser.user?.email || clientUser.email);
+      const serviceData = generateValidServiceData(testCategoryId, {
+        name: 'Client Blocked Service',
+      });
+
+      await request(app)
+        .post('/api/v1/services')
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send(serviceData)
+        .expect(403);
+
+      await request(app)
+        .put(`/api/v1/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send({ name: 'Client Blocked Update' })
+        .expect(403);
+
+      await request(app)
+        .patch(`/api/v1/services/${testServiceId}/activate`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .expect(403);
+
+      await request(app)
+        .patch(`/api/v1/services/${testServiceId}/deactivate`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .expect(403);
+
+      await request(app)
+        .delete(`/api/v1/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .expect(403);
+    });
+
+    // Debería rechazar operaciones de escritura para un usuario STYLIST (F14)
+    it('should reject write operations for a STYLIST user (403)', async () => {
+      const stylistUser = await createTestUser('STYLIST');
+      const stylistToken = await loginAs(stylistUser.user?.email || stylistUser.email);
+      const serviceData = generateValidServiceData(testCategoryId, {
+        name: 'Stylist Blocked Service',
+      });
+
+      await request(app)
+        .post('/api/v1/services')
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .send(serviceData)
+        .expect(403);
+
+      await request(app)
+        .put(`/api/v1/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .send({ name: 'Stylist Blocked Update' })
+        .expect(403);
+
+      await request(app)
+        .patch(`/api/v1/services/${testServiceId}/activate`)
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .expect(403);
+
+      await request(app)
+        .patch(`/api/v1/services/${testServiceId}/deactivate`)
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .expect(403);
+
+      await request(app)
+        .delete(`/api/v1/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${stylistToken}`)
+        .expect(403);
     });
   });
 });

@@ -44,23 +44,9 @@ export class AppointmentValidations {
 
     body('serviceIds')
       .isArray({ min: 1 })
-      .withMessage('At least one service must be selected')
-      .custom((serviceIds) => {
-        if (!Array.isArray(serviceIds) || serviceIds.length === 0) {
-          throw new Error('Service IDs must be a non-empty array');
-        }
+      .withMessage('At least one service must be selected'),
 
-        // Validar que todos los elementos sean UUIDs válidos
-        const uuidRegex =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        for (const serviceId of serviceIds) {
-          if (!uuidRegex.test(serviceId)) {
-            throw new Error('All service IDs must be valid UUIDs');
-          }
-        }
-
-        return true;
-      }),
+    body('serviceIds.*').isUUID().withMessage('All service IDs must be valid UUIDs'),
 
     body('duration')
       .optional()
@@ -121,45 +107,19 @@ export class AppointmentValidations {
         return true;
       }),
 
+    // Permite null, undefined o '' para quitar el estilista; si se proporciona un
+    // valor, debe ser un UUID válido (checkFalsy trata los valores falsy como ausentes)
     body('stylistId')
-      .optional()
-      .custom((value) => {
-        // Permitir null o undefined para quitar el estilista
-        if (value === null || value === undefined || value === '') {
-          return true;
-        }
-
-        // Si se proporciona un valor, debe ser un UUID válido
-        const uuidRegex =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(value)) {
-          throw new Error('Stylist ID must be a valid UUID or null');
-        }
-
-        return true;
-      }),
+      .optional({ checkFalsy: true })
+      .isUUID()
+      .withMessage('Stylist ID must be a valid UUID or null'),
 
     body('serviceIds')
       .optional()
       .isArray({ min: 1 })
-      .withMessage('At least one service must be selected')
-      .custom((serviceIds) => {
-        if (!serviceIds) return true; // Campo opcional
+      .withMessage('At least one service must be selected'),
 
-        if (!Array.isArray(serviceIds) || serviceIds.length === 0) {
-          throw new Error('Service IDs must be a non-empty array');
-        }
-
-        const uuidRegex =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        for (const serviceId of serviceIds) {
-          if (!uuidRegex.test(serviceId)) {
-            throw new Error('All service IDs must be valid UUIDs');
-          }
-        }
-
-        return true;
-      }),
+    body('serviceIds.*').isUUID().withMessage('All service IDs must be valid UUIDs'),
 
     body('notes')
       .optional()
@@ -213,18 +173,30 @@ export class AppointmentValidations {
 
   /**
    * Validaciones para buscar citas por cliente
-   * @description Valida que el parámetro clientId sea un UUID válido
+   * @description Valida que el parámetro clientId sea un UUID válido y los
+   * parámetros opcionales de paginación (F17, mismo patrón que payments/holidays)
    */
   static appointmentsByClient = [
     param('clientId').isUUID().withMessage('Client ID must be a valid UUID'),
+    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('Limit must be between 1 and 100'),
   ];
 
   /**
    * Validaciones para buscar citas por estilista
-   * @description Valida que el parámetro stylistId sea un UUID válido
+   * @description Valida que el parámetro stylistId sea un UUID válido y los
+   * parámetros opcionales de paginación (F17, mismo patrón que payments/holidays)
    */
   static appointmentsByStylist = [
     param('stylistId').isUUID().withMessage('Stylist ID must be a valid UUID'),
+    query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage('Limit must be between 1 and 100'),
   ];
 
   /**

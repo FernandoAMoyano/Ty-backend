@@ -1,8 +1,8 @@
 import { INotificationRepository } from '../../domain/repositories/INotificationRepository';
 import { NotificationDto } from '../dto/response/NotificationDto';
-import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
+import { assertValidUuid } from '../../../../shared/utils/validateUuid';
 
 /**
  * Caso de uso para obtener una notificación por su ID
@@ -56,13 +56,6 @@ export class GetNotificationById {
    * @throws ValidationError si no es un UUID válido
    */
   private validateUuid(value: string, fieldName: string): void {
-    if (!value || value.trim().length === 0) {
-      throw new ValidationError(`${fieldName} is required`);
-    }
-
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(value)) {
-      throw new ValidationError(`${fieldName} must be a valid UUID`);
-    }
+    assertValidUuid(value, fieldName);
   }
 }

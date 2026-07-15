@@ -3,8 +3,8 @@ import { INotificationStatusRepository } from '../../domain/repositories/INotifi
 import { NotificationStatusEnum } from '../../domain/entities/NotificationStatus';
 import { GetNotificationsFilterDto } from '../dto/request/GetNotificationsFilterDto';
 import { NotificationDto, NotificationListDto } from '../dto/response/NotificationDto';
-import { Notification } from '../../domain/entities/Notification';
-import { ValidationError } from '../../../../shared/exceptions/ValidationError';
+import { Notification, NotificationTypeEnum } from '../../domain/entities/Notification';
+import { assertValidUuid } from '../../../../shared/utils/validateUuid';
 
 /**
  * Caso de uso para obtener las notificaciones de un usuario
@@ -32,32 +32,29 @@ export class GetUserNotifications {
     const limit = filters?.limit || 20;
     const offset = (page - 1) * limit;
 
-    // 3. Obtener notificaciones
-    let notifications: Notification[];
+    // 3. Resolver el estado READ una sola vez (se usa para enriquecer la respuesta y, si
+    // corresponde, para el filtro unreadOnly como "status distinto de READ")
+    const readStatus = await this.notificationStatusRepository.findByName(NotificationStatusEnum.READ);
 
-    if (filters?.unreadOnly) {
-      const readStatus = await this.notificationStatusRepository.findByName(
-        NotificationStatusEnum.READ,
-      );
-
-      const allUserNotifications = await this.notificationRepository.findByUserId(userId);
-
-      if (readStatus) {
-        notifications = allUserNotifications.filter((n) => n.statusId !== readStatus.id);
-      } else {
-        notifications = allUserNotifications;
-      }
-    } else if (filters?.type) {
-      notifications = await this.notificationRepository.findByUserIdAndType(userId, filters.type);
-    } else {
-      notifications = await this.notificationRepository.findByUserIdPaginated(userId, limit, offset);
+    // 4. Construir filtros combinables (unreadOnly y type ya no son excluyentes) y
+    // aplicar siempre paginación real en el repositorio, no en memoria
+    const repositoryFilters: { excludeStatusId?: string; type?: NotificationTypeEnum } = {};
+    if (filters?.unreadOnly && readStatus) {
+      repositoryFilters.excludeStatusId = readStatus.id;
+    }
+    if (filters?.type) {
+      repositoryFilters.type = filters.type;
     }
 
-    // 4. Obtener total para paginación
-    const total = await this.notificationRepository.countByUserId(userId);
+    const notifications = await this.notificationRepository.findByUserIdFiltered(
+      userId,
+      repositoryFilters,
+      limit,
+      offset,
+    );
 
-    // 5. Obtener estados para enriquecer respuesta
-    const readStatus = await this.notificationStatusRepository.findByName(NotificationStatusEnum.READ);
+    // 5. Obtener el total reflejando los mismos filtros aplicados
+    const total = await this.notificationRepository.countByUserIdFiltered(userId, repositoryFilters);
 
     // 6. Mapear a DTOs
     const notificationDtos = notifications.map(n => this.mapToDto(n, readStatus?.id));
@@ -82,14 +79,7 @@ export class GetUserNotifications {
    * @throws ValidationError si el ID no es válido
    */
   private validateUserId(userId: string): void {
-    if (!userId || userId.trim().length === 0) {
-      throw new ValidationError('User ID is required');
-    }
-
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(userId)) {
-      throw new ValidationError('User ID must be a valid UUID');
-    }
+    assertValidUuid(userId, 'User ID');
   }
 
   /**

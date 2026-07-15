@@ -4,6 +4,7 @@ import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
 import { isValidEmail, isValidPassword, isValidPhone } from '../../../../shared/utils/validation';
 import { User } from '../../domain/entities/User';
+import { Role } from '../../domain/entities/Role';
 import { IRoleRepository } from '../../domain/repositories/IRoleRepository';
 import { IUserRepository } from '../../domain/repositories/IUserRepository';
 import { RegisterDto } from '../dto/request/RegisterDto';
@@ -129,7 +130,7 @@ export class RegisterUser {
    * @returns Objeto DTO con los datos del usuario para respuesta
    * @private
    */
-  private mapUserToDto(user: any, role: any): UserDto {
+  private mapUserToDto(user: User, role: Role): UserDto {
     return {
       id: user.id,
       name: user.name,

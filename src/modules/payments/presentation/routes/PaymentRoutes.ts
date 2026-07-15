@@ -24,12 +24,13 @@ export class PaymentRoutes {
    * @routes
    * - GET /payments - Listar todos los pagos (admin)
    * - GET /payments/statistics - Obtener estadísticas (admin)
-   * - GET /payments/appointment/:appointmentId - Pagos de una cita
-   * - GET /payments/:id - Obtener pago por ID
+   * - GET /payments/appointment/:appointmentId - Pagos de una cita (admin,
+   *   stylist dueño de la cita, client dueño de la cita -- F18)
+   * - GET /payments/:id - Obtener pago por ID (admin, stylist dueño -- F18)
    * - POST /payments - Crear pago (admin, stylist)
-   * - POST /payments/:id/process - Procesar pago (admin, stylist)
+   * - POST /payments/:id/process - Procesar pago (admin, stylist dueño -- F18)
    * - POST /payments/:id/refund - Reembolsar pago (admin)
-   * - POST /payments/:id/cancel - Cancelar pago (admin, stylist)
+   * - POST /payments/:id/cancel - Cancelar pago (admin, stylist dueño -- F18)
    * - PUT /payments/:id - Actualizar pago (admin)
    */
   private setupRoutes(): void {
@@ -77,11 +78,11 @@ export class PaymentRoutes {
       },
     );
 
-    // GET /appointment/:appointmentId - Pagos de una cita (admin, stylist)
+    // GET /appointment/:appointmentId - Pagos de una cita (admin, stylist dueño, client dueño -- F18)
     this.router.get(
       '/appointment/:appointmentId',
       this.authMiddleware.authenticate.bind(this.authMiddleware),
-      this.authMiddleware.authorize(['ADMIN', 'STYLIST']),
+      this.authMiddleware.authorize(['ADMIN', 'STYLIST', 'CLIENT']),
       PaymentValidations.paymentsByAppointment,
       ValidationMiddleware.handleValidationErrors,
       (req: Request, res: Response, next: NextFunction) => {

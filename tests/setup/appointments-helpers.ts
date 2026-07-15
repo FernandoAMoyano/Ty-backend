@@ -128,7 +128,7 @@ export async function createTestAppointment(overrides: Partial<any> = {}): Promi
     statusId,
     stylistId: stylistId,
     confirmedAt: null,
-    serviceIds: [], // Simplificado para tests
+    serviceIds: [] as string[], // IDs de Service a conectar vía la relación M2M
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides
@@ -146,7 +146,10 @@ export async function createTestAppointment(overrides: Partial<any> = {}): Promi
       stylistId: appointmentData.stylistId,
       confirmedAt: appointmentData.confirmedAt,
       createdAt: appointmentData.createdAt,
-      updatedAt: appointmentData.updatedAt
+      updatedAt: appointmentData.updatedAt,
+      ...(appointmentData.serviceIds.length > 0
+        ? { services: { connect: appointmentData.serviceIds.map((id) => ({ id })) } }
+        : {}),
     }
   });
 

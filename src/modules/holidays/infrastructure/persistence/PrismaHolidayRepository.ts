@@ -1,4 +1,4 @@
-import { PrismaClient, Holiday as PrismaHoliday } from '@prisma/client';
+import { Prisma, PrismaClient, Holiday as PrismaHoliday } from '@prisma/client';
 import { Holiday } from '../../domain/entities/Holiday';
 import {
   IHolidayRepository,
@@ -6,6 +6,7 @@ import {
   PaginationOptions,
   PaginatedResult,
 } from '../../domain/repositories/IHolidayRepository';
+import { startOfDayUTC, endOfDayUTC, yearRangeUTC, monthRangeUTC } from '../../../../shared/utils/dateOnly';
 
 /**
  * Implementación del repositorio de feriados con Prisma
@@ -62,8 +63,7 @@ export class PrismaHolidayRepository implements IHolidayRepository {
    * Busca feriados por año
    */
   async findByYear(year: number): Promise<Holiday[]> {
-    const startOfYear = new Date(year, 0, 1);
-    const endOfYear = new Date(year, 11, 31);
+    const { gte: startOfYear, lte: endOfYear } = yearRangeUTC(year);
 
     const holidays = await this.prisma.holiday.findMany({
       where: {
@@ -82,12 +82,9 @@ export class PrismaHolidayRepository implements IHolidayRepository {
    * Busca un feriado por fecha exacta
    */
   async findByDate(date: Date): Promise<Holiday | null> {
-    // Normalizar la fecha para buscar solo por día
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Normalizar la fecha para buscar solo por día (UTC)
+    const startOfDay = startOfDayUTC(date);
+    const endOfDay = endOfDayUTC(date);
 
     const holiday = await this.prisma.holiday.findFirst({
       where: {
@@ -113,39 +110,31 @@ export class PrismaHolidayRepository implements IHolidayRepository {
     const skip = (page - 1) * limit;
 
     // Construir condiciones de filtro
-    const where: any = {};
+    const where: Prisma.HolidayWhereInput = {};
+    const dateFilter: Prisma.DateTimeFilter = {};
 
     if (filters?.year) {
-      const startOfYear = new Date(filters.year, 0, 1);
-      const endOfYear = new Date(filters.year, 11, 31);
-      where.date = {
-        ...where.date,
-        gte: startOfYear,
-        lte: endOfYear,
-      };
+      const { gte: startOfYear, lte: endOfYear } = yearRangeUTC(filters.year);
+      dateFilter.gte = startOfYear;
+      dateFilter.lte = endOfYear;
     }
 
     if (filters?.month && filters?.year) {
-      const startOfMonth = new Date(filters.year, filters.month - 1, 1);
-      const endOfMonth = new Date(filters.year, filters.month, 0);
-      where.date = {
-        gte: startOfMonth,
-        lte: endOfMonth,
-      };
+      const { gte: startOfMonth, lte: endOfMonth } = monthRangeUTC(filters.year, filters.month);
+      dateFilter.gte = startOfMonth;
+      dateFilter.lte = endOfMonth;
     }
 
     if (filters?.startDate) {
-      where.date = {
-        ...where.date,
-        gte: filters.startDate,
-      };
+      dateFilter.gte = filters.startDate;
     }
 
     if (filters?.endDate) {
-      where.date = {
-        ...where.date,
-        lte: filters.endDate,
-      };
+      dateFilter.lte = filters.endDate;
+    }
+
+    if (Object.keys(dateFilter).length > 0) {
+      where.date = dateFilter;
     }
 
     if (filters?.name) {
@@ -200,8 +189,7 @@ export class PrismaHolidayRepository implements IHolidayRepository {
    * Busca feriados próximos (futuros)
    */
   async findUpcoming(limit: number = 5): Promise<Holiday[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfDayUTC(new Date());
 
     const holidays = await this.prisma.holiday.findMany({
       where: {
@@ -250,13 +238,10 @@ export class PrismaHolidayRepository implements IHolidayRepository {
    * Verifica si existe un feriado en una fecha específica
    */
   async existsByDate(date: Date, excludeId?: string): Promise<boolean> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
+    const startOfDay = startOfDayUTC(date);
+    const endOfDay = endOfDayUTC(date);
 
-    const where: any = {
+    const where: Prisma.HolidayWhereInput = {
       date: {
         gte: startOfDay,
         lte: endOfDay,

@@ -485,6 +485,12 @@ npm run docker:db:reset
 
 Para desarrollo sin Docker (requiere PostgreSQL instalado localmente):
 
+> **Zona horaria**: las fechas-sin-hora (feriados, excepciones de horario, disponibilidad)
+> se interpretan y operan en UTC en el código (helpers en `src/shared/utils/dateOnly.ts`).
+> Docker Compose y CI ya fijan `TZ=UTC` como capa adicional de protección; si corrés el
+> servidor localmente sin Docker (o en producción), exportá `TZ=UTC` en el entorno del
+> proceso para evitar corrimientos de día en zonas horarias con offset distinto de UTC.
+
 ```bash
 # Instalar dependencias
 npm install

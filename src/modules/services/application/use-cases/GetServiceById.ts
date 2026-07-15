@@ -1,4 +1,5 @@
 import { Service } from '../../domain/entities/Service';
+import { Category } from '../../domain/entities/Category';
 import { IServiceRepository } from '../../domain/repositories/IServiceRepository';
 import { ICategoryRepository } from '../../domain/repositories/ICategoryRepository';
 import { NotFoundError } from '../../../../shared/exceptions/NotFoundError';
@@ -39,7 +40,7 @@ export class GetServiceById {
    * @param category - Entidad de categoría asociada
    * @returns Objeto DTO con los datos completos del servicio
    */
-  private mapToDto(service: Service, category: any): ServiceDto {
+  private mapToDto(service: Service, category: Category): ServiceDto {
     return {
       id: service.id,
       name: service.name,

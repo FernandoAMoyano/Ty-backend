@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../../../src/app';
 import {
   loginAsAdmin,
+  createTestUser,
   createTestCategory,
   createTestService,
   createTestStylist,
@@ -10,11 +11,27 @@ import {
   validateStylistServiceResponse,
 } from '../../setup/helpers';
 
+/**
+ * Login de un usuario de test recién creado con la contraseña fija de test
+ */
+const loginAs = async (email: string): Promise<string> => {
+  const response = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email, password: 'TestPass123!' });
+
+  if (response.status !== 200) {
+    throw new Error(`Login falló: ${response.status}`);
+  }
+
+  return response.body.data.token;
+};
+
 describe('Stylist Service Assignment Integration Tests', () => {
   let adminToken: string;
   let testCategoryId: string;
   let testServiceId: string;
   let testStylistId: string;
+  let testStylistUser: any;
 
   beforeAll(async () => {
     // Login como admin para todas las operaciones
@@ -32,6 +49,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
     // Crear estilista de test
     const stylist = await createTestStylist();
     testStylistId = stylist.stylistId;
+    testStylistUser = stylist.user;
   });
 
   afterEach(async () => {
@@ -60,7 +78,7 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(assignment.serviceId).toBe(testServiceId);
       expect(assignment.isOffering).toBe(true); // Default value
       expect(assignment.hasCustomPrice).toBe(false); // No custom price
-      expect(assignment.customPrice).toBeUndefined();
+      expect(assignment.customPrice).toBeNull();
     });
 
     // Debería asignar servicio con precio personalizado
@@ -293,6 +311,38 @@ describe('Stylist Service Assignment Integration Tests', () => {
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('assignment');
     });
+
+    // Debería limpiar el precio personalizado enviando customPrice: null (F5)
+    it('should clear custom price when sending customPrice: null', async () => {
+      // Primero fijar un precio personalizado
+      await request(app)
+        .put(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ customPrice: 55.0 })
+        .expect(200);
+
+      // Ahora limpiarlo con null explícito
+      const response = await request(app)
+        .put(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ customPrice: null });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.customPrice).toBeNull();
+      expect(response.body.data.hasCustomPrice).toBe(false);
+
+      // Verificar que la clave customPrice sigue presente (en null) en el GET
+      const getResponse = await request(app)
+        .get(`/api/v1/services/stylists/${testStylistId}/services`)
+        .expect(200);
+
+      const refreshedAssignment = getResponse.body.data.find(
+        (a: any) => a.serviceId === testServiceId,
+      );
+      expect(refreshedAssignment).toHaveProperty('customPrice');
+      expect(refreshedAssignment.customPrice).toBeNull();
+    });
   });
 
   describe('DELETE /api/v1/services/stylists/:stylistId/services/:serviceId - Remove Assignment', () => {
@@ -335,6 +385,124 @@ describe('Stylist Service Assignment Integration Tests', () => {
     });
   });
 
+  describe('Ownership Tests (F1 - horizontal authorization)', () => {
+    // Login del usuario estilista creado con createTestStylist (password fija de test)
+    const loginAsStylist = async (email: string): Promise<string> => {
+      const response = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email, password: 'TestPass123!' });
+
+      if (response.status !== 200) {
+        throw new Error(`Login estilista falló: ${response.status}`);
+      }
+
+      return response.body.data.token;
+    };
+
+    // Debería rechazar a un STYLIST que intenta asignar un servicio a otro estilista
+    it('should reject POST when a stylist targets another stylist', async () => {
+      const otherStylist = await createTestStylist();
+      const otherStylistToken = await loginAsStylist(otherStylist.user.email);
+
+      const response = await request(app)
+        .post(`/api/v1/services/stylists/${testStylistId}/services`)
+        .set('Authorization', `Bearer ${otherStylistToken}`)
+        .send({ serviceId: testServiceId });
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+
+    // Debería permitir a un STYLIST asignarse un servicio a sí mismo
+    it('should allow POST when a stylist targets itself', async () => {
+      const selfToken = await loginAsStylist(testStylistUser.email);
+
+      const response = await request(app)
+        .post(`/api/v1/services/stylists/${testStylistId}/services`)
+        .set('Authorization', `Bearer ${selfToken}`)
+        .send({ serviceId: testServiceId });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+    });
+
+    // Debería rechazar a un STYLIST que intenta actualizar la asignación de otro estilista
+    it('should reject PUT when a stylist targets another stylist', async () => {
+      await assignServiceToStylist(adminToken, testStylistId, testServiceId);
+      const otherStylist = await createTestStylist();
+      const otherStylistToken = await loginAsStylist(otherStylist.user.email);
+
+      const response = await request(app)
+        .put(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${otherStylistToken}`)
+        .send({ customPrice: 60.0 });
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+
+    // Debería permitir a un STYLIST actualizar su propia asignación
+    it('should allow PUT when a stylist targets itself', async () => {
+      await assignServiceToStylist(adminToken, testStylistId, testServiceId);
+      const selfToken = await loginAsStylist(testStylistUser.email);
+
+      const response = await request(app)
+        .put(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${selfToken}`)
+        .send({ customPrice: 60.0 });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+    });
+
+    // Debería rechazar a un STYLIST que intenta eliminar la asignación de otro estilista
+    it('should reject DELETE when a stylist targets another stylist', async () => {
+      await assignServiceToStylist(adminToken, testStylistId, testServiceId);
+      const otherStylist = await createTestStylist();
+      const otherStylistToken = await loginAsStylist(otherStylist.user.email);
+
+      const response = await request(app)
+        .delete(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${otherStylistToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+
+    // Debería permitir a un STYLIST eliminar su propia asignación
+    it('should allow DELETE when a stylist targets itself', async () => {
+      await assignServiceToStylist(adminToken, testStylistId, testServiceId);
+      const selfToken = await loginAsStylist(testStylistUser.email);
+
+      const response = await request(app)
+        .delete(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${selfToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+    });
+
+    // Debería permitir a ADMIN operar sobre cualquier estilista (POST/PUT/DELETE)
+    it('should allow ADMIN to operate on any stylist', async () => {
+      const postResponse = await request(app)
+        .post(`/api/v1/services/stylists/${testStylistId}/services`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ serviceId: testServiceId });
+      expect(postResponse.status).toBe(201);
+
+      const putResponse = await request(app)
+        .put(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ customPrice: 65.0 });
+      expect(putResponse.status).toBe(200);
+
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(deleteResponse.status).toBe(200);
+    });
+  });
+
   describe('Authorization Tests', () => {
     beforeEach(async () => {
       await assignServiceToStylist(adminToken, testStylistId, testServiceId);
@@ -364,6 +532,29 @@ describe('Stylist Service Assignment Integration Tests', () => {
       await request(app)
         .delete(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
         .expect(401);
+    });
+
+    // Debería rechazar operaciones de escritura para un usuario CLIENT (F14)
+    it('should reject write operations for a CLIENT user (403)', async () => {
+      const clientUser = await createTestUser('CLIENT');
+      const clientToken = await loginAs(clientUser.user?.email || clientUser.email);
+
+      await request(app)
+        .post(`/api/v1/services/stylists/${testStylistId}/services`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send({ serviceId: testServiceId })
+        .expect(403);
+
+      await request(app)
+        .put(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .send({ customPrice: 60.0 })
+        .expect(403);
+
+      await request(app)
+        .delete(`/api/v1/services/stylists/${testStylistId}/services/${testServiceId}`)
+        .set('Authorization', `Bearer ${clientToken}`)
+        .expect(403);
     });
   });
 });

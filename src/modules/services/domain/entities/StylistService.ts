@@ -4,7 +4,7 @@ export class StylistService {
   constructor(
     public stylistId: string,
     public serviceId: string,
-    public customPrice?: number,
+    public customPrice: number | null = null,
     public isOffering: boolean = true,
     public createdAt: Date = new Date(),
     public updatedAt: Date = new Date(),
@@ -16,11 +16,11 @@ export class StylistService {
    * Crea una nueva instancia de asignación estilista-servicio con validaciones automáticas
    * @param stylistId - ID único del estilista
    * @param serviceId - ID único del servicio
-   * @param customPrice - Precio personalizado para este estilista (opcional)
+   * @param customPrice - Precio personalizado para este estilista (null = sin precio personalizado)
    * @returns Nueva instancia de StylistService
    * @throws ValidationError si los datos no son válidos
    */
-  static create(stylistId: string, serviceId: string, customPrice?: number): StylistService {
+  static create(stylistId: string, serviceId: string, customPrice: number | null = null): StylistService {
     return new StylistService(stylistId, serviceId, customPrice);
   }
 
@@ -28,7 +28,7 @@ export class StylistService {
    * Reconstruye una instancia de asignación desde datos de persistencia
    * @param stylistId - ID del estilista
    * @param serviceId - ID del servicio
-   * @param customPrice - Precio personalizado (opcional)
+   * @param customPrice - Precio personalizado (null = sin precio personalizado)
    * @param isOffering - Estado de oferta (por defecto true)
    * @param createdAt - Fecha de creación (opcional)
    * @param updatedAt - Fecha de última actualización (opcional)
@@ -37,7 +37,7 @@ export class StylistService {
   static fromPersistence(
     stylistId: string,
     serviceId: string,
-    customPrice?: number,
+    customPrice: number | null = null,
     isOffering?: boolean,
     createdAt?: Date,
     updatedAt?: Date,
@@ -58,18 +58,18 @@ export class StylistService {
       throw new ValidationError('Service ID cannot be empty');
     }
 
-    if (this.customPrice !== undefined && this.customPrice < 0) {
+    if (this.customPrice !== null && this.customPrice < 0) {
       throw new ValidationError('Custom price cannot be negative');
     }
   }
 
   /**
    * Actualiza el precio personalizado del estilista para este servicio
-   * @param newPrice - Nuevo precio personalizado (undefined para usar precio base)
+   * @param newPrice - Nuevo precio personalizado (null para limpiarlo y usar el precio base)
    * @throws ValidationError si el precio es negativo
    */
-  updatePrice(newPrice?: number): void {
-    if (newPrice !== undefined && newPrice < 0) {
+  updatePrice(newPrice: number | null): void {
+    if (newPrice !== null && newPrice < 0) {
       throw new ValidationError('Custom price cannot be negative');
     }
     this.customPrice = newPrice;
@@ -103,6 +103,8 @@ export class StylistService {
 
   /**
    * Formatea el precio efectivo para mostrar en la interfaz
+   * @description El precio (propio o base) se almacena en centavos (patrón Stripe, ver F2);
+   * se divide por 100 para mostrarlo en la unidad monetaria base con dos decimales
    * @param basePrice - Precio base del servicio
    * @returns Precio efectivo formateado como string con dos decimales
    */
@@ -115,7 +117,7 @@ export class StylistService {
    * @returns true si tiene precio personalizado, false si usa el precio base
    */
   hasCustomPrice(): boolean {
-    return this.customPrice !== undefined && this.customPrice !== null;
+    return this.customPrice !== null;
   }
 
   /**
