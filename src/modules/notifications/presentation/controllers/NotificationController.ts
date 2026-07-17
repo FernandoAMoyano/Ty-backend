@@ -93,7 +93,7 @@ export class NotificationController {
    * @responseStatus 200 - Notificación obtenida exitosamente
    * @throws UnauthorizedError si no hay autenticación
    * @throws NotFoundError si la notificación no existe
-   * @throws BusinessRuleError si el usuario no tiene permiso
+   * @throws ForbiddenError si el usuario no tiene permiso
    */
   async getById(req: AuthenticatedRequest, res: Response): Promise<Response> {
     if (!req.user?.userId) {
@@ -119,7 +119,7 @@ export class NotificationController {
    * @responseStatus 200 - Notificaciones marcadas como leídas exitosamente
    * @throws UnauthorizedError si no hay autenticación
    * @throws NotFoundError si alguna notificación no existe
-   * @throws BusinessRuleError si el usuario no tiene permiso
+   * @throws ForbiddenError si el usuario no tiene permiso
    */
   async markAsRead(req: AuthenticatedRequest, res: Response): Promise<Response> {
     if (!req.user?.userId) {
@@ -149,7 +149,7 @@ export class NotificationController {
    * @responseStatus 200 - Notificación marcada como leída exitosamente
    * @throws UnauthorizedError si no hay autenticación
    * @throws NotFoundError si la notificación no existe
-   * @throws BusinessRuleError si el usuario no tiene permiso
+   * @throws ForbiddenError si el usuario no tiene permiso
    */
   async markSingleAsRead(req: AuthenticatedRequest, res: Response): Promise<Response> {
     if (!req.user?.userId) {
