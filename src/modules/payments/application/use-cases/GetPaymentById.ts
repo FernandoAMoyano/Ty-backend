@@ -9,8 +9,9 @@ import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
  * Caso de uso para obtener un pago por ID
  * @description Busca y retorna un pago específico, aplicando control de acceso
  * por ownership sobre la cita asociada: ADMIN sin restricción, STYLIST solo
- * pagos de citas donde es el estilista asignado, CLIENT solo pagos de citas
- * donde es el cliente o el creador (F18)
+ * pagos de citas donde es el estilista asignado. CLIENT nunca llega a este use
+ * case: `GET /payments/:id` solo permite ADMIN/STYLIST a nivel de ruta; el
+ * CLIENT accede a sus pagos únicamente vía `GET /payments/appointment/:id` (F18)
  */
 export class GetPaymentById {
   constructor(
@@ -25,7 +26,7 @@ export class GetPaymentById {
    * @param requesterRole - Nombre del rol del usuario solicitante
    * @returns El pago encontrado
    * @throws NotFoundError si el pago no existe, o si la cita asociada no
-   * existe (solo se resuelve para STYLIST/CLIENT, ver validateAccessPermissions)
+   * existe (solo se resuelve para STYLIST, ver validateAccessPermissions)
    * @throws ForbiddenError si el usuario no tiene permisos sobre la cita del pago
    */
   async execute(
@@ -60,26 +61,22 @@ export class GetPaymentById {
     // ADMIN puede ver cualquier pago
     if (requesterRole === 'ADMIN') return;
 
-    if (requesterRole === 'STYLIST' || requesterRole === 'CLIENT') {
+    if (requesterRole === 'STYLIST') {
       const appointment = await this.appointmentRepository.findById(appointmentId);
       if (!appointment) {
         throw new NotFoundError('Appointment', appointmentId);
       }
 
-      if (requesterRole === 'STYLIST') {
-        if (appointment.stylistId !== requesterId) {
-          throw new ForbiddenError('You can only access payments for your own appointments');
-        }
-        return;
-      }
-
-      // CLIENT: dueño de la cita (cliente o creador)
-      if (appointment.clientId !== requesterId && appointment.userId !== requesterId) {
+      if (appointment.stylistId !== requesterId) {
         throw new ForbiddenError('You can only access payments for your own appointments');
       }
       return;
     }
 
+    // CLIENT (y cualquier otro rol): bloqueado sin resolver la cita. En la
+    // práctica CLIENT nunca llega aquí porque `GET /payments/:id` solo autoriza
+    // ADMIN/STYLIST en la ruta; el CLIENT accede a sus pagos vía
+    // `GET /payments/appointment/:id` (F18), donde sí se valida su ownership.
     throw new ForbiddenError('You can only access payments for your own appointments');
   }
 
