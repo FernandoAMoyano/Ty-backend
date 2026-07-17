@@ -25,6 +25,16 @@
       "key": "user_id",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "maria_token_403",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "other_user_notification_id",
+      "value": "",
+      "type": "string"
     }
   ],
   "auth": {
@@ -966,6 +976,121 @@
               "path": ["notifications", "mark-read"]
             },
             "description": "Test de marcar como leído sin IDs"
+          }
+        },
+        {
+          "name": "Setup: Login Client María (403 Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('maria_token_403', response.data.token);",
+                  "    console.log('✅ Cliente María logueada (token dedicado, no pisa jwt_token)');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"maria@example.com\",\n  \"password\": \"client123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login de María en una variable dedicada (maria_token_403), sin tocar jwt_token (que sigue siendo Admin para el resto de Error Testing). Se usará para pedir una notificación que NO le pertenece."
+          }
+        },
+        {
+          "name": "Setup: Create Notification for Other User (403 Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('other_user_notification_id', response.data.id);",
+                  "    console.log('✅ Notificación de otro usuario creada para test 403:', response.data.id);",
+                  "} else {",
+                  "    console.log('❌ Error creando notificación de otro usuario:', pm.response.json().message);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"SYSTEM\",\n  \"message\": \"Notificacion de otro usuario (test 403)\",\n  \"userId\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"]
+            },
+            "description": "Crea, como ADMIN (jwt_token), una notificación destinada al propio Admin ({{user_id}}) para usarla como 'notificación de otro usuario' desde el punto de vista de María en el siguiente request."
+          }
+        },
+        {
+          "name": "Get Notification - Forbidden (other user)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 403 - Cliente no puede ver notificación de otro usuario', function () {",
+                  "    pm.expect(pm.response.code).to.eql(403);",
+                  "    pm.expect(pm.response.json().success).to.be.false;",
+                  "});",
+                  "console.log('✅ Error esperado - Notificación pertenece a otro usuario (D2, sin bypass ADMIN)');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{maria_token_403}}",
+                "type": "text"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications/{{other_user_notification_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "{{other_user_notification_id}}"]
+            },
+            "description": "María intenta obtener una notificación que pertenece a otro usuario (Admin). Debe rechazarse con 403: el acceso a notificaciones es estrictamente owner-only, sin excepción para ningún rol (D2). auth:noauth evita que el bearer heredado de la colección ({{jwt_token}}, que en este punto sigue siendo Admin) pise el header Authorization manual con maria_token_403."
           }
         }
       ]
