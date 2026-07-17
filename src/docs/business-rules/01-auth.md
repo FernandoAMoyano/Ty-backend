@@ -62,7 +62,7 @@ El módulo de autenticación gestiona el registro, login y sesiones de usuarios 
 | Nombre requerido | No puede estar vacío, máximo 100 caracteres, se trimea al guardar |
 | Email único | No pueden existir dos usuarios con el mismo email |
 | Email válido | Debe tener formato de email válido. Se normaliza a minúsculas al registrar |
-| Teléfono válido | 7-15 dígitos, sin letras ni caracteres especiales, `+` opcional al inicio |
+| Teléfono válido | Formato E.164 simplificado: `+` opcional al inicio, primer dígito 1–9, entre 2 y 15 dígitos en total; sin letras ni separadores |
 | Password seguro | Mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número |
 | Rol por defecto | Si no se especifica, se asigna rol CLIENT |
 | Foto de perfil | Opcional. Si se proporciona, debe ser una URL válida |
@@ -90,7 +90,7 @@ El módulo de autenticación gestiona el registro, login y sesiones de usuarios 
 | Email inmutable | El email no puede cambiarse después del registro |
 | Password separado | La contraseña se cambia en endpoint separado |
 | Nombre válido | Si se envía, no puede estar vacío (máx 100 caracteres) |
-| Teléfono válido | Si se envía, debe cumplir el mismo formato que en registro |
+| Teléfono válido | Si se envía, debe cumplir el mismo formato E.164 simplificado que en registro (`+` opcional, primer dígito 1–9, 2 a 15 dígitos en total) |
 | Foto de perfil | Si se envía, debe ser una URL válida |
 
 ### 4.5 Cambio de Contraseña
@@ -133,8 +133,11 @@ El módulo de autenticación gestiona el registro, login y sesiones de usuarios 
 |--------|-------------|---------|
 | 400 | Validación | Email inválido, teléfono inválido, password muy corto |
 | 401 | No autenticado | Token inválido o expirado, contraseña actual incorrecta |
+| 403 | Sin permisos | CLIENT/STYLIST intenta desactivar usuarios (solo ADMIN) |
 | 404 | No encontrado | Usuario o rol no existe |
 | 409 | Conflicto | Email ya registrado |
+| 422 | Regla de negocio | Usuario ya inactivo |
+| 429 | Rate limit | Demasiados intentos de login/registro/refresh |
 
 ---
 

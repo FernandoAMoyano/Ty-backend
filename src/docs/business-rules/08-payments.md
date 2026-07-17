@@ -49,16 +49,18 @@ El módulo de pagos gestiona el procesamiento de cobros asociados a las citas. S
 
 ## 3. Permisos por Rol
 
+> **Nota de ownership (F18):** para STYLIST y CLIENT, los permisos de esta tabla están además restringidos por ownership sobre la cita asociada al pago. STYLIST solo accede (lectura y mutaciones de proceso/cancelación) a pagos de citas donde es el estilista asignado; CLIENT solo accede en lectura a pagos de citas donde es el cliente o el creador (vía `/appointment/:id`, sin acceso de mutación). ADMIN no tiene restricción de ownership en ningún caso.
+
 | Acción | ADMIN | STYLIST | CLIENT | Público |
 |--------|-------|---------|--------|---------|
 | Crear pago | ✅ | ✅ | ❌ | ❌ |
 | Listar todos los pagos | ✅ | ❌ | ❌ | ❌ |
-| Ver pago por ID | ✅ | ✅ | ✅ | ❌ |
-| Ver pagos por cita | ✅ | ✅ | ✅ | ❌ |
+| Ver pago por ID | ✅ | ✅ (solo su cita) | ❌ | ❌ |
+| Ver pagos por cita | ✅ | ✅ (solo su cita) | ✅ (solo su cita, vía `/appointment/:id`) | ❌ |
 | Obtener estadísticas | ✅ | ❌ | ❌ | ❌ |
-| Procesar pago | ✅ | ✅ | ❌ | ❌ |
+| Procesar pago | ✅ | ✅ (solo su cita) | ❌ | ❌ |
 | Reembolsar pago | ✅ | ❌ | ❌ | ❌ |
-| Cancelar pago | ✅ | ✅ | ❌ | ❌ |
+| Cancelar pago | ✅ | ✅ (solo su cita) | ❌ | ❌ |
 | Actualizar monto | ✅ | ❌ | ❌ | ❌ |
 
 ---
@@ -141,8 +143,8 @@ FAILED (Cancelado/Fallido)
 | POST | /api/v1/payments | Crear pago | Admin, Stylist |
 | GET | /api/v1/payments | Listar pagos (paginado) | Admin |
 | GET | /api/v1/payments/statistics | Obtener estadísticas | Admin |
-| GET | /api/v1/payments/appointment/:id | Pagos de una cita | Autenticado |
-| GET | /api/v1/payments/:id | Obtener pago por ID | Autenticado |
+| GET | /api/v1/payments/appointment/:id | Pagos de una cita | Admin, Stylist (dueño), Client (dueño) |
+| GET | /api/v1/payments/:id | Obtener pago por ID | Admin, Stylist (dueño) |
 | PUT | /api/v1/payments/:id | Actualizar monto | Admin |
 | POST | /api/v1/payments/:id/process | Procesar pago | Admin, Stylist |
 | POST | /api/v1/payments/:id/refund | Reembolsar pago | Admin |

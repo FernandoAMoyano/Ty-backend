@@ -93,6 +93,7 @@ El módulo de feriados gestiona los días especiales donde el salón puede tener
 | Regla | Descripción |
 |-------|-------------|
 | Cascada | Al eliminar un feriado, se eliminan sus excepciones asociadas |
+| Desvinculación de Schedules (F9) | Los `Schedule` que referencian el feriado quedan con `holidayId = null` (FK `onDelete: SetNull`), no se borran |
 | Irreversible | La eliminación es permanente |
 
 ### 4.5 Feriados sin Excepción de Horario
@@ -202,7 +203,7 @@ El módulo de feriados gestiona los días especiales donde el salón puede tener
 ## 9. Relaciones con Otros Módulos
 
 - **Appointments**: Los feriados afectan la disponibilidad de citas a través de `ScheduleAvailabilityService`. Un feriado sin excepción cierra el día (no se pueden crear citas ni se muestran slots). Al crear un feriado, se cancelan automáticamente las citas activas para esa fecha vía `CreateHoliday` use case
-- **Schedules**: Las excepciones de horario (`ScheduleException`) actúan como modificadores temporales de los `Schedule` regulares. En una fecha con excepción, el horario de la excepción prevalece sobre el horario regular. La prioridad completa es: `ScheduleException > Holiday (cerrado) > Schedule regular`
+- **Schedules**: Las excepciones de horario (`ScheduleException`) actúan como modificadores temporales de los `Schedule` regulares. En una fecha con excepción, el horario de la excepción prevalece sobre el horario regular. La prioridad completa es: `ScheduleException > Holiday (cerrado) > Schedule regular`. Además, `Schedule.holidayId` es una FK opcional hacia `Holiday` con `onDelete: SetNull` (F9): si el feriado referenciado se elimina, el `Schedule` no se borra, solo pierde la referencia (`holidayId` pasa a `null`)
 
 ---
 

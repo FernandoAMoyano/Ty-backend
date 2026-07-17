@@ -148,11 +148,11 @@ FAILED (Fallida)
 | Parámetro | Tipo | Descripción |
 |-----------|------|-------------|
 | page | number | Página actual (default: 1) |
-| limit | number | Elementos por página (default: 20) |
+| limit | number | Elementos por página (default: 20, máx: 100) |
 | type | string | Filtrar por tipo de notificación (valor del enum) |
 | unreadOnly | boolean | Solo notificaciones no leídas (filtra por statusId ≠ READ) |
 
-> **Nota (ISSUE-26):** El default de `limit` es 20, sin máximo documentado explícitamente. Otros módulos como Holidays usan 10 por menor volumen esperado.
+> **Nota (ISSUE-26):** El default de `limit` es 20 con máximo 100 (`NotificationValidations.getNotifications`). Otros módulos como Holidays usan 10 por menor volumen esperado.
 
 ---
 
