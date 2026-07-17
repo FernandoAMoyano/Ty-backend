@@ -51,8 +51,8 @@ export class CreateService {
       throw new ValidationError('Service duration must be positive');
     }
 
-    if (createDto.duration > 600) {
-      throw new ValidationError('Service duration is too long (max 10 hours)');
+    if (createDto.duration > 480) {
+      throw new ValidationError('Service duration is too long (max 8 hours)');
     }
 
     if (createDto.durationVariation < 0) {

@@ -25,6 +25,11 @@
       "key": "user_id_to_deactivate",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "client_token_403",
+      "value": "",
+      "type": "string"
     }
   ],
   "auth": {
@@ -372,6 +377,48 @@
             },
             "description": "Cambia la contraseña del usuario autenticado"
           }
+        },
+        {
+          "name": "Change Password - Wrong Current",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 401 - Contraseña actual incorrecta', function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.false;",
+                  "});",
+                  "console.log('Error esperado - currentPassword incorrecta');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"ContraseñaIncorrecta999!\",\n  \"newPassword\": \"OtraPassword789!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "change-password"]
+            },
+            "description": "Test de cambio de contraseña con currentPassword incorrecta - ChangeUserPassword lanza UnauthorizedError('Current password is incorrect'), debe retornar 401."
+          }
         }
       ]
     },
@@ -455,6 +502,79 @@
               "path": ["auth", "users", "{{user_id_to_deactivate}}", "deactivate"]
             },
             "description": "Test de desactivar usuario ya inactivo - debe retornar 422"
+          }
+        },
+        {
+          "name": "Setup: Login Client María (Forbidden Deactivate Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('client_token_403', response.data.token);",
+                  "    console.log('Cliente María logueada (token dedicado, no pisa jwt_token)');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"maria@example.com\",\n  \"password\": \"client123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login de la clienta María (seed) en una variable dedicada (client_token_403), sin tocar jwt_token. Se usa para probar que un CLIENT no puede desactivar usuarios."
+          }
+        },
+        {
+          "name": "Deactivate User - Forbidden (CLIENT token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Error 403 - CLIENT no puede desactivar usuarios', function () {",
+                  "    pm.expect(pm.response.code).to.eql(403);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.false;",
+                  "});",
+                  "console.log('Error esperado - solo ADMIN puede desactivar usuarios');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token_403}}",
+                "type": "text"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/users/{{user_id_to_deactivate}}/deactivate",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "users", "{{user_id_to_deactivate}}", "deactivate"]
+            },
+            "description": "María (CLIENT) intenta desactivar un usuario. AuthMiddleware.authorize(['ADMIN']) rechaza con 403 antes de llegar al use case. auth:noauth evita que el bearer heredado de la colección ({{jwt_token}}) pise el header Authorization manual con client_token_403."
           }
         }
       ]

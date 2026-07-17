@@ -4,13 +4,13 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?logo=typescript&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-5.x-000000.svg?logo=express&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1.svg?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/Tests-1118%2B%20passing-brightgreen.svg)
+![Tests](https://img.shields.io/badge/Tests-1303%20passing-brightgreen.svg)
 
 # 💇‍♀️ Turnity Backend
 
 Backend API para sistema de gestión de salones de belleza construido con **Node.js**, **TypeScript**, **Express** y **Prisma ORM**.
 
-Implementa **Clean Architecture**, **DDD táctico** y **Arquitectura Hexagonal** (Ports & Adapters) con 7 módulos de negocio, 1118+ tests automatizados y documentación Swagger interactiva.
+Implementa **Clean Architecture**, **DDD táctico** y **Arquitectura Hexagonal** (Ports & Adapters) con 7 módulos de negocio, 1303 tests automatizados y documentación Swagger interactiva.
 
 ---
 
@@ -390,22 +390,22 @@ PATCH  /notifications/:id/read                 # Marcar una como leída (autenti
 
 [Índice](#índice)
 
-El proyecto cuenta con **1118+ tests** organizados en tres niveles:
+El proyecto cuenta con **1303 tests** organizados en tres niveles:
 
 ### Estructura de tests
 
 ```
 tests/
 ├── unit/                  # Tests unitarios (entidades y use cases)
-│   ├── auth/              # 6 tests: User, Role, AuthService, BcryptHash, JwtToken, DeactivateUser
+│   ├── auth/              # 9 tests: User, Role, AuthService, BcryptHashService, JwtTokenService, RefreshToken, DeactivateUser, AuthMiddleware, UserRoleValidationService
 │   ├── services/          # 6 tests: Category, Service, StylistService + UseCases
 │   ├── appointments/      # 12 tests: 3 entidades + 8 use cases + ScheduleAvailabilityService
-│   ├── holidays/          # 12 tests: 2 entidades + 10 use cases
-│   ├── notifications/     # 7 tests: 2 entidades + 5 use cases
-│   ├── payments/          # 9 tests: 1 entidad + 8 use cases
-│   └── shared/            # 1 test: ValidationMiddleware
+│   ├── holidays/          # 13 tests: 2 entidades + 11 use cases
+│   ├── notifications/     # 8 tests: 2 entidades + 6 use cases
+│   ├── payments/          # 10 tests: 1 entidad + 9 use cases
+│   └── shared/            # 7 tests: dateOnly, env, ErrorHandler, RateLimiter, RequestIdMiddleware, validateUuid, validation
 ├── integration/           # Tests de integración (API endpoints)
-│   ├── auth/              # 5 tests: login, register, profile, refresh-token, change-password
+│   ├── auth/              # 6 tests: login, register, profile, refresh-token, change-password, deactivate-user
 │   ├── services/          # 3 tests: categories, services, stylist-services
 │   ├── appointments/      # 3 tests: repositorios (Appointment, Status, Schedule)
 │   ├── holidays/          # 1 test: holiday-routes
@@ -421,6 +421,10 @@ tests/
 ```
 
 ### Ejecución de tests
+
+> Los tests locales (`npm test`) requieren la variable `TEST_DATABASE_URL` en tu `.env`, apuntando
+> a una base de datos **separada** de `DATABASE_URL` (ver `.env.example` y `tests/setup/jest.setup.ts`).
+> Si falta, la suite falla al arrancar con un error explícito antes de correr cualquier test.
 
 ```bash
 # Todos los tests (en Docker)
@@ -441,7 +445,7 @@ npm test -- --coverage
 
 ### Estrategia de aislamiento
 
-Los tests utilizan la misma base de datos de desarrollo con limpieza selectiva por convención: usuarios de test se identifican por `'test'` en el email, statuses de test por prefijo `'TEST_'`, y helpers dedicados gestionan la creación y limpieza de datos en cada módulo.
+Los tests utilizan una base de datos de test **separada** de la de desarrollo (`TEST_DATABASE_URL`, ver sección anterior) con limpieza selectiva por convención: usuarios de test se identifican por `'test'` en el email, statuses de test por prefijo `'TEST_'`, y helpers dedicados gestionan la creación y limpieza de datos en cada módulo.
 
 ---
 
@@ -524,12 +528,13 @@ La API estará disponible en **http://localhost:3000** con la documentación Swa
 | **Framework**        | Express 5.x                                  |
 | **Base de datos**    | PostgreSQL 14+ · Prisma ORM                  |
 | **Autenticación**    | JWT (access + refresh tokens) · bcrypt       |
-| **Validación**       | express-validator                            |
+| **Validación**       | express-validator · zod                      |
 | **Documentación**    | Swagger/OpenAPI 3.0 · swagger-ui-express     |
 | **Testing**          | Jest · Supertest                             |
 | **Containerización** | Docker · Docker Compose                      |
-| **Seguridad**        | Helmet · CORS                                |
-| **Utilidades**       | date-fns · uuid · morgan · nodemailer        |
+| **Seguridad**        | Helmet · CORS · Rate limiting (express-rate-limit) |
+| **Logging**          | winston · morgan · RequestId middleware (header `X-Request-Id`, correlación de logs) |
+| **Utilidades**       | date-fns · uuid · nodemailer (instalado, sin implementar) |
 | **Arquitectura**     | Clean Architecture · DDD táctico · Hexagonal |
 
 ---

@@ -71,22 +71,24 @@ El modelo de permisos de este módulo es **ownership-based** (basado en particip
 
 ### 3.2 Acciones de consulta
 
-Todas las rutas de consulta requieren solo `authenticate` (sin `authorize`). Cualquier usuario autenticado puede acceder, independientemente de su rol.
+Todas las rutas de consulta y mutación (ver §3.3) requieren `authenticate` + `authorize(['ADMIN','STYLIST','CLIENT'])`. `authorize` no restringe el acceso en sí mismo (los 3 roles pasan la validación), pero resuelve y adjunta `req.user.roleName`, del que dependen todos los use cases para el control de ownership (`GetAppointmentById`, `GetAppointmentsByClient/Stylist`, `Confirm/Cancel/Update`). Sin `authorize`, `roleName` llegaría `undefined` a los use cases y el filtro de ownership fallaría o se degradaría.
 
 | Acción | ADMIN | STYLIST | CLIENT |
 |--------|-------|---------|--------|
 | Ver cita por ID | ✅ | ✅ | ✅ |
-| Ver citas por cliente | ✅ | ✅ | ✅ |
-| Ver citas por estilista | ✅ | ✅ | ✅ |
+| Ver citas por cliente (`GET /client/:clientId`) | ✅ (cualquier cliente) | ✅ (cualquier `clientId`; el resultado y el `total` se restringen a las citas donde también participa como estilista o creador — F17) | ✅ solo si `clientId` es el propio (`403 ForbiddenError` en caso contrario) |
+| Ver citas por estilista (`GET /stylist/:stylistId`) | ✅ (cualquier estilista) | ✅ solo si `stylistId` es el propio (`403 ForbiddenError` en caso contrario) | ✅ (cualquier `stylistId`; el resultado y el `total` se restringen a las citas donde también participa como cliente o creador — F17) |
+
+> Ver §7.1 para el detalle de paginación (`page`/`limit`) y el shape de respuesta de estos dos listados.
 
 ### 3.3 Acciones de mutación (ownership-based)
 
 | Acción | ¿Quién puede? | Validación en código |
 |--------|--------------|---------------------|
-| Crear cita | Cualquier autenticado | Solo `authenticate` |
-| Confirmar cita | El creador (`userId`) o el estilista asignado (`stylistId`) | `ConfirmAppointment` valida participación |
-| Cancelar cita | El creador (`userId`), cliente (`clientId`), o estilista (`stylistId`) | `CancelAppointment` valida participación |
-| Actualizar cita | Cualquier autenticado | Solo `authenticate` |
+| Crear cita | Cualquier autenticado (ADMIN, STYLIST o CLIENT) | `authenticate` + `authorize(['ADMIN','STYLIST','CLIENT'])` |
+| Confirmar cita | El creador (`userId`) o el estilista asignado (`stylistId`) | `authenticate` + `authorize(['ADMIN','STYLIST','CLIENT'])`; `ConfirmAppointment` valida participación usando `roleName`/`requesterId` resueltos por `authorize` |
+| Cancelar cita | El creador (`userId`), cliente (`clientId`), o estilista (`stylistId`) | `authenticate` + `authorize(['ADMIN','STYLIST','CLIENT'])`; `CancelAppointment` valida participación usando `roleName`/`requesterId` resueltos por `authorize` |
+| Actualizar cita | Cualquier autenticado (ADMIN, STYLIST o CLIENT) | `authenticate` + `authorize(['ADMIN','STYLIST','CLIENT'])` |
 
 > **Nota sobre ownership:** Los campos `userId`, `clientId` y `stylistId` en Appointment almacenan `User.id`. Esto permite que las comparaciones de ownership (`appointment.clientId === requesterId`) funcionen correctamente, ya que `requesterId` del JWT también es `User.id`.
 
@@ -205,9 +207,36 @@ NO_SHOW (No Se Presentó)
 | POST | /api/v1/appointments/:id/confirm | Confirmar | Autenticado |
 | POST | /api/v1/appointments/:id/cancel | Cancelar | Autenticado |
 
+> **Nota (F17):** `GET /client/:clientId` y `GET /stylist/:stylistId` devuelven un objeto paginado (no un array plano): `{appointments, total, page, limit, totalPages, hasNextPage, hasPreviousPage}`. Ver §7.1.
+
 ---
 
-## 7. Parámetros de Slots Disponibles
+## 7. Parámetros de Consulta
+
+### 7.1 Paginación de Listados (`GET /client/:clientId`, `GET /stylist/:stylistId`)
+
+| Parámetro | Tipo | Requerido | Descripción |
+|-----------|------|-----------|-------------|
+| page | number | No | Número de página (default: 1) |
+| limit | number | No | Elementos por página (default: 20, máx: 100) |
+
+**Shape de la respuesta (`data`):**
+
+```
+{
+  appointments: Appointment[],
+  total: number,
+  page: number,
+  limit: number,
+  totalPages: number,
+  hasNextPage: boolean,
+  hasPreviousPage: boolean
+}
+```
+
+> Para STYLIST en `/client/:clientId` y para CLIENT en `/stylist/:stylistId`, `appointments`/`total`/`totalPages` reflejan únicamente las citas donde el requester es participante (estilista asignado o creador, y cliente o creador respectivamente). El filtro se aplica en el repositorio (`WHERE`), no en memoria, por lo que la metadata de paginación es consistente con el filtro real. Ver §3.2.
+
+### 7.2 Parámetros de Slots Disponibles
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|

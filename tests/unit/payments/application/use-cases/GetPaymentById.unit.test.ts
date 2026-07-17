@@ -152,34 +152,26 @@ describe('GetPaymentById Use Case', () => {
       ).rejects.toThrow(ForbiddenError);
     });
 
-    // CLIENT dueño de la cita debe poder ver el pago
-    it('should allow the owning client to view the payment', async () => {
+    // CLIENT nunca llega a este use case en producción (GET /payments/:id solo
+    // autoriza ADMIN/STYLIST en la ruta); el use case igual debe bloquearlo si
+    // se invoca directamente, sin resolver la cita (hallazgo #2, Opción A)
+    it('should throw ForbiddenError for CLIENT without resolving the appointment', async () => {
       mockPaymentRepository.findById.mockResolvedValue(mockPayment);
-      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment as any);
-
-      const result = await getPaymentById.execute(mockPayment.id, validClientId, 'CLIENT');
-
-      expect(result.id).toBe(mockPayment.id);
-    });
-
-    // El creador de la cita (userId) también debe poder ver el pago, aunque no sea el clientId
-    it('should allow the appointment creator (userId) to view the payment', async () => {
-      mockPaymentRepository.findById.mockResolvedValue(mockPayment);
-      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment as any);
-
-      const result = await getPaymentById.execute(mockPayment.id, validUserId, 'CLIENT');
-
-      expect(result.id).toBe(mockPayment.id);
-    });
-
-    // CLIENT ajeno a la cita no debe poder ver el pago
-    it('should throw ForbiddenError when the client does not own the appointment', async () => {
-      mockPaymentRepository.findById.mockResolvedValue(mockPayment);
-      mockAppointmentRepository.findById.mockResolvedValue(mockAppointment as any);
 
       await expect(
-        getPaymentById.execute(mockPayment.id, 'other-client-id', 'CLIENT'),
+        getPaymentById.execute(mockPayment.id, validClientId, 'CLIENT'),
       ).rejects.toThrow(ForbiddenError);
+      expect(mockAppointmentRepository.findById).not.toHaveBeenCalled();
+    });
+
+    // Cualquier otro rol no contemplado también debe ser rechazado por defecto
+    it('should throw ForbiddenError for any other unrecognized role', async () => {
+      mockPaymentRepository.findById.mockResolvedValue(mockPayment);
+
+      await expect(
+        getPaymentById.execute(mockPayment.id, 'some-id', 'UNKNOWN_ROLE'),
+      ).rejects.toThrow(ForbiddenError);
+      expect(mockAppointmentRepository.findById).not.toHaveBeenCalled();
     });
 
     // Debería lanzar NotFoundError si la cita asociada al pago ya no existe

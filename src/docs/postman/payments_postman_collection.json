@@ -30,6 +30,31 @@
       "key": "stylist_id",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "stylist_owner_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "stylist_other_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_owner_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_other_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ownership_payment_id",
+      "value": "",
+      "type": "string"
     }
   ],
   "auth": {
@@ -130,10 +155,11 @@
                 "exec": [
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
-                  "    if (response.data && response.data.length > 0) {",
+                  "    const appointments = response.data && response.data.appointments;",
+                  "    if (appointments && appointments.length > 0) {",
                   "        // Preferir una cita CONFIRMED/COMPLETED (confirmedAt seteado, no cancelada), ya que CreatePayment lo exige",
-                  "        const validAppointment = response.data.find(apt => apt.confirmedAt && !apt.cancelledBy);",
-                  "        const chosen = validAppointment || response.data[0];",
+                  "        const validAppointment = appointments.find(apt => apt.confirmedAt && !apt.cancelledBy);",
+                  "        const chosen = validAppointment || appointments[0];",
                   "        pm.collectionVariables.set('appointment_id', chosen.id);",
                   "        console.log('✅ Appointment ID guardado:', chosen.id, validAppointment ? '(confirmada)' : '(sin confirmar, puede fallar en Create Payment)');",
                   "    } else {",
@@ -1105,6 +1131,453 @@
               "path": ["payments", "statistics"]
             },
             "description": "PASO 5: Verificar estadísticas finales"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ownership (F18)",
+      "description": "Ejercita el control de ownership de F18: STYLIST solo accede a pagos de sus propias citas (process/cancel); CLIENT dueño de la cita accede en lectura vía /payments/appointment/:id; ADMIN sin restricción. Usa tokens dedicados (no pisa jwt_token) para no interferir con el resto de la colección. Espeja el bloque 'Ownership (F18)' de payment-routes.integration.test.ts.",
+      "item": [
+        {
+          "name": "Setup: Login Stylist Dueño (Lucía)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('stylist_owner_token', response.data.token);",
+                  "    console.log('✅ Estilista dueño (Lucía) logueado para Ownership (F18)');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"lucia@turnity.com\",\n  \"password\": \"stylist123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login del estilista dueño de {{appointment_id}} (asignado en Authentication Setup). Guarda el token en stylist_owner_token sin tocar jwt_token."
+          }
+        },
+        {
+          "name": "Setup: Login Stylist Ajeno (Carlos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('stylist_other_token', response.data.token);",
+                  "    console.log('✅ Estilista ajeno (Carlos) logueado para Ownership (F18)');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlos@turnity.com\",\n  \"password\": \"stylist123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login de un estilista sin relación con {{appointment_id}}. Guarda el token en stylist_other_token sin tocar jwt_token."
+          }
+        },
+        {
+          "name": "Setup: Login Client Dueño (María)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('client_owner_token', response.data.token);",
+                  "    console.log('✅ Cliente dueño (María) logueado para Ownership (F18)');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"maria@example.com\",\n  \"password\": \"client123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login de la clienta dueña de {{appointment_id}}. Guarda el token en client_owner_token sin tocar jwt_token."
+          }
+        },
+        {
+          "name": "Setup: Login Client Ajeno (Juan)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('client_other_token', response.data.token);",
+                  "    console.log('✅ Cliente ajeno (Juan) logueado para Ownership (F18)');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"juan@example.com\",\n  \"password\": \"client123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login de un cliente sin relación con {{appointment_id}}. Guarda el token en client_other_token sin tocar jwt_token."
+          }
+        },
+        {
+          "name": "Setup: Create Payment for Ownership Tests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('ownership_payment_id', response.data.id);",
+                  "    pm.test('Pago de Ownership (F18) creado correctamente', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.status).to.eql('PENDING');",
+                  "    });",
+                  "    console.log('✅ Pago para Ownership (F18) creado:', response.data.id);",
+                  "} else {",
+                  "    console.log('❌ Error creando pago de Ownership (F18):', pm.response.json().message);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 40.00,\n  \"appointmentId\": \"{{appointment_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments",
+              "host": ["{{base_url}}"],
+              "path": ["payments"]
+            },
+            "description": "Crea, como ADMIN (jwt_token activo tras Authentication Setup), un pago pendiente sobre {{appointment_id}} (dueños: estilista Lucía, cliente María) dedicado a los tests de ownership. Guarda ownership_payment_id."
+          }
+        },
+        {
+          "name": "Process Payment - Forbidden (Stylist Ajeno)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Estilista ajeno rechazado al procesar el pago (403)', function () {",
+                  "    pm.expect(pm.response.code).to.eql(403);",
+                  "    pm.expect(pm.response.json().success).to.be.false;",
+                  "});",
+                  "console.log('✅ Error esperado - Estilista ajeno no puede procesar');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{stylist_other_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"CASH\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{ownership_payment_id}}/process",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{ownership_payment_id}}", "process"]
+            },
+            "description": "Carlos (estilista ajeno a {{appointment_id}}) intenta procesar el pago. Debe rechazarse con 403 por ownership (F18). auth:noauth evita que el bearer heredado de la colección ({{jwt_token}}) pise el header manual."
+          }
+        },
+        {
+          "name": "Cancel Payment - Forbidden (Stylist Ajeno)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Estilista ajeno rechazado al cancelar el pago (403)', function () {",
+                  "    pm.expect(pm.response.code).to.eql(403);",
+                  "    pm.expect(pm.response.json().success).to.be.false;",
+                  "});",
+                  "console.log('✅ Error esperado - Estilista ajeno no puede cancelar');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{stylist_other_token}}",
+                "type": "text"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{ownership_payment_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{ownership_payment_id}}", "cancel"]
+            },
+            "description": "Carlos (estilista ajeno a {{appointment_id}}) intenta cancelar el pago. Debe rechazarse con 403 por ownership (F18). El pago sigue PENDING (el rechazo ocurre antes de cambiar el estado). auth:noauth evita que el bearer heredado de la colección pise el header manual."
+          }
+        },
+        {
+          "name": "Refund Payment - Forbidden (Stylist Ajeno)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Estilista ajeno rechazado al reembolsar el pago (403)', function () {",
+                  "    pm.expect(pm.response.code).to.eql(403);",
+                  "    pm.expect(pm.response.json().success).to.be.false;",
+                  "});",
+                  "console.log('✅ Error esperado - la ruta /refund es ADMIN-only, ningún STYLIST puede reembolsar');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{stylist_other_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Intento de reembolso por estilista ajeno\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{ownership_payment_id}}/refund",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{ownership_payment_id}}", "refund"]
+            },
+            "description": "Carlos (estilista) intenta reembolsar. La ruta /refund es ADMIN-only a nivel de middleware, por lo que cualquier STYLIST recibe 403 (no llega al chequeo de ownership del use case). auth:noauth evita que el bearer heredado de la colección pise el header manual."
+          }
+        },
+        {
+          "name": "Process Payment - Allowed (Stylist Dueño)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Estilista dueño procesa su propio pago (200)', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.status).to.eql('COMPLETED');",
+                  "        pm.expect(response.data.method).to.eql('CASH');",
+                  "    });",
+                  "    console.log('✅ Estilista dueño procesó el pago correctamente');",
+                  "} else {",
+                  "    console.log('❌ Error inesperado procesando como estilista dueño:', pm.response.json().message);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{stylist_owner_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"CASH\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/{{ownership_payment_id}}/process",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "{{ownership_payment_id}}", "process"]
+            },
+            "description": "Lucía (estilista dueña de {{appointment_id}}) procesa el mismo pago que Carlos no pudo tocar. Debe permitirse con 200 (F18). auth:noauth evita que el bearer heredado de la colección pise el header manual."
+          }
+        },
+        {
+          "name": "Get Payments by Appointment - Allowed (Client Dueño)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.test('Cliente dueño ve los pagos de su cita (200)', function () {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(Array.isArray(response.data)).to.be.true;",
+                  "        pm.expect(response.data.some(p => p.id === pm.collectionVariables.get('ownership_payment_id'))).to.be.true;",
+                  "    });",
+                  "    console.log('✅ Cliente dueño obtuvo los pagos de su cita');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_owner_token}}",
+                "type": "text"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/appointment/{{appointment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "appointment", "{{appointment_id}}"]
+            },
+            "description": "María (clienta dueña de {{appointment_id}}) consulta los pagos de su propia cita. Debe permitirse con 200 (F18, alcance de lectura de CLIENT). auth:noauth evita que el bearer heredado de la colección pise el header manual."
+          }
+        },
+        {
+          "name": "Get Payments by Appointment - Forbidden (Client Ajeno)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Cliente ajeno rechazado al ver pagos de una cita que no es suya (403)', function () {",
+                  "    pm.expect(pm.response.code).to.eql(403);",
+                  "    pm.expect(pm.response.json().success).to.be.false;",
+                  "});",
+                  "console.log('✅ Error esperado - Cliente ajeno no puede ver pagos de otra cita');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_other_token}}",
+                "type": "text"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/appointment/{{appointment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "appointment", "{{appointment_id}}"]
+            },
+            "description": "Juan (cliente sin relación con {{appointment_id}}) intenta ver los pagos de esa cita. Debe rechazarse con 403 por ownership (F18). auth:noauth evita que el bearer heredado de la colección pise el header manual."
           }
         }
       ]

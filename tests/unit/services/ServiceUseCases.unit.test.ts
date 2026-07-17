@@ -104,6 +104,19 @@ describe('Service Use Cases', () => {
       mockServiceRepository.existsByName.mockResolvedValue(false);
       await expect(createService.execute(invalidDto)).rejects.toThrow(ValidationError);
     });
+
+    // Debe rechazar duración mayor a 480 en el use case
+    it('should reject duration above 480 in the use case', async () => {
+      const invalidDto = { ...validCreateDto, duration: 481 };
+      const mockCategory = Category.create('Hair Services');
+      mockCategoryRepository.findById.mockResolvedValue(mockCategory);
+      mockServiceRepository.existsByName.mockResolvedValue(false);
+
+      await expect(createService.execute(invalidDto)).rejects.toThrow(ValidationError);
+      await expect(createService.execute(invalidDto)).rejects.toThrow(
+        'Service duration is too long (max 8 hours)',
+      );
+    });
   });
 
   describe('GetServiceById', () => {

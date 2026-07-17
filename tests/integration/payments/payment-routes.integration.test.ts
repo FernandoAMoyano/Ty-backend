@@ -377,6 +377,17 @@ describe('Payments Integration Tests', () => {
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
     });
+
+    // CLIENT recibe 403 en GET /payments/:id (bloqueado a nivel de ruta;
+    // hallazgo #2 Opción A: el CLIENT accede a sus pagos vía /appointment/:id)
+    it('should reject access as client', async () => {
+      const response = await request(app)
+        .get(`/api/v1/payments/${testPaymentId}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
   });
 
   // POST /api/v1/payments/:id/process - Procesar pago (Admin, Stylist)

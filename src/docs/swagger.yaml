@@ -562,6 +562,7 @@ paths:
                 price:
                   type: number
                   example: 25.00
+                  description: "En unidad monetaria base (ej: pesos), p.ej. 25.00; se convierte y almacena internamente en centavos (patrón Stripe)"
       responses:
         '201':
           description: Servicio creado exitosamente
@@ -659,6 +660,7 @@ paths:
                 price:
                   type: number
                   example: 30.00
+                  description: "En unidad monetaria base (ej: pesos), p.ej. 30.00; se convierte y almacena internamente en centavos (patrón Stripe)"
       responses:
         '200':
           description: Servicio actualizado exitosamente
@@ -874,6 +876,7 @@ paths:
                 customPrice:
                   type: number
                   example: 35.00
+                  description: "En unidad monetaria base (ej: pesos), p.ej. 35.00; se convierte y almacena en centavos. Si se omite, el estilista usa el precio base del servicio."
       responses:
         '201':
           description: Servicio asignado exitosamente
@@ -965,7 +968,7 @@ paths:
                   type: number
                   nullable: true
                   example: 40.00
-                  description: "null restablece el precio base"
+                  description: "En unidad monetaria base (ej: pesos); se convierte y almacena en centavos. null restablece el precio base del servicio (elimina el precio personalizado). Omitir el campo deja el precio personalizado sin cambios."
                 isOffering:
                   type: boolean
                   example: true
@@ -1486,9 +1489,9 @@ paths:
           in: query
           schema:
             type: integer
-            default: 10
+            default: 20
             maximum: 100
-            example: 10
+            example: 20
         - name: status
           in: query
           schema:
@@ -1649,7 +1652,9 @@ paths:
       description: >
         Lista todos los pagos asociados a una cita específica. Accesible para
         ADMIN sin restricción; STYLIST solo si es el estilista asignado a la
-        cita; CLIENT solo si es el cliente o el creador de la cita (F18).
+        cita; CLIENT solo si es el cliente o el creador de la cita (F18). El
+        404 aplica cuando STYLIST/CLIENT consultan una cita inexistente (ADMIN
+        no valida existencia de la cita y obtiene lista vacía en ese caso).
       parameters:
         - name: appointmentId
           in: path
@@ -1682,6 +1687,8 @@ paths:
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
 
   /payments/{id}:
     get:
@@ -2500,6 +2507,8 @@ paths:
                       totalPages:
                         type: integer
                         example: 3
+        '400':
+          $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
 
@@ -2552,6 +2561,8 @@ paths:
           $ref: '#/components/responses/Error401'
         '403':
           $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
 
   /notifications/unread-count:
     get:
@@ -2628,6 +2639,10 @@ paths:
           $ref: '#/components/responses/Error400'
         '401':
           $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
 
   /notifications/mark-all-read:
     post:
@@ -2829,7 +2844,7 @@ components:
         price:
           type: integer
           example: 2500
-          description: "Precio en centavos (unidad monetaria minima, patron Stripe)"
+          description: "Precio en centavos (unidad monetaria minima, patron Stripe). El request de creación/actualización recibe el valor en unidad monetaria base (ej: 25.00); dividir por 100 para mostrarlo de la misma forma."
         formattedPrice:
           type: string
           example: "25.00"
@@ -2869,7 +2884,7 @@ components:
           type: integer
           nullable: true
           example: 3000
-          description: "Precio personalizado del estilista en centavos. null si no tiene (usa el precio base)."
+          description: "Precio personalizado del estilista en centavos. null si no tiene (usa el precio base). El request de asignación/actualización recibe el valor en unidad monetaria base (ej: 30.00); dividir por 100 para mostrarlo de la misma forma."
         effectivePrice:
           type: integer
           example: 3000
