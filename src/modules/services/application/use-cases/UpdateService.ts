@@ -51,8 +51,8 @@ export class UpdateService {
       throw new ValidationError('Service duration must be positive');
     }
 
-    if (updateDto.duration !== undefined && updateDto.duration > 600) {
-      throw new ValidationError('Service duration is too long (max 10 hours)');
+    if (updateDto.duration !== undefined && updateDto.duration > 480) {
+      throw new ValidationError('Service duration is too long (max 8 hours)');
     }
 
     if (updateDto.durationVariation !== undefined && updateDto.durationVariation < 0) {
