@@ -156,6 +156,8 @@ export class AppointmentContainer {
       this._appointmentRepository,
       this._scheduleRepository,
       scheduleAvailabilityService,
+      this._stylistServiceRepository,
+      this._userRepository,
     );
 
     this._confirmAppointment = new ConfirmAppointment(
@@ -168,6 +170,8 @@ export class AppointmentContainer {
       this._appointmentStatusRepository,
       this._serviceRepository,
       userRoleValidationService,
+      scheduleAvailabilityService,
+      this._stylistServiceRepository,
     );
 
     // HTTP Layer - Inyectamos los casos de uso implementados

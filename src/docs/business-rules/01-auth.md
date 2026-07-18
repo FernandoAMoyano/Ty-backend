@@ -62,7 +62,7 @@ El módulo de autenticación gestiona el registro, login y sesiones de usuarios 
 | Nombre requerido | No puede estar vacío, máximo 100 caracteres, se trimea al guardar |
 | Email único | No pueden existir dos usuarios con el mismo email |
 | Email válido | Debe tener formato de email válido. Se normaliza a minúsculas al registrar |
-| Teléfono válido | Formato E.164 simplificado: `+` opcional al inicio, primer dígito 1–9, entre 2 y 15 dígitos en total; sin letras ni separadores |
+| Teléfono válido | Formato E.164 simplificado: `+` opcional al inicio, primer dígito 1–9, entre 7 y 15 dígitos en total; sin letras ni separadores. Se rechazan teléfonos compuestos solo por ceros (ej. `0000000`) |
 | Password seguro | Mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número |
 | Rol por defecto | Si no se especifica, se asigna rol CLIENT |
 | Foto de perfil | Opcional. Si se proporciona, debe ser una URL válida |
@@ -90,7 +90,7 @@ El módulo de autenticación gestiona el registro, login y sesiones de usuarios 
 | Email inmutable | El email no puede cambiarse después del registro |
 | Password separado | La contraseña se cambia en endpoint separado |
 | Nombre válido | Si se envía, no puede estar vacío (máx 100 caracteres) |
-| Teléfono válido | Si se envía, debe cumplir el mismo formato E.164 simplificado que en registro (`+` opcional, primer dígito 1–9, 2 a 15 dígitos en total) |
+| Teléfono válido | Si se envía, debe cumplir el mismo formato E.164 simplificado que en registro (`+` opcional, primer dígito 1–9, 7 a 15 dígitos en total, sin ser solo ceros) |
 | Foto de perfil | Si se envía, debe ser una URL válida |
 
 ### 4.5 Cambio de Contraseña

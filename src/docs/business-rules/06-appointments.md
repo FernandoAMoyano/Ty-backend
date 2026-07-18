@@ -86,7 +86,7 @@ Todas las rutas de consulta y mutación (ver §3.3) requieren `authenticate` + `
 | Acción | ¿Quién puede? | Validación en código |
 |--------|--------------|---------------------|
 | Crear cita | Cualquier autenticado (ADMIN, STYLIST o CLIENT) | `authenticate` + `authorize(['ADMIN','STYLIST','CLIENT'])` |
-| Confirmar cita | El creador (`userId`) o el estilista asignado (`stylistId`) | `authenticate` + `authorize(['ADMIN','STYLIST','CLIENT'])`; `ConfirmAppointment` valida participación usando `roleName`/`requesterId` resueltos por `authorize` |
+| Confirmar cita | El creador (`userId`), el cliente (`clientId`) o el estilista asignado (`stylistId`) | `authenticate` + `authorize(['ADMIN','STYLIST','CLIENT'])`; `ConfirmAppointment.validateConfirmationPermissions` permite `userId \|\| clientId \|\| stylistId` (además de ADMIN), usando `roleName`/`requesterId` resueltos por `authorize` |
 | Cancelar cita | El creador (`userId`), cliente (`clientId`), o estilista (`stylistId`) | `authenticate` + `authorize(['ADMIN','STYLIST','CLIENT'])`; `CancelAppointment` valida participación usando `roleName`/`requesterId` resueltos por `authorize` |
 | Actualizar cita | Cualquier autenticado (ADMIN, STYLIST o CLIENT) | `authenticate` + `authorize(['ADMIN','STYLIST','CLIENT'])` |
 
@@ -136,7 +136,7 @@ Todas las rutas de consulta y mutación (ver §3.3) requieren `authenticate` + `
 | No completada | No se pueden confirmar citas con estado COMPLETED |
 | No en el pasado | No se pueden confirmar citas que ya pasaron |
 | Tiempo mínimo | Debe confirmarse al menos **1 hora antes** de la cita |
-| Permisos | El creador (`userId`) o el estilista asignado (`stylistId`) pueden confirmar |
+| Permisos | El creador (`userId`), el cliente (`clientId`) o el estilista asignado (`stylistId`) pueden confirmar |
 | Registro | Se guarda `confirmedAt` con la fecha de confirmación |
 | Notas | Opcionales, máximo 500 caracteres. Se almacenan en `confirmationNotes` |
 
@@ -159,7 +159,11 @@ Todas las rutas de consulta y mutación (ver §3.3) requieren `authenticate` + `
 |-------|-------------|
 | Ventana de tiempo | Solo se puede modificar si faltan al menos 24 horas para la cita (`canBeModified()`) |
 | Reprogramar | Se puede cambiar fecha/hora y opcionalmente duración. Nueva fecha no puede ser en el pasado |
+| Reprogramar: horario efectivo | Al cambiar `dateTime` y/o `duration`, se revalida contra el horario efectivo del día (`ScheduleAvailabilityService.getEffectiveSchedule`, misma prioridad `Exception > Holiday > Regular` que en creación); se rechaza si el día está cerrado o si la cita queda fuera del horario laboral |
+| Reprogramar: límite diario | Si cambia `dateTime`, se revalida el límite de 3 citas activas por cliente por día sobre la nueva fecha (excluyendo la propia cita que se está reprogramando) |
+| Reprogramar cita confirmada | Si la cita está en estado CONFIRMED y se cambia `dateTime`, se exige `notes` o `reason` en la actualización (`BusinessRuleError` si no se provee ninguno) |
 | Servicios | Se pueden agregar o remover servicios individuales. No se pueden duplicar |
+| Servicios: validación de disponibilidad | Al actualizar los servicios de la cita se revalida que cada servicio esté activo (`isActive = true`) y, si hay estilista asignado, que lo ofrezca activamente (`isOffering = true`) — misma validación que en creación (`CreateAppointment`) |
 | Estilista | Se puede reasignar a otro estilista |
 
 ---

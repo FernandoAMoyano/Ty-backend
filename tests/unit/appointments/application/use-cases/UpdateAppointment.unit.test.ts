@@ -2,7 +2,9 @@ import { UpdateAppointment } from '../../../../../src/modules/appointments/appli
 import { IAppointmentRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentRepository';
 import { IAppointmentStatusRepository } from '../../../../../src/modules/appointments/domain/repositories/IAppointmentStatusRepository';
 import { IServiceRepository } from '../../../../../src/modules/services/domain/repositories/IServiceRepository';
+import { IStylistServiceRepository } from '../../../../../src/modules/services/domain/repositories/IStylistServiceRepository';
 import { UserRoleValidationService } from '../../../../../src/modules/auth/domain/services/UserRoleValidationService';
+import { ScheduleAvailabilityService } from '../../../../../src/modules/appointments/domain/services/ScheduleAvailabilityService';
 import { Appointment } from '../../../../../src/modules/appointments/domain/entities/Appointment';
 import {
   AppointmentStatus,
@@ -23,6 +25,8 @@ describe('UpdateAppointment Use Case', () => {
   let mockAppointmentStatusRepository: jest.Mocked<IAppointmentStatusRepository>;
   let mockServiceRepository: jest.Mocked<IServiceRepository>;
   let mockUserRoleValidationService: jest.Mocked<UserRoleValidationService>;
+  let mockScheduleAvailabilityService: jest.Mocked<ScheduleAvailabilityService>;
+  let mockStylistServiceRepository: jest.Mocked<IStylistServiceRepository>;
 
   const getFutureDate = (hoursFromNow: number = 48): Date => {
     const future = new Date();
@@ -183,11 +187,40 @@ describe('UpdateAppointment Use Case', () => {
       ensureUserHasRole: jest.fn().mockResolvedValue(undefined),
     } as unknown as jest.Mocked<UserRoleValidationService>;
 
+    // Mock de ScheduleAvailabilityService: por defecto un horario amplio y permisivo (APT-39)
+    mockScheduleAvailabilityService = {
+      getEffectiveSchedule: jest.fn().mockResolvedValue({
+        startTime: '00:00',
+        endTime: '23:59',
+        source: 'regular',
+      }),
+      isDayClosed: jest.fn().mockResolvedValue(false),
+    } as unknown as jest.Mocked<ScheduleAvailabilityService>;
+
+    // Mock de IStylistServiceRepository: por defecto el estilista ofrece cualquier servicio (APT-29)
+    mockStylistServiceRepository = {
+      findByStylistAndService: jest.fn().mockResolvedValue({ isOffering: true }),
+      findByStylist: jest.fn(),
+      findByService: jest.fn(),
+      findActiveOfferings: jest.fn(),
+      findStylistsOfferingService: jest.fn(),
+      save: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      existsAssignment: jest.fn(),
+    } as unknown as jest.Mocked<IStylistServiceRepository>;
+
+    // Defaults para la revalidación de límite diario al reprogramar (APT-39)
+    mockAppointmentRepository.findByClientAndDateRange.mockResolvedValue([]);
+    mockAppointmentStatusRepository.findByName.mockResolvedValue(null);
+
     useCase = new UpdateAppointment(
       mockAppointmentRepository,
       mockAppointmentStatusRepository,
       mockServiceRepository,
       mockUserRoleValidationService,
+      mockScheduleAvailabilityService,
+      mockStylistServiceRepository,
     );
   });
 
@@ -196,6 +229,7 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Successful Execution', () => {
+    // Debería actualizar la cita exitosamente con datos completos
     it('should update appointment successfully with complete data', async () => {
       const completeUpdateDto: UpdateAppointmentDto = {
         dateTime: getFutureISOString(72),
@@ -226,6 +260,7 @@ describe('UpdateAppointment Use Case', () => {
       expect(result.id).toBe(appointment.id);
     });
 
+    // Debería actualizar la cita exitosamente con cambios mínimos
     it('should update appointment successfully with minimal changes', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -245,6 +280,7 @@ describe('UpdateAppointment Use Case', () => {
       expect(mockUserRoleValidationService.ensureUserHasRole).not.toHaveBeenCalled();
     });
 
+    // Debería permitir la actualización por parte del estilista asignado
     it('should allow update by assigned stylist', async () => {
       const appointment = createMockAppointment({
         stylistId: validRequesterId,
@@ -298,18 +334,21 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Input Validation', () => {
+    // Debería lanzar error si el appointmentId está vacío
     it('should throw error for empty appointmentId', async () => {
       await expect(
         useCase.execute('', minimalUpdateDto, validRequesterId, adminRole),
       ).rejects.toThrow(new ValidationError('Appointment ID is required'));
     });
 
+    // Debería lanzar error si el formato UUID del appointmentId es inválido
     it('should throw error for invalid appointmentId UUID format', async () => {
       await expect(
         useCase.execute('invalid-uuid', minimalUpdateDto, validRequesterId, adminRole),
       ).rejects.toThrow(new ValidationError('Appointment ID must be a valid UUID'));
     });
 
+    // Debería lanzar error si no se proporciona ningún campo para actualizar
     it('should throw error if no fields provided for update', async () => {
       const emptyDto: UpdateAppointmentDto = {};
       await expect(
@@ -317,6 +356,7 @@ describe('UpdateAppointment Use Case', () => {
       ).rejects.toThrow(new ValidationError('At least one field must be provided for update'));
     });
 
+    // Debería lanzar error si la fecha/hora está en el pasado
     it('should throw error for past dateTime', async () => {
       const pastDate = new Date();
       pastDate.setHours(pastDate.getHours() - 1);
@@ -326,6 +366,7 @@ describe('UpdateAppointment Use Case', () => {
       ).rejects.toThrow(new ValidationError('Appointment cannot be rescheduled to the past'));
     });
 
+    // Debería lanzar error para valores de duración inválidos
     it('should throw error for invalid duration values', async () => {
       const testCases = [
         { duration: 0, expectedError: 'Duration must be greater than 0' },
@@ -341,6 +382,7 @@ describe('UpdateAppointment Use Case', () => {
       }
     });
 
+    // Debería lanzar error si las notas son demasiado largas
     it('should throw error for notes too long', async () => {
       const longNotesDto: UpdateAppointmentDto = { notes: 'x'.repeat(501) };
       await expect(
@@ -350,7 +392,8 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Business Rules Validation', () => {
-    // Usar rol CLIENT para que no tenga ADMIN override
+    // Debería lanzar ForbiddenError para un usuario sin permisos
+    // (usa rol CLIENT para que no tenga ADMIN override)
     it('should throw ForbiddenError for user without permissions', async () => {
       const unauthorizedUserId = generateUuid();
       const appointment = createMockAppointment({ userId: validUserId, stylistId: validStylistId });
@@ -363,6 +406,7 @@ describe('UpdateAppointment Use Case', () => {
       );
     });
 
+    // Debería lanzar BusinessRuleError para citas en estado terminal
     it('should throw BusinessRuleError for terminal status appointments', async () => {
       const terminalStatuses = ['COMPLETED', 'CANCELLED', 'NO_SHOW'];
       for (const statusName of terminalStatuses) {
@@ -379,6 +423,7 @@ describe('UpdateAppointment Use Case', () => {
       }
     });
 
+    // Debería exigir una nota al cambiar la fecha/hora de una cita confirmada
     it('should require note for dateTime changes in confirmed appointments', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -400,6 +445,7 @@ describe('UpdateAppointment Use Case', () => {
       );
     });
 
+    // Debería lanzar BusinessRuleError si la modificación es demasiado tardía
     it('should throw BusinessRuleError for too late modifications', async () => {
       const appointment = createMockAppointment({ userId: validRequesterId });
       const confirmedStatus = createMockAppointmentStatus(AppointmentStatusEnum.CONFIRMED);
@@ -414,6 +460,7 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Not Found Handling', () => {
+    // Debería lanzar NotFoundError si la cita no existe
     it('should throw NotFoundError when appointment does not exist', async () => {
       mockAppointmentRepository.findById.mockResolvedValue(null);
       await expect(
@@ -421,6 +468,7 @@ describe('UpdateAppointment Use Case', () => {
       ).rejects.toThrow(new NotFoundError('Appointment', validAppointmentId));
     });
 
+    // Debería lanzar NotFoundError si el estilista no existe
     it('should throw NotFoundError when stylist does not exist', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -438,6 +486,7 @@ describe('UpdateAppointment Use Case', () => {
       ).rejects.toThrow(new NotFoundError('Stylist', validNewStylistId));
     });
 
+    // Debería lanzar NotFoundError si el servicio no existe
     it('should throw NotFoundError when service does not exist', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -455,6 +504,7 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Conflict Detection', () => {
+    // Debería lanzar ConflictError por conflictos de horario
     it('should throw ConflictError for scheduling conflicts', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -480,6 +530,7 @@ describe('UpdateAppointment Use Case', () => {
   });
 
   describe('Repository Integration', () => {
+    // Debería llamar a los repositorios con los parámetros correctos
     it('should call repositories with correct parameters', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -495,7 +546,183 @@ describe('UpdateAppointment Use Case', () => {
     });
   });
 
+  describe('APT-39: Effective Schedule Revalidation on Reschedule', () => {
+    // Debería lanzar BusinessRuleError si la nueva fecha cae en un día cerrado (feriado)
+    it('should throw BusinessRuleError when the new date falls on a closed day (holiday)', async () => {
+      const appointment = createMockAppointment({
+        userId: validRequesterId,
+        dateTime: getFutureDate(96),
+      });
+      jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
+      setupBasicSuccessfulMocks(appointment);
+      mockScheduleAvailabilityService.getEffectiveSchedule.mockResolvedValue(null);
+
+      const rescheduleDto: UpdateAppointmentDto = {
+        dateTime: getFutureISOString(120),
+        notes: 'Reschedule to closed day',
+      };
+
+      await expect(
+        useCase.execute(validAppointmentId, rescheduleDto, validRequesterId, adminRole),
+      ).rejects.toThrow(
+        new BusinessRuleError(
+          'The salon is closed on the selected date (holiday or no schedule available)',
+        ),
+      );
+    });
+
+    // Debería lanzar BusinessRuleError si el horario reprogramado cae fuera del horario laboral
+    it('should throw BusinessRuleError when the rescheduled time falls outside working hours', async () => {
+      const futureDate = getFutureDate(96);
+      // Fuerza una hora (UTC) fuera del rango de horario efectivo simulado (09:00-17:00)
+      futureDate.setUTCHours(20, 0, 0, 0);
+      const appointment = createMockAppointment({
+        userId: validRequesterId,
+        dateTime: getFutureDate(48),
+      });
+      jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
+      setupBasicSuccessfulMocks(appointment);
+      mockScheduleAvailabilityService.getEffectiveSchedule.mockResolvedValue({
+        startTime: '09:00',
+        endTime: '17:00',
+        source: 'regular',
+      });
+
+      const rescheduleDto: UpdateAppointmentDto = {
+        dateTime: futureDate.toISOString(),
+        notes: 'Reschedule outside working hours',
+      };
+
+      await expect(
+        useCase.execute(validAppointmentId, rescheduleDto, validRequesterId, adminRole),
+      ).rejects.toThrow(BusinessRuleError);
+    });
+
+    // Debería lanzar BusinessRuleError si se alcanza el límite diario de citas en la nueva fecha
+    it('should throw BusinessRuleError when the daily appointment limit is reached on the new date', async () => {
+      const appointment = createMockAppointment({
+        userId: validRequesterId,
+        dateTime: getFutureDate(96),
+      });
+      jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
+      setupBasicSuccessfulMocks(appointment);
+
+      const otherAppointment1 = createMockAppointment({ id: generateUuid() });
+      const otherAppointment2 = createMockAppointment({ id: generateUuid() });
+      const otherAppointment3 = createMockAppointment({ id: generateUuid() });
+      mockAppointmentRepository.findByClientAndDateRange.mockResolvedValue([
+        otherAppointment1,
+        otherAppointment2,
+        otherAppointment3,
+      ]);
+
+      const rescheduleDto: UpdateAppointmentDto = {
+        dateTime: getFutureISOString(120),
+        notes: 'Reschedule hitting daily limit',
+      };
+
+      await expect(
+        useCase.execute(validAppointmentId, rescheduleDto, validRequesterId, adminRole),
+      ).rejects.toThrow(
+        new BusinessRuleError('Maximum of 3 appointments per day has been reached'),
+      );
+    });
+
+    // Debería excluir la propia cita del conteo del límite diario
+    it('should exclude the appointment itself from the daily limit count', async () => {
+      const appointment = createMockAppointment({
+        userId: validRequesterId,
+        dateTime: getFutureDate(96),
+      });
+      jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
+      setupBasicSuccessfulMocks(appointment);
+
+      // La propia cita ya existe en el rango de fechas consultado; no debe contarse a sí misma
+      mockAppointmentRepository.findByClientAndDateRange.mockResolvedValue([appointment]);
+
+      const rescheduleDto: UpdateAppointmentDto = {
+        dateTime: getFutureISOString(120),
+        notes: 'Reschedule same day',
+      };
+
+      const result = await useCase.execute(
+        validAppointmentId,
+        rescheduleDto,
+        validRequesterId,
+        adminRole,
+      );
+
+      expect(result.id).toBe(appointment.id);
+    });
+  });
+
+  describe('APT-29: Service Offering Revalidation on Update', () => {
+    // Debería lanzar BusinessRuleError si un servicio actualizado ya no está activo
+    it('should throw BusinessRuleError when an updated service is no longer active', async () => {
+      const appointment = createMockAppointment({
+        userId: validRequesterId,
+        dateTime: getFutureDate(96),
+      });
+      jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
+      setupBasicSuccessfulMocks(appointment);
+      const inactiveService = createMockService(validNewServiceId);
+      (inactiveService as any).isActive = false;
+      mockServiceRepository.findById.mockResolvedValue(inactiveService);
+
+      const updateServicesDto: UpdateAppointmentDto = { serviceIds: [validNewServiceId] };
+
+      await expect(
+        useCase.execute(validAppointmentId, updateServicesDto, validRequesterId, adminRole),
+      ).rejects.toThrow(BusinessRuleError);
+    });
+
+    // Debería lanzar BusinessRuleError si el estilista asignado no ofrece el servicio actualizado
+    it('should throw BusinessRuleError when the assigned stylist does not offer the updated service', async () => {
+      const appointment = createMockAppointment({
+        userId: validRequesterId,
+        dateTime: getFutureDate(96),
+        stylistId: validStylistId,
+      });
+      jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
+      setupBasicSuccessfulMocks(appointment);
+      mockServiceRepository.findById.mockResolvedValue(createMockService(validNewServiceId));
+      mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(null);
+
+      const updateServicesDto: UpdateAppointmentDto = { serviceIds: [validNewServiceId] };
+
+      await expect(
+        useCase.execute(validAppointmentId, updateServicesDto, validRequesterId, adminRole),
+      ).rejects.toThrow(
+        new BusinessRuleError('Stylist does not offer one of the selected services'),
+      );
+    });
+
+    // Debería lanzar BusinessRuleError si el estilista dejó de ofrecer el servicio actualizado
+    it('should throw BusinessRuleError when the stylist has stopped offering the updated service', async () => {
+      const appointment = createMockAppointment({
+        userId: validRequesterId,
+        dateTime: getFutureDate(96),
+        stylistId: validStylistId,
+      });
+      jest.spyOn(appointment, 'canBeModified').mockReturnValue(true);
+      setupBasicSuccessfulMocks(appointment);
+      mockServiceRepository.findById.mockResolvedValue(createMockService(validNewServiceId));
+      mockStylistServiceRepository.findByStylistAndService.mockResolvedValue({
+        isOffering: false,
+      } as any);
+
+      const updateServicesDto: UpdateAppointmentDto = { serviceIds: [validNewServiceId] };
+
+      await expect(
+        useCase.execute(validAppointmentId, updateServicesDto, validRequesterId, adminRole),
+      ).rejects.toThrow(
+        new BusinessRuleError('Stylist is not currently offering one of the selected services'),
+      );
+    });
+  });
+
   describe('Data Mapping', () => {
+    // Debería mapear las fechas al formato ISO string
     it('should map dates to ISO string format', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,
@@ -515,6 +742,7 @@ describe('UpdateAppointment Use Case', () => {
       expect(result.createdAt).toBe(appointment.createdAt.toISOString());
     });
 
+    // Debería mantener intacta la estructura del array
     it('should maintain array structure intact', async () => {
       const appointment = createMockAppointment({
         userId: validRequesterId,

@@ -1,4 +1,4 @@
-import { isValidEmail, isValidPassword, isValidPhone } from '../../../src/shared/utils/validation';
+import { isValidEmail, isValidPassword, isValidPhone, isValidUrl } from '../../../src/shared/utils/validation';
 
 describe('Validation Utils Unit Tests', () => {
   describe('isValidEmail', () => {
@@ -83,6 +83,31 @@ describe('Validation Utils Unit Tests', () => {
 
       invalidPhones.forEach((phone) => {
         expect(isValidPhone(phone)).toBe(false);
+      });
+    });
+  });
+
+  // Endurecimiento de dominio (observación transversal del audit): usado por User.profilePicture
+  describe('isValidUrl', () => {
+    // Debería devolver true para URLs http/https válidas
+    it('should return true for valid http/https URLs', () => {
+      const validUrls = [
+        'https://example.com/photo.jpg',
+        'http://example.com',
+        'https://sub.domain.co/path?query=1',
+      ];
+
+      validUrls.forEach((url) => {
+        expect(isValidUrl(url)).toBe(true);
+      });
+    });
+
+    // Debería devolver false para URLs inválidas
+    it('should return false for invalid URLs', () => {
+      const invalidUrls = ['not-a-url', 'ftp://example.com', 'javascript:alert(1)', '', '   '];
+
+      invalidUrls.forEach((url) => {
+        expect(isValidUrl(url)).toBe(false);
       });
     });
   });

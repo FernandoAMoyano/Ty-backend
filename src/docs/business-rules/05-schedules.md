@@ -73,7 +73,7 @@ Los horarios definen los días y horas de operación del salón. Cada día de la
 | Incrementos | La duración debe ser en múltiplos de 15 minutos |
 | Duración por defecto | 30 minutos si no se especifica |
 | stylistId opcional | UUID válido para filtrar por estilista |
-| serviceIds opcional | Lista de UUIDs válidos para filtrar por servicios |
+| serviceIds opcional | Lista de UUIDs válidos. Si se proporciona, se filtra la disponibilidad: si además se especifica `stylistId`, se verifica que ese estilista ofrezca (`isOffering = true`) todos los servicios indicados; si no se especifica `stylistId`, se verifica que exista al menos un estilista que ofrezca todos los servicios. Si no se cumple, todos los slots del día se marcan `available: false` con el motivo correspondiente en `conflictReason` |
 
 ### 4.2 Proceso de Generación
 
@@ -88,7 +88,7 @@ Los horarios definen los días y horas de operación del salón. Cada día de la
 8. Retornar respuesta con slots y metadata
 ```
 
-> **Limitación conocida (ISSUE-12):** Actualmente, `GetAvailableSlots` solo consulta el `Schedule` regular por día de la semana. No consulta feriados (`IHolidayRepository`) ni excepciones de horario (`IScheduleExceptionRepository`). La lógica de prioridad `ScheduleException > Holiday > Schedule regular` está planificada como feature futura. Del mismo modo, `CreateAppointment` no valida contra feriados ni excepciones al crear una cita.
+> **Integración con feriados y excepciones (antes ISSUE-12, resuelto):** `GetAvailableSlots` consulta `ScheduleAvailabilityService.getEffectiveSchedule()`, que implementa la prioridad `ScheduleException > Holiday > Schedule regular`. Del mismo modo, `CreateAppointment` valida contra feriados y excepciones al crear una cita, usando el mismo servicio de dominio. Ver §7 y `06-appointments.md` §10 para el detalle del servicio.
 
 ### 4.3 Detección de Conflictos
 
@@ -143,4 +143,4 @@ La entidad Schedule no tiene endpoints propios. Se accede a través del módulo 
 ## 7. Relaciones con Otros Módulos
 
 - **Appointments**: Los horarios determinan cuándo se pueden crear citas. `GetAvailableSlots` es el endpoint público. `CreateAppointment` valida que la hora de la cita caiga dentro del horario laboral del día (`startTime`-`endTime`)
-- **Holidays**: Los feriados pueden vincular horarios especiales via `holidayId`. Las ScheduleExceptions modifican días específicos. **Nota:** La integración entre feriados/excepciones y disponibilidad de citas está diferida como feature futura (ver ISSUE-12 en INTERVENTION_PLAN.md)
+- **Holidays**: Los feriados pueden vincular horarios especiales via `holidayId`. Las ScheduleExceptions modifican días específicos. La integración entre feriados/excepciones y disponibilidad de citas está implementada vía `ScheduleAvailabilityService`, usado tanto por `GetAvailableSlots` como por `CreateAppointment`

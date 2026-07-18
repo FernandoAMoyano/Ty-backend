@@ -1,5 +1,5 @@
 import { generateUuid } from '../../../../shared/utils/uuid';
-import { isValidPhone } from '../../../../shared/utils/validation';
+import { isValidPhone, isValidUrl } from '../../../../shared/utils/validation';
 
 /**
  * Entidad de dominio User que representa un usuario del sistema
@@ -51,12 +51,20 @@ export class User {
       throw new Error('User name cannot be empty');
     }
 
+    if (name.trim().length > 100) {
+      throw new Error('User name cannot exceed 100 characters');
+    }
+
     if (!phone || phone.trim() === '') {
       throw new Error('Phone cannot be empty');
     }
 
     if (!isValidPhone(phone)) {
       throw new Error('Invalid phone format');
+    }
+
+    if (profilePicture && !isValidUrl(profilePicture)) {
+      throw new Error('Profile picture must be a valid URL');
     }
 
     this.id = id;
@@ -137,6 +145,9 @@ export class User {
       if (!name || name.trim() === '') {
         throw new Error('User name cannot be empty');
       }
+      if (name.trim().length > 100) {
+        throw new Error('User name cannot exceed 100 characters');
+      }
       this.name = name.trim();
     }
 
@@ -151,18 +162,12 @@ export class User {
     }
 
     if (profilePicture !== undefined) {
+      if (profilePicture && !isValidUrl(profilePicture)) {
+        throw new Error('Profile picture must be a valid URL');
+      }
       this.profilePicture = profilePicture;
     }
 
-    this.updatedAt = new Date();
-  }
-
-  /**
-   * Actualiza las preferencias del usuario
-   * @param preferences - Nuevas preferencias (null para eliminar)
-   */
-  updatePreferences(preferences: string | null): void {
-    this.preferences = preferences;
     this.updatedAt = new Date();
   }
 

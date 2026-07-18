@@ -27,7 +27,7 @@ export class AuthValidations {
     body('phone')
       .notEmpty()
       .withMessage('Phone is required')
-      .matches(/^\+?[1-9]\d{1,14}$/)
+      .matches(/^\+?[1-9]\d{6,14}$/)
       .withMessage('Valid phone is required'),
 
     body('password')
@@ -90,7 +90,7 @@ export class AuthValidations {
 
     body('phone')
       .optional()
-      .matches(/^\+?[1-9]\d{1,14}$/)
+      .matches(/^\+?[1-9]\d{6,14}$/)
       .withMessage('Valid phone is required'),
 
     body('profilePicture')

@@ -3,18 +3,24 @@ import { CategoryDto } from '../dto/response/CategoryDto';
 import { Category } from '../../domain/entities/Category';
 
 /**
- * Caso de uso para obtener todas las categorías del sistema
+ * Caso de uso para obtener las categorías del sistema
+ * @description Endpoint público (GET /categories). Por defecto excluye las
+ * categorías inactivas (CAT-11), ya que este es el listado público — usar
+ * `includeInactive: true` para obtener también las inactivas (uso administrativo)
  */
 export class GetAllCategories {
   constructor(private categoryRepository: ICategoryRepository) {}
 
   /**
-   * Ejecuta la obtención de todas las categorías
-   * @returns Promise con la lista completa de categorías
+   * Ejecuta la obtención de categorías
+   * @param includeInactive - Si es true, incluye también las categorías inactivas.
+   * Por defecto false (solo activas, ver CAT-11)
+   * @returns Promise con la lista de categorías
    */
-  async execute(): Promise<CategoryDto[]> {
+  async execute(includeInactive = false): Promise<CategoryDto[]> {
     const categories = await this.categoryRepository.findAll();
-    return categories.map((category) => this.mapToDto(category));
+    const filtered = includeInactive ? categories : categories.filter((c) => c.isActive);
+    return filtered.map((category) => this.mapToDto(category));
   }
 
   /**

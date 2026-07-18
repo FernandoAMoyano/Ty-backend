@@ -10,6 +10,8 @@ import { GetAvailableSlotsDto } from '../../../../../src/modules/appointments/ap
 import { ValidationError } from '../../../../../src/shared/exceptions/ValidationError';
 import { BusinessRuleError } from '../../../../../src/shared/exceptions/BusinessRuleError';
 import { ScheduleAvailabilityService } from '../../../../../src/modules/appointments/domain/services/ScheduleAvailabilityService';
+import { IStylistServiceRepository } from '../../../../../src/modules/services/domain/repositories/IStylistServiceRepository';
+import { IUserRepository } from '../../../../../src/modules/auth/domain/repositories/IUserRepository';
 import { generateUuid } from '../../../../../src/shared/utils/uuid';
 
 describe('GetAvailableSlots Use Case', () => {
@@ -17,6 +19,8 @@ describe('GetAvailableSlots Use Case', () => {
   let mockAppointmentRepository: jest.Mocked<IAppointmentRepository>;
   let mockScheduleRepository: jest.Mocked<IScheduleRepository>;
   let mockScheduleAvailabilityService: jest.Mocked<ScheduleAvailabilityService>;
+  let mockStylistServiceRepository: jest.Mocked<IStylistServiceRepository>;
+  let mockUserRepository: jest.Mocked<IUserRepository>;
 
   // Utilidades de fecha dinámicas
   const getFutureDateString = (daysFromNow: number = 7): string => {
@@ -196,10 +200,41 @@ describe('GetAvailableSlots Use Case', () => {
       isDayClosed: jest.fn().mockResolvedValue(false),
     } as unknown as jest.Mocked<ScheduleAvailabilityService>;
 
+    // Mock de IStylistServiceRepository (SCH-14): por defecto el estilista válido ofrece cualquier servicio
+    mockStylistServiceRepository = {
+      findByStylistAndService: jest.fn().mockResolvedValue({ isOffering: true }),
+      findByStylist: jest.fn(),
+      findByService: jest.fn(),
+      findActiveOfferings: jest.fn(),
+      findStylistsOfferingService: jest
+        .fn()
+        .mockResolvedValue([{ stylistId: validStylistId, isOffering: true }]),
+      save: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      existsAssignment: jest.fn(),
+    } as unknown as jest.Mocked<IStylistServiceRepository>;
+
+    // Mock de IUserRepository (SCH-20): por defecto resuelve un nombre real
+    mockUserRepository = {
+      findById: jest.fn().mockResolvedValue({ id: validStylistId, name: 'Jane Stylist' }),
+      findByIdWithRole: jest.fn(),
+      findByEmail: jest.fn(),
+      findByEmailWithRole: jest.fn(),
+      existsByEmail: jest.fn(),
+      save: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      findAll: jest.fn(),
+      findByRole: jest.fn(),
+    } as unknown as jest.Mocked<IUserRepository>;
+
     useCase = new GetAvailableSlots(
       mockAppointmentRepository,
       mockScheduleRepository,
       mockScheduleAvailabilityService,
+      mockStylistServiceRepository,
+      mockUserRepository,
     );
   });
 
@@ -295,6 +330,34 @@ describe('GetAvailableSlots Use Case', () => {
         expect(slot.stylist).toBeDefined();
         expect(slot.stylist!.id).toBe(validStylistId);
       });
+    });
+
+    // SCH-20: el nombre del estilista debe resolverse desde el repositorio, no ser un placeholder
+    it('should resolve the real stylist name from the repository (SCH-20)', async () => {
+      const dateString = getFutureDateString(7);
+      const dto = createValidDto({ date: dateString, stylistId: validStylistId });
+      setupSuccessfulMocks(dateString);
+      mockUserRepository.findById.mockResolvedValue({ id: validStylistId, name: 'Jane Stylist' } as any);
+
+      const result = await useCase.execute(dto);
+
+      expect(mockUserRepository.findById).toHaveBeenCalledWith(validStylistId);
+      result.slots.forEach((slot) => {
+        expect(slot.stylist!.name).toBe('Jane Stylist');
+        expect(slot.stylist!.name).not.toBe('Estilista');
+      });
+    });
+
+    // SCH-20: si el usuario no existe, no debe fallar la consulta completa
+    it('should fall back gracefully if the stylist user is not found', async () => {
+      const dateString = getFutureDateString(7);
+      const dto = createValidDto({ date: dateString, stylistId: validStylistId });
+      setupSuccessfulMocks(dateString);
+      mockUserRepository.findById.mockResolvedValue(null);
+
+      const result = await useCase.execute(dto);
+
+      expect(result.slots[0].stylist!.name).toBe('Unknown stylist');
     });
 
     // Debería calcular correctamente availableSlots count
@@ -552,6 +615,112 @@ describe('GetAvailableSlots Use Case', () => {
       const result = await useCase.execute(dto);
 
       expect(result).toBeDefined();
+    });
+  });
+
+  describe('SCH-14: Service Filter', () => {
+    // Debería marcar todos los slots como no disponibles si el estilista indicado no ofrece los servicios solicitados
+    it('should mark all slots unavailable when the specified stylist does not offer the requested services', async () => {
+      const dateString = getFutureDateString(7);
+      const dto = createValidDto({
+        date: dateString,
+        stylistId: validStylistId,
+        serviceIds: [validServiceId1],
+      });
+      setupSuccessfulMocks(dateString);
+      mockStylistServiceRepository.findByStylistAndService.mockResolvedValue(null);
+
+      const result = await useCase.execute(dto);
+
+      expect(result.availableSlots).toBe(0);
+      result.slots.forEach((slot) => {
+        expect(slot.available).toBe(false);
+        expect(slot.conflictReason).toBe(
+          'Selected stylist does not offer the requested combination of services',
+        );
+      });
+    });
+
+    // Debería marcar todos los slots como no disponibles si el estilista indicado dejó de ofrecer un servicio solicitado
+    it('should mark all slots unavailable when the specified stylist has stopped offering a requested service', async () => {
+      const dateString = getFutureDateString(7);
+      const dto = createValidDto({
+        date: dateString,
+        stylistId: validStylistId,
+        serviceIds: [validServiceId1],
+      });
+      setupSuccessfulMocks(dateString);
+      mockStylistServiceRepository.findByStylistAndService.mockResolvedValue({
+        isOffering: false,
+      } as any);
+
+      const result = await useCase.execute(dto);
+
+      expect(result.availableSlots).toBe(0);
+    });
+
+    // Debería mantener los slots disponibles si el estilista indicado ofrece todos los servicios solicitados
+    it('should keep slots available when the specified stylist offers all requested services', async () => {
+      const dateString = getFutureDateString(7);
+      const dto = createValidDto({
+        date: dateString,
+        stylistId: validStylistId,
+        serviceIds: [validServiceId1, validServiceId2],
+      });
+      setupSuccessfulMocks(dateString);
+      mockStylistServiceRepository.findByStylistAndService.mockResolvedValue({
+        isOffering: true,
+      } as any);
+
+      const result = await useCase.execute(dto);
+
+      expect(result.availableSlots).toBeGreaterThan(0);
+      expect(mockStylistServiceRepository.findByStylistAndService).toHaveBeenCalledWith(
+        validStylistId,
+        validServiceId1,
+      );
+      expect(mockStylistServiceRepository.findByStylistAndService).toHaveBeenCalledWith(
+        validStylistId,
+        validServiceId2,
+      );
+    });
+
+    // Debería marcar todos los slots como no disponibles si ningún estilista (sin filtrar) ofrece la combinación de servicios solicitada
+    it('should mark all slots unavailable when no stylist (unfiltered) offers the requested combination of services', async () => {
+      const dateString = getFutureDateString(7);
+      const dto = createValidDto({
+        date: dateString,
+        serviceIds: [validServiceId1, validServiceId2],
+      });
+      setupSuccessfulMocks(dateString);
+      // Ningún estilista ofrece serviceId1
+      mockStylistServiceRepository.findStylistsOfferingService.mockImplementation(
+        async (serviceId: string) => {
+          if (serviceId === validServiceId1) return [];
+          return [{ stylistId: validStylistId, isOffering: true } as any];
+        },
+      );
+
+      const result = await useCase.execute(dto);
+
+      expect(result.availableSlots).toBe(0);
+      result.slots.forEach((slot) => {
+        expect(slot.conflictReason).toBe(
+          'No stylist currently offers the requested combination of services',
+        );
+      });
+    });
+
+    // Debería no aplicar ningún filtro si no se proporcionan serviceIds
+    it('should not apply any filter when serviceIds is not provided', async () => {
+      const dateString = getFutureDateString(7);
+      const dto = createValidDto({ date: dateString });
+      setupSuccessfulMocks(dateString);
+
+      await useCase.execute(dto);
+
+      expect(mockStylistServiceRepository.findByStylistAndService).not.toHaveBeenCalled();
+      expect(mockStylistServiceRepository.findStylistsOfferingService).not.toHaveBeenCalled();
     });
   });
 

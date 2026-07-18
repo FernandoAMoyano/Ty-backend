@@ -106,19 +106,12 @@ describe('User Entity', () => {
       }, 10);
     });
 
-    // Debería actualizar preferencias con un valor string
-    it('should update preferences with a string value', () => {
-      user.updatePreferences('dark-mode');
-      expect(user.preferences).toBe('dark-mode');
+    // Debería no exponer un método updatePreferences (AUTH-31, código muerto eliminado)
+    // (updatePreferences() no tenía caso de uso/endpoint asociado)
+    it('should not expose an updatePreferences method (AUTH-31, removed dead code)', () => {
+      expect((user as any).updatePreferences).toBeUndefined();
     });
 
-    // Debería mantener null al actualizar preferencias con null (no convertir a undefined)
-    it('should keep null when updating preferences with null', () => {
-      user.updatePreferences('dark-mode');
-      user.updatePreferences(null);
-      expect(user.preferences).toBeNull();
-      expect(user.preferences).not.toBeUndefined();
-    });
   });
 
   describe('User Validation', () => {
@@ -165,6 +158,104 @@ describe('User Entity', () => {
           validUserData.isActive,
         );
       }).toThrow('Phone cannot be empty');
+    });
+
+    // Debería lanzar error para nombre de más de 100 caracteres
+    // (endurecimiento de dominio: aplica aunque la entidad se instancie fuera del flujo HTTP)
+    it('should throw error for name longer than 100 characters', () => {
+      expect(() => {
+        new User(
+          validUserData.id,
+          validUserData.roleId,
+          'a'.repeat(101),
+          validUserData.email,
+          validUserData.phone,
+          validUserData.password,
+          validUserData.isActive,
+        );
+      }).toThrow('User name cannot exceed 100 characters');
+    });
+
+    // Debería lanzar error para una URL de foto de perfil inválida
+    // (endurecimiento de dominio: profilePicture debe ser una URL válida si se proporciona)
+    it('should throw error for invalid profile picture URL', () => {
+      expect(() => {
+        new User(
+          validUserData.id,
+          validUserData.roleId,
+          validUserData.name,
+          validUserData.email,
+          validUserData.phone,
+          validUserData.password,
+          validUserData.isActive,
+          'not-a-url',
+        );
+      }).toThrow('Profile picture must be a valid URL');
+    });
+
+    // Debería aceptar una URL de foto de perfil válida
+    it('should accept a valid profile picture URL', () => {
+      const user = new User(
+        validUserData.id,
+        validUserData.roleId,
+        validUserData.name,
+        validUserData.email,
+        validUserData.phone,
+        validUserData.password,
+        validUserData.isActive,
+        'https://example.com/photo.jpg',
+      );
+      expect(user.profilePicture).toBe('https://example.com/photo.jpg');
+    });
+
+    // Debería permitir omitir profilePicture (opcional)
+    it('should allow omitting profilePicture', () => {
+      const user = new User(
+        validUserData.id,
+        validUserData.roleId,
+        validUserData.name,
+        validUserData.email,
+        validUserData.phone,
+        validUserData.password,
+        validUserData.isActive,
+      );
+      expect(user.profilePicture).toBeUndefined();
+    });
+  });
+
+  describe('Domain Hardening - updateProfile', () => {
+    let user: User;
+
+    beforeEach(() => {
+      user = new User(
+        validUserData.id,
+        validUserData.roleId,
+        validUserData.name,
+        validUserData.email,
+        validUserData.phone,
+        validUserData.password,
+        validUserData.isActive,
+      );
+    });
+
+    // Debería lanzar error al actualizar el nombre a más de 100 caracteres
+    it('should throw error when updating name to longer than 100 characters', () => {
+      expect(() => {
+        user.updateProfile('a'.repeat(101));
+      }).toThrow('User name cannot exceed 100 characters');
+    });
+
+    // Debería lanzar error al actualizar profilePicture con una URL inválida
+    it('should throw error when updating profilePicture to an invalid URL', () => {
+      expect(() => {
+        user.updateProfile(undefined, undefined, 'not-a-url');
+      }).toThrow('Profile picture must be a valid URL');
+    });
+
+    // Debería aceptar actualizar profilePicture con una URL válida
+    it('should accept updating profilePicture to a valid URL', () => {
+      user.updateProfile(undefined, undefined, 'https://example.com/new-photo.jpg');
+      expect(user.profilePicture).toBe('https://example.com/new-photo.jpg');
     });
   });
 });

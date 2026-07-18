@@ -49,11 +49,13 @@ El módulo de pagos gestiona el procesamiento de cobros asociados a las citas. S
 
 ## 3. Permisos por Rol
 
-> **Nota de ownership (F18):** para STYLIST y CLIENT, los permisos de esta tabla están además restringidos por ownership sobre la cita asociada al pago. STYLIST solo accede (lectura y mutaciones de proceso/cancelación) a pagos de citas donde es el estilista asignado; CLIENT solo accede en lectura a pagos de citas donde es el cliente o el creador (vía `/appointment/:id`, sin acceso de mutación). ADMIN no tiene restricción de ownership en ningún caso.
+> **Nota de ownership (F18):** para STYLIST y CLIENT, los permisos de esta tabla están además restringidos por ownership sobre la cita asociada al pago. STYLIST solo accede (lectura, creación y mutaciones de proceso/cancelación) a pagos de citas donde es el estilista asignado; CLIENT solo accede en lectura a pagos de citas donde es el cliente o el creador (vía `/appointment/:id`, sin acceso de mutación). ADMIN no tiene restricción de ownership en ningún caso.
+>
+> **Ownership en creación (PAY-25):** `CreatePayment` valida que, si el solicitante es STYLIST, sea el estilista asignado a la cita del pago (`ForbiddenError` si no); un estilista no puede crear pagos para citas de otros estilistas.
 
 | Acción | ADMIN | STYLIST | CLIENT | Público |
 |--------|-------|---------|--------|---------|
-| Crear pago | ✅ | ✅ | ❌ | ❌ |
+| Crear pago | ✅ | ✅ (solo su cita) | ❌ | ❌ |
 | Listar todos los pagos | ✅ | ❌ | ❌ | ❌ |
 | Ver pago por ID | ✅ | ✅ (solo su cita) | ❌ | ❌ |
 | Ver pagos por cita | ✅ | ✅ (solo su cita) | ✅ (solo su cita, vía `/appointment/:id`) | ❌ |
@@ -87,7 +89,7 @@ El módulo de pagos gestiona el procesamiento de cobros asociados a las citas. S
 | Solo pendientes | Solo se pueden procesar pagos en estado PENDING | 422 |
 | Método requerido | Se debe especificar el método de pago | 400 |
 | Método válido | El método debe ser uno de los valores del enum | 400 |
-| Fecha de pago | Se registra automáticamente `paidAt` | - |
+| Fecha de pago | Se registra automáticamente `paymentDate` (nombre real del campo en la entidad/DTO/schema) | - |
 | Estado final | El estado cambia a COMPLETED | - |
 
 ### 4.3 Reembolso de Pagos

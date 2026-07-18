@@ -2,6 +2,7 @@ import { Appointment } from '../../domain/entities/Appointment';
 import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRepository';
 import { IAppointmentStatusRepository } from '../../domain/repositories/IAppointmentStatusRepository';
 import { IServiceRepository } from '../../../services/domain/repositories/IServiceRepository';
+import { IStylistServiceRepository } from '../../../services/domain/repositories/IStylistServiceRepository';
 import { UserRoleValidationService } from '../../../auth/domain/services/UserRoleValidationService';
 import { RoleName } from '@prisma/client';
 import { AppointmentDto } from '../dto/response/AppointmentDto';
@@ -13,17 +14,26 @@ import { ForbiddenError } from '../../../../shared/exceptions/ForbiddenError';
 import { ConflictError } from '../../../../shared/exceptions/ConflictError';
 import { AppointmentStatusEnum } from '../../domain/entities/AppointmentStatus';
 import { assertValidUuid } from '../../../../shared/utils/validateUuid';
+import {
+  ScheduleAvailabilityService,
+  EffectiveSchedule,
+} from '../../domain/services/ScheduleAvailabilityService';
 
 /**
  * Caso de uso para actualizar una cita existente
  * Maneja la actualización con validaciones de reglas de negocio y detección de conflictos
  */
 export class UpdateAppointment {
+  /** Máximo de citas activas por cliente por día (alineado con CreateAppointment) */
+  private static readonly MAX_DAILY_APPOINTMENTS = 3;
+
   constructor(
     private appointmentRepository: IAppointmentRepository,
     private appointmentStatusRepository: IAppointmentStatusRepository,
     private serviceRepository: IServiceRepository,
     private userRoleValidationService: UserRoleValidationService,
+    private scheduleAvailabilityService: ScheduleAvailabilityService,
+    private stylistServiceRepository: IStylistServiceRepository,
   ) {}
 
   /**
@@ -70,6 +80,16 @@ export class UpdateAppointment {
 
     if (updateDto.serviceIds !== undefined) {
       await this.updateServices(appointment, updateDto.serviceIds);
+    }
+
+    // 6. Si cambió la fecha/hora o la duración, revalidar horario efectivo (día cerrado / fuera de horario laboral)
+    if (updateDto.dateTime || updateDto.duration !== undefined) {
+      await this.validateEffectiveSchedule(appointment);
+    }
+
+    // 6b. Si cambió la fecha, revalidar el límite diario de citas activas del cliente sobre la nueva fecha
+    if (updateDto.dateTime) {
+      await this.validateDailyAppointmentLimit(appointment, appointmentId);
     }
 
     // 7. Validar conflictos después de todos los cambios
@@ -293,13 +313,34 @@ export class UpdateAppointment {
 
   /**
    * Actualiza los servicios de la cita
+   * Revalida que cada servicio esté activo y, si hay estilista asignado, que lo
+   * siga ofreciendo activamente (misma validación que CreateAppointment — APT-29)
    */
   private async updateServices(appointment: Appointment, newServiceIds: string[]): Promise<void> {
-    // Verificar que todos los servicios existen
+    // Verificar que todos los servicios existen y están activos
     for (const serviceId of newServiceIds) {
       const service = await this.serviceRepository.findById(serviceId);
       if (!service) {
         throw new NotFoundError('Service', serviceId);
+      }
+      if (!service.isActive) {
+        throw new BusinessRuleError(`Service '${service.name}' is not currently active`);
+      }
+    }
+
+    // Verificar que el estilista (final, ya aplicado el posible cambio) ofrezca los servicios seleccionados
+    if (appointment.stylistId) {
+      for (const serviceId of newServiceIds) {
+        const assignment = await this.stylistServiceRepository.findByStylistAndService(
+          appointment.stylistId,
+          serviceId,
+        );
+        if (!assignment) {
+          throw new BusinessRuleError('Stylist does not offer one of the selected services');
+        }
+        if (!assignment.isOffering) {
+          throw new BusinessRuleError('Stylist is not currently offering one of the selected services');
+        }
       }
     }
 
@@ -307,6 +348,95 @@ export class UpdateAppointment {
     appointment.serviceIds = [];
     for (const serviceId of newServiceIds) {
       appointment.addService(serviceId);
+    }
+  }
+
+  /**
+   * Revalida que la cita (con la fecha/duración ya aplicadas) siga dentro del
+   * horario efectivo del día (prioridad Exception > Holiday > Regular),
+   * reusando ScheduleAvailabilityService.getEffectiveSchedule (APT-39)
+   */
+  private async validateEffectiveSchedule(appointment: Appointment): Promise<void> {
+    const effectiveSchedule = await this.scheduleAvailabilityService.getEffectiveSchedule(
+      appointment.dateTime,
+    );
+
+    if (!effectiveSchedule) {
+      throw new BusinessRuleError(
+        'The salon is closed on the selected date (holiday or no schedule available)',
+      );
+    }
+
+    this.validateWorkingHours(appointment.dateTime, appointment.duration, effectiveSchedule);
+  }
+
+  /**
+   * Valida que la cita completa (inicio + duración) esté dentro del horario laboral del día
+   * Equivalente a CreateAppointment.validateWorkingHours
+   */
+  private validateWorkingHours(
+    dateTime: Date,
+    duration: number,
+    schedule: EffectiveSchedule,
+  ): void {
+    const appointmentHours = dateTime.getUTCHours();
+    const appointmentMinutes = dateTime.getUTCMinutes();
+
+    const [startH, startM] = schedule.startTime.split(':').map(Number);
+    const [endH, endM] = schedule.endTime.split(':').map(Number);
+
+    const appointmentStartInMinutes = appointmentHours * 60 + appointmentMinutes;
+    const appointmentEndInMinutes = appointmentStartInMinutes + duration;
+    const scheduleStartInMinutes = startH * 60 + startM;
+    const scheduleEndInMinutes = endH * 60 + endM;
+
+    if (appointmentStartInMinutes < scheduleStartInMinutes) {
+      throw new BusinessRuleError(
+        `Appointment starts before working hours (${schedule.startTime})`,
+      );
+    }
+
+    if (appointmentEndInMinutes > scheduleEndInMinutes) {
+      throw new BusinessRuleError(
+        `Appointment ends after working hours (${schedule.endTime})`,
+      );
+    }
+  }
+
+  /**
+   * Revalida que el cliente no exceda el límite diario de citas activas en la
+   * nueva fecha, excluyendo la propia cita que se está reprogramando (APT-39)
+   */
+  private async validateDailyAppointmentLimit(
+    appointment: Appointment,
+    appointmentId: string,
+  ): Promise<void> {
+    const appointmentDate = appointment.dateTime;
+
+    const startOfDay = new Date(appointmentDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(appointmentDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingAppointments = await this.appointmentRepository.findByClientAndDateRange(
+      appointment.clientId,
+      startOfDay,
+      endOfDay,
+    );
+
+    const cancelledStatus = await this.appointmentStatusRepository.findByName('CANCELLED');
+
+    const activeAppointments = existingAppointments.filter((a) => {
+      if (a.id === appointmentId) return false; // excluir la propia cita
+      if (cancelledStatus && a.statusId === cancelledStatus.id) return false;
+      return true;
+    });
+
+    if (activeAppointments.length >= UpdateAppointment.MAX_DAILY_APPOINTMENTS) {
+      throw new BusinessRuleError(
+        `Maximum of ${UpdateAppointment.MAX_DAILY_APPOINTMENTS} appointments per day has been reached`,
+      );
     }
   }
 

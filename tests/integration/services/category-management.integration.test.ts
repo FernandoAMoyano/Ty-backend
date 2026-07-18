@@ -193,22 +193,40 @@ describe('Category Management Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`);
     });
 
-    // Debería obtener todas las categorías
-    it('should get all categories', async () => {
+    // Debería excluir categorías inactivas por defecto (CAT-11: listado público)
+    it('should exclude inactive categories by default (CAT-11)', async () => {
       const response = await request(app).get('/api/v1/categories').expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.length).toBeGreaterThanOrEqual(1);
+
+      // Ninguna categoría inactiva debe aparecer en el listado público por defecto
+      const inactiveCategories = response.body.data.filter((c: any) => !c.isActive);
+      expect(inactiveCategories.length).toBe(0);
+
+      // Validar estructura de respuesta
+      response.body.data.forEach((category: any) => {
+        validateCategoryResponse(category);
+      });
+    });
+
+    // Debería incluir también las inactivas con ?includeInactive=true (CAT-11, uso administrativo)
+    it('should include inactive categories with includeInactive=true (CAT-11)', async () => {
+      const response = await request(app)
+        .get('/api/v1/categories?includeInactive=true')
+        .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(Array.isArray(response.body.data)).toBe(true);
       expect(response.body.data.length).toBeGreaterThanOrEqual(2);
 
-      // Verificar que incluye categorías activas e inactivas
       const activeCategories = response.body.data.filter((c: any) => c.isActive);
       const inactiveCategories = response.body.data.filter((c: any) => !c.isActive);
 
       expect(activeCategories.length).toBeGreaterThanOrEqual(1);
       expect(inactiveCategories.length).toBeGreaterThanOrEqual(1);
 
-      // Validar estructura de respuesta
       response.body.data.forEach((category: any) => {
         validateCategoryResponse(category);
       });
