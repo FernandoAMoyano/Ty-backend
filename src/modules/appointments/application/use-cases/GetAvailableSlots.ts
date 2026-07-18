@@ -2,6 +2,8 @@ import { IAppointmentRepository } from '../../domain/repositories/IAppointmentRe
 import { Appointment } from '../../domain/entities/Appointment';
 import { IScheduleRepository } from '../../domain/repositories/IScheduleRepository';
 import { ScheduleAvailabilityService } from '../../domain/services/ScheduleAvailabilityService';
+import { IStylistServiceRepository } from '../../../services/domain/repositories/IStylistServiceRepository';
+import { IUserRepository } from '../../../auth/domain/repositories/IUserRepository';
 import { GetAvailableSlotsDto } from '../dto/request/GetAvailableSlotsDto';
 import { DayAvailabilityDto, AvailableSlotDto } from '../dto/response/AvailableSlotDto';
 import { ValidationError } from '../../../../shared/exceptions/ValidationError';
@@ -19,6 +21,8 @@ export class GetAvailableSlots {
     private appointmentRepository: IAppointmentRepository,
     private scheduleRepository: IScheduleRepository,
     private scheduleAvailabilityService: ScheduleAvailabilityService,
+    private stylistServiceRepository: IStylistServiceRepository,
+    private userRepository: IUserRepository,
   ) {}
 
   /**
@@ -60,22 +64,98 @@ export class GetAvailableSlots {
     // 8. Obtener citas existentes para el día
     const existingAppointments = await this.getExistingAppointments(targetDate, request.stylistId);
 
-    // 9. Calcular disponibilidad de cada slot
+    // 9. Resolver nombre real del estilista si se especifica (SCH-20)
+    const stylistName = request.stylistId
+      ? await this.resolveStylistName(request.stylistId)
+      : undefined;
+
+    // 10. Determinar si hay al menos un estilista que ofrezca todos los servicios solicitados (SCH-14)
+    const serviceFilterReason = await this.evaluateServiceFilter(
+      request.serviceIds,
+      request.stylistId,
+    );
+
+    // 11. Calcular disponibilidad de cada slot
     const availableSlots = await this.calculateSlotAvailability(
       baseSlots,
       existingAppointments,
       targetDate,
       duration,
       request.stylistId,
+      stylistName,
+      serviceFilterReason,
     );
 
-    // 10. Construir y retornar respuesta con horario efectivo
+    // 12. Construir y retornar respuesta con horario efectivo
     return this.buildDayAvailabilityResponse(
       request.date,
       dayOfWeek,
       { startTime: effectiveSchedule.startTime, endTime: effectiveSchedule.endTime },
       availableSlots,
     );
+  }
+
+  /**
+   * Resuelve el nombre real del estilista desde el repositorio (SCH-20)
+   * Si el usuario no existe (caso borde), retorna un fallback genérico en vez de fallar la consulta
+   */
+  private async resolveStylistName(stylistId: string): Promise<string> {
+    const user = await this.userRepository.findById(stylistId);
+    return user?.name ?? 'Unknown stylist';
+  }
+
+  /**
+   * Evalúa si los `serviceIds` solicitados son ofrecidos por al menos un estilista
+   * (o por el `stylistId` específico, si se proporciona). Implementa el filtro por
+   * servicio prometido en la documentación (SCH-14).
+   * @returns undefined si no aplica ningún filtro (no se pidieron serviceIds, o hay
+   * al menos un estilista elegible); un motivo de no-disponibilidad en caso contrario
+   */
+  private async evaluateServiceFilter(
+    serviceIds: string[] | undefined,
+    stylistId: string | undefined,
+  ): Promise<string | undefined> {
+    if (!serviceIds || serviceIds.length === 0) {
+      return undefined;
+    }
+
+    if (stylistId) {
+      // Verificar que el estilista específico ofrezca TODOS los servicios solicitados
+      for (const serviceId of serviceIds) {
+        const assignment = await this.stylistServiceRepository.findByStylistAndService(
+          stylistId,
+          serviceId,
+        );
+        if (!assignment || !assignment.isOffering) {
+          return 'Selected stylist does not offer the requested combination of services';
+        }
+      }
+      return undefined;
+    }
+
+    // Sin stylistId: verificar que exista AL MENOS un estilista que ofrezca todos los servicios
+    let eligibleStylistIds: Set<string> | undefined;
+    for (const serviceId of serviceIds) {
+      const offerings = await this.stylistServiceRepository.findStylistsOfferingService(serviceId);
+      const offeringStylistIds: Set<string> = new Set(
+        offerings.filter((o) => o.isOffering).map((o) => o.stylistId),
+      );
+
+      if (!eligibleStylistIds) {
+        eligibleStylistIds = offeringStylistIds;
+      } else {
+        const intersection: Set<string> = new Set(
+          [...eligibleStylistIds].filter((id) => offeringStylistIds.has(id)),
+        );
+        eligibleStylistIds = intersection;
+      }
+
+      if (eligibleStylistIds.size === 0) {
+        return 'No stylist currently offers the requested combination of services';
+      }
+    }
+
+    return undefined;
   }
 
   /**
@@ -258,6 +338,8 @@ export class GetAvailableSlots {
     targetDate: Date,
     duration: number,
     stylistId?: string,
+    stylistName?: string,
+    serviceFilterReason?: string,
   ): Promise<AvailableSlotDto[]> {
     const availableSlots: AvailableSlotDto[] = [];
 
@@ -268,19 +350,23 @@ export class GetAvailableSlots {
       // Verificar conflictos con citas existentes
       const conflict = this.checkForConflicts(slotDateTime, slotEndTime, existingAppointments);
 
+      // El filtro por servicio (SCH-14) tiene prioridad como motivo si aplica
+      const isAvailable = !conflict.hasConflict && !serviceFilterReason;
+      const reason = serviceFilterReason ?? conflict.reason;
+
       const slot: AvailableSlotDto = {
         time: slotTime,
-        available: !conflict.hasConflict,
+        available: isAvailable,
         duration,
-        conflictReason: conflict.reason,
+        conflictReason: reason,
       };
 
-      // Agregar información del estilista si se especifica
+      // Agregar información del estilista si se especifica (SCH-20: nombre real, no placeholder)
       if (stylistId) {
         slot.stylist = {
           id: stylistId,
-          name: 'Estilista', // En implementación real, obtener del repositorio
-          available: !conflict.hasConflict,
+          name: stylistName ?? 'Unknown stylist',
+          available: isAvailable,
         };
       }
 
