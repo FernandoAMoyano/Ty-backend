@@ -24,7 +24,7 @@ El módulo gestiona la relación entre estilistas y los servicios que ofrecen. L
 | createdAt | DateTime | Fecha de creación |
 | updatedAt | DateTime | Última actualización |
 
-> **Nota**: StylistService SÍ tiene campo `id` propio (UUID). `stylistId` y `serviceId` no son clave compuesta.
+> **Nota**: El schema de Prisma define `id` (UUID) como clave primaria de `StylistService` y además un `@@unique([stylistId, serviceId])`. Sin embargo, la **entidad de dominio** `StylistService.ts` no modela el campo `id`, y el repositorio usa el par `(stylistId, serviceId)` como clave de acceso en la práctica (`findByStylistAndService`, `delete(stylistId, serviceId)`, `existsAssignment`). En este sentido, `(stylistId, serviceId)` **es** la clave efectiva a nivel de dominio/aplicación, aunque a nivel de base de datos exista también un `id` propio.
 
 ---
 
