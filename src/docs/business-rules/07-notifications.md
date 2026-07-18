@@ -125,7 +125,7 @@ FAILED (Fallida)
     └── → PENDING (Reintento permitido)
 ```
 
-> Las transiciones se validan en código mediante `NotificationStatus.canTransitionTo()`
+> Las transiciones se validan en código mediante `NotificationStatus.canTransitionTo()`, **excepto** en el marcado de lectura (`MarkNotificationAsRead`, individual/batch), que actualiza el `statusId` directamente a READ sin invocar `canTransitionTo()`. En la práctica, una notificación puede pasar de PENDING a READ directamente (sin transicionar por SENT), ya que actualmente no existe un servicio de envío que ejecute la transición PENDING→SENT. Esta es una excepción intencional al diagrama de arriba: READ es alcanzable tanto desde SENT como directamente desde PENDING.
 
 ---
 
