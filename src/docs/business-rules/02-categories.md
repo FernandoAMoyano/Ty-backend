@@ -80,7 +80,7 @@ Las categorías agrupan los servicios ofrecidos por el salón (ej: "Cortes", "Co
 
 | Método | Endpoint | Descripción | Permisos |
 |--------|----------|-------------|----------|
-| GET | /api/v1/categories | Listar todas las categorías | Público |
+| GET | /api/v1/categories | Listar categorías (activas por defecto; `?includeInactive=true` incluye también las inactivas — CAT-11) | Público |
 | GET | /api/v1/categories/active | Listar categorías activas | Público |
 | GET | /api/v1/categories/:id | Obtener por ID | Público |
 | POST | /api/v1/categories | Crear categoría | Admin |
