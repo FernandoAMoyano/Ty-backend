@@ -40,12 +40,20 @@ export class PaymentController {
    * @throws ValidationError si el monto no es válido
    */
   async create(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId || !req.user?.roleName) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
     const { amount, appointmentId } = req.body;
 
-    const payment = await this._createPayment.execute({
-      amount,
-      appointmentId,
-    });
+    const payment = await this._createPayment.execute(
+      {
+        amount,
+        appointmentId,
+      },
+      req.user.userId,
+      req.user.roleName,
+    );
 
     return res.status(201).json({
       success: true,

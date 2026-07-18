@@ -5,6 +5,7 @@ import { IAppointmentStatusRepository } from '../../../../../src/modules/appoint
 import { Payment, PaymentStatusEnum } from '../../../../../src/modules/payments/domain/entities/Payment';
 import { NotFoundError } from '../../../../../src/shared/exceptions/NotFoundError';
 import { BusinessRuleError } from '../../../../../src/shared/exceptions/BusinessRuleError';
+import { ForbiddenError } from '../../../../../src/shared/exceptions/ForbiddenError';
 
 describe('CreatePayment Use Case', () => {
   let createPayment: CreatePayment;
@@ -215,5 +216,69 @@ describe('CreatePayment Use Case', () => {
 
     expect(result.amount).toBe(100);
     expect(mockPaymentRepository.save).toHaveBeenCalledTimes(1);
+  });
+
+  describe('PAY-25: Ownership Validation', () => {
+    const stylistId = mockAppointment.userId; // reutilizamos un UUID válido del fixture
+    const otherStylistId = '123e4567-e89b-12d3-a456-426614174099';
+
+    // Debería lanzar ForbiddenError si un STYLIST crea un pago para la cita de otro estilista
+    it('should throw ForbiddenError when a STYLIST creates a payment for another stylist\'s appointment', async () => {
+      const dto = { amount: 100, appointmentId: validAppointmentId };
+      mockAppointmentRepository.findById.mockResolvedValue({
+        ...mockAppointment,
+        stylistId,
+      } as any);
+
+      await expect(
+        createPayment.execute(dto, otherStylistId, 'STYLIST'),
+      ).rejects.toThrow(ForbiddenError);
+      expect(mockPaymentRepository.save).not.toHaveBeenCalled();
+    });
+
+    // Debería permitir que un STYLIST cree un pago para su propia cita
+    it('should allow a STYLIST to create a payment for their own appointment', async () => {
+      const dto = { amount: 100, appointmentId: validAppointmentId };
+      mockAppointmentRepository.findById.mockResolvedValue({
+        ...mockAppointment,
+        stylistId,
+      } as any);
+      mockPaymentRepository.save.mockImplementation(async (payment: Payment) => payment);
+
+      const result = await createPayment.execute(dto, stylistId, 'STYLIST');
+
+      expect(result.amount).toBe(100);
+      expect(mockPaymentRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    // Debería permitir que ADMIN cree un pago para cualquier cita sin importar el estilista
+    it('should allow ADMIN to create a payment for any appointment regardless of stylist', async () => {
+      const dto = { amount: 100, appointmentId: validAppointmentId };
+      mockAppointmentRepository.findById.mockResolvedValue({
+        ...mockAppointment,
+        stylistId,
+      } as any);
+      mockPaymentRepository.save.mockImplementation(async (payment: Payment) => payment);
+
+      const result = await createPayment.execute(dto, otherStylistId, 'ADMIN');
+
+      expect(result.amount).toBe(100);
+      expect(mockPaymentRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    // Debería no aplicar la validación de ownership si se omiten requesterId/requesterRole (compatibilidad hacia atrás)
+    it('should not apply ownership validation when requesterId/requesterRole are omitted (backward compatibility)', async () => {
+      const dto = { amount: 100, appointmentId: validAppointmentId };
+      mockAppointmentRepository.findById.mockResolvedValue({
+        ...mockAppointment,
+        stylistId,
+      } as any);
+      mockPaymentRepository.save.mockImplementation(async (payment: Payment) => payment);
+
+      const result = await createPayment.execute(dto);
+
+      expect(result.amount).toBe(100);
+      expect(mockPaymentRepository.save).toHaveBeenCalledTimes(1);
+    });
   });
 });
