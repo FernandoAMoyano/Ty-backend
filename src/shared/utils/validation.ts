@@ -71,6 +71,26 @@ export const isValidPassword = (password: string): boolean => {
   return true;
 };
 
+/**
+ * Valida que una cadena sea una URL bien formada con protocolo http o https
+ * @description Endurecimiento de dominio (observación transversal del audit):
+ * antes esta regla solo vivía en express-validator (`isURL()`), permitiendo que
+ * la entidad `User` aceptara cualquier string como `profilePicture` si se
+ * instanciaba fuera del flujo HTTP
+ */
+export const isValidUrl = (url: string): boolean => {
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 export const isValidPhone = (phone: string): boolean => {
   if (!phone || typeof phone !== 'string' || phone.trim() === '') {
     return false;

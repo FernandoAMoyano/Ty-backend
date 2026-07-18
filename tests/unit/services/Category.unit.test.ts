@@ -46,6 +46,28 @@ describe('Category Entity', () => {
         Category.create('Valid Name', longDescription);
       }).toThrow(ValidationError);
     });
+
+    // Endurecimiento de dominio (observación transversal del audit): el formato
+    // del nombre (solo letras y espacios) antes solo se validaba en express-validator
+    // Debería lanzar error si el nombre contiene dígitos
+    it('should throw error if name contains digits', () => {
+      expect(() => {
+        Category.create('Hair Services 2');
+      }).toThrow('Category name can only contain letters and spaces');
+    });
+
+    // Debería lanzar error si el nombre contiene caracteres especiales
+    it('should throw error if name contains special characters', () => {
+      expect(() => {
+        Category.create('Hair & Nails');
+      }).toThrow('Category name can only contain letters and spaces');
+    });
+
+    // Debería aceptar nombres con letras acentuadas
+    it('should accept names with accented letters', () => {
+      const category = Category.create('Peluquería Señoras');
+      expect(category.name).toBe('Peluquería Señoras');
+    });
   });
 
   describe('Updates', () => {

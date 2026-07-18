@@ -49,6 +49,9 @@ export class Category {
    * Ejecuta todas las validaciones de negocio para la categoría
    * @throws ValidationError si alguna validación falla
    */
+  /** Solo letras (con acentos) y espacios, igual que CategoryValidations (capa HTTP) */
+  private static readonly NAME_FORMAT_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+
   private validate(): void {
     if (!this.name || this.name.trim().length === 0) {
       throw new ValidationError('Category name cannot be empty');
@@ -56,6 +59,10 @@ export class Category {
 
     if (this.name.length > 100) {
       throw new ValidationError('Category name is too long');
+    }
+
+    if (!Category.NAME_FORMAT_REGEX.test(this.name)) {
+      throw new ValidationError('Category name can only contain letters and spaces');
     }
 
     if (this.description && this.description.length > 500) {
