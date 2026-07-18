@@ -4,13 +4,13 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?logo=typescript&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-5.x-000000.svg?logo=express&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1.svg?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/Tests-1303%20passing-brightgreen.svg)
+![Tests](https://img.shields.io/badge/Tests-1337%20passing-brightgreen.svg)
 
 # 💇‍♀️ Turnity Backend
 
 Backend API para sistema de gestión de salones de belleza construido con **Node.js**, **TypeScript**, **Express** y **Prisma ORM**.
 
-Implementa **Clean Architecture**, **DDD táctico** y **Arquitectura Hexagonal** (Ports & Adapters) con 7 módulos de negocio, 1303 tests automatizados y documentación Swagger interactiva.
+Implementa **Clean Architecture**, **DDD táctico** y **Arquitectura Hexagonal** (Ports & Adapters) con 7 módulos de negocio, 1337 tests automatizados y documentación Swagger interactiva.
 
 ---
 
@@ -390,7 +390,7 @@ PATCH  /notifications/:id/read                 # Marcar una como leída (autenti
 
 [Índice](#índice)
 
-El proyecto cuenta con **1303 tests** organizados en tres niveles:
+El proyecto cuenta con **1337 tests** organizados en tres niveles:
 
 ### Estructura de tests
 
@@ -522,20 +522,20 @@ La API estará disponible en **http://localhost:3000** con la documentación Swa
 
 [Índice](#índice)
 
-| Categoría            | Tecnología                                   |
-| -------------------- | -------------------------------------------- |
-| **Runtime**          | Node.js 18+ · TypeScript 5.x                 |
-| **Framework**        | Express 5.x                                  |
-| **Base de datos**    | PostgreSQL 14+ · Prisma ORM                  |
-| **Autenticación**    | JWT (access + refresh tokens) · bcrypt       |
-| **Validación**       | express-validator · zod                      |
-| **Documentación**    | Swagger/OpenAPI 3.0 · swagger-ui-express     |
-| **Testing**          | Jest · Supertest                             |
-| **Containerización** | Docker · Docker Compose                      |
-| **Seguridad**        | Helmet · CORS · Rate limiting (express-rate-limit) |
+| Categoría            | Tecnología                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------ |
+| **Runtime**          | Node.js 18+ · TypeScript 5.x                                                         |
+| **Framework**        | Express 5.x                                                                          |
+| **Base de datos**    | PostgreSQL 14+ · Prisma ORM                                                          |
+| **Autenticación**    | JWT (access + refresh tokens) · bcrypt                                               |
+| **Validación**       | express-validator · zod                                                              |
+| **Documentación**    | Swagger/OpenAPI 3.0 · swagger-ui-express                                             |
+| **Testing**          | Jest · Supertest                                                                     |
+| **Containerización** | Docker · Docker Compose                                                              |
+| **Seguridad**        | Helmet · CORS · Rate limiting (express-rate-limit)                                   |
 | **Logging**          | winston · morgan · RequestId middleware (header `X-Request-Id`, correlación de logs) |
-| **Utilidades**       | date-fns · uuid · nodemailer (instalado, sin implementar) |
-| **Arquitectura**     | Clean Architecture · DDD táctico · Hexagonal |
+| **Utilidades**       | date-fns · uuid · nodemailer (instalado, sin implementar)                            |
+| **Arquitectura**     | Clean Architecture · DDD táctico · Hexagonal                                         |
 
 ---
 
