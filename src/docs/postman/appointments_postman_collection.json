@@ -748,11 +748,17 @@
                 "exec": [
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
-                  "    pm.test('Array of appointments returned', function () {",
+                  "    pm.test('Paginated appointments object returned', function () {",
                   "        pm.expect(response.success).to.be.true;",
-                  "        pm.expect(Array.isArray(response.data)).to.be.true;",
+                  "        pm.expect(Array.isArray(response.data.appointments)).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('total');",
+                  "        pm.expect(response.data).to.have.property('page');",
+                  "        pm.expect(response.data).to.have.property('limit');",
+                  "        pm.expect(response.data).to.have.property('totalPages');",
+                  "        pm.expect(response.data).to.have.property('hasNextPage');",
+                  "        pm.expect(response.data).to.have.property('hasPreviousPage');",
                   "    });",
-                  "    console.log('📋 Citas del cliente:', response.data.length);",
+                  "    console.log('📋 Citas del cliente (página', response.data.page, 'de', response.data.totalPages, '):', response.data.appointments.length, '/', response.data.total);",
                   "}"
                 ]
               }
@@ -768,11 +774,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/appointments/client/{{client_id}}",
+              "raw": "{{base_url}}/appointments/client/{{client_id}}?page=1&limit=20",
               "host": ["{{base_url}}"],
-              "path": ["appointments", "client", "{{client_id}}"]
+              "path": ["appointments", "client", "{{client_id}}"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
             },
-            "description": "Obtiene todas las citas de un cliente específico"
+            "description": "Obtiene las citas de un cliente específico, paginadas (F17). ADMIN sin restricción; STYLIST solo ve las citas donde es el estilista asignado o el creador; CLIENT solo puede consultar sus propias citas."
           }
         },
         {
@@ -784,11 +794,17 @@
                 "exec": [
                   "if (pm.response.code === 200) {",
                   "    const response = pm.response.json();",
-                  "    pm.test('Array of appointments returned', function () {",
+                  "    pm.test('Paginated appointments object returned', function () {",
                   "        pm.expect(response.success).to.be.true;",
-                  "        pm.expect(Array.isArray(response.data)).to.be.true;",
+                  "        pm.expect(Array.isArray(response.data.appointments)).to.be.true;",
+                  "        pm.expect(response.data).to.have.property('total');",
+                  "        pm.expect(response.data).to.have.property('page');",
+                  "        pm.expect(response.data).to.have.property('limit');",
+                  "        pm.expect(response.data).to.have.property('totalPages');",
+                  "        pm.expect(response.data).to.have.property('hasNextPage');",
+                  "        pm.expect(response.data).to.have.property('hasPreviousPage');",
                   "    });",
-                  "    console.log('📋 Citas del estilista:', response.data.length);",
+                  "    console.log('📋 Citas del estilista (página', response.data.page, 'de', response.data.totalPages, '):', response.data.appointments.length, '/', response.data.total);",
                   "}"
                 ]
               }
@@ -804,11 +820,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/appointments/stylist/{{stylist_id}}",
+              "raw": "{{base_url}}/appointments/stylist/{{stylist_id}}?page=1&limit=20",
               "host": ["{{base_url}}"],
-              "path": ["appointments", "stylist", "{{stylist_id}}"]
+              "path": ["appointments", "stylist", "{{stylist_id}}"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
             },
-            "description": "Obtiene todas las citas asignadas a un estilista"
+            "description": "Obtiene las citas asignadas a un estilista, paginadas (F17). ADMIN sin restricción; CLIENT solo ve las citas donde es el cliente o el creador; STYLIST solo puede consultar sus propias citas."
           }
         }
       ]
