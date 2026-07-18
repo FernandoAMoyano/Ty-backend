@@ -22,7 +22,7 @@ export class Service {
    * @param categoryId - ID de la categoría a la que pertenece el servicio
    * @param name - Nombre del servicio (máximo 150 caracteres)
    * @param description - Descripción del servicio (requerida, máximo 1000 caracteres)
-   * @param duration - Duración base en minutos (positivo, máximo 600 minutos)
+   * @param duration - Duración base en minutos (positivo, máximo 480 minutos / 8 horas)
    * @param durationVariation - Variación de duración permitida en minutos
    * @param price - Precio del servicio (no puede ser negativo)
    * @returns Nueva instancia de Service con ID generado automáticamente
