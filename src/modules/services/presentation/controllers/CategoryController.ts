@@ -78,13 +78,16 @@ export class CategoryController {
   };
 
   /**
-   * Obtiene todas las categorías del sistema
+   * Obtiene las categorías del sistema
    * @route GET /categories
+   * @description Endpoint público. Por defecto excluye las categorías inactivas (CAT-11).
+   * Acepta `?includeInactive=true` para incluirlas también (uso administrativo)
    * @responseStatus 200 - Categorías obtenidas exitosamente
    */
   getAllCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const categories = await this._getAllCategories.execute();
+      const includeInactive = req.query.includeInactive === 'true';
+      const categories = await this._getAllCategories.execute(includeInactive);
       res.status(200).json({ success: true, message: 'Categories retrieved successfully', data: categories });
     } catch (error) {
       next(error);
