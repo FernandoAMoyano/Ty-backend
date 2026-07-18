@@ -102,6 +102,39 @@ describe('Register Integration Tests', () => {
       expect(response.body.message).toContain('Valid phone is required');
     });
 
+    // Debería rechazar teléfonos con menos de 7 dígitos (AUTH-4/AUTH-16)
+    // (el rango canónico de dígitos es 7-15; antes 2-15 en express-validator,
+    // desalineado con isValidPhone del dominio que ya exigía 7-15)
+    it('should reject phone numbers with fewer than 7 digits (AUTH-4/AUTH-16)', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'Test User',
+          email: `test-shortphone-${Date.now()}@example.com`,
+          phone: '+12345', // 5 dígitos, por debajo del mínimo de 7
+          password: 'TestPass123!',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Valid phone is required');
+    });
+
+    // Debería aceptar el mínimo de 7 dígitos (AUTH-4/AUTH-16)
+    it('should accept phone numbers with exactly 7 digits (AUTH-4/AUTH-16)', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'Test User',
+          email: `test-minphone-${Date.now()}@example.com`,
+          phone: '+1234567', // exactamente 7 dígitos
+          password: 'TestPass123!',
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+    });
+
     // Debería rechazar nombre de rol inválido
     it('should reject invalid roleName', async () => {
       const response = await request(app)
