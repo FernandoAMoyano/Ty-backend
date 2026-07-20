@@ -9,6 +9,8 @@ import { GetUserProfile } from './application/use-cases/GetUserProfile';
 import { UpdateUserProfile } from './application/use-cases/UpdateUserProfile';
 import { ChangeUserPassword } from './application/use-cases/ChangeUserPassword';
 import { DeactivateUser } from './application/use-cases/DeactivateUser';
+import { LogoutUser } from './application/use-cases/LogoutUser';
+import { LogoutAllSessions } from './application/use-cases/LogoutAllSessions';
 import { PrismaUserRepository } from './infrastructure/persistence/PrismaUserRepository';
 import { PrismaRoleRepository } from './infrastructure/persistence/PrismaRolRepository';
 import { PrismaStylistServiceRepository } from '../services/infrastructure/persistence/PrismaStylistServiceRepository';
@@ -47,6 +49,8 @@ export class AuthContainer {
   private _updateUserProfile: UpdateUserProfile;
   private _changeUserPassword: ChangeUserPassword;
   private _deactivateUser: DeactivateUser;
+  private _logoutUser: LogoutUser;
+  private _logoutAll: LogoutAllSessions;
 
   /**
    * Constructor privado que inicializa todas las dependencias del módulo
@@ -119,6 +123,8 @@ export class AuthContainer {
       appointmentRepository,
       appointmentStatusRepository,
     );
+    this._logoutUser = new LogoutUser(refreshTokenRepository, refreshTokenService);
+    this._logoutAll = new LogoutAllSessions(refreshTokenRepository);
 
     // HTTP Layer - Inyectamos los casos de uso directamente
     this._authController = new AuthController(
@@ -129,6 +135,8 @@ export class AuthContainer {
       this._updateUserProfile,
       this._changeUserPassword,
       this._deactivateUser,
+      this._logoutUser,
+      this._logoutAll,
     );
 
     this._authMiddleware = new AuthMiddleware(jwtService, roleRepository);

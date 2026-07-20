@@ -70,6 +70,26 @@ export class AuthRoutes {
       },
     );
 
+    // POST /logout - Cerrar la sesión actual (requiere autenticación)
+    this.router.post(
+      '/logout',
+      this.authMiddleware.authenticate.bind(this.authMiddleware),
+      AuthValidations.logout,
+      ValidationMiddleware.handleValidationErrors,
+      (req: Request, res: Response, next: NextFunction) => {
+        this.authController.logout(req, res).catch(next);
+      },
+    );
+
+    // POST /logout-all - Cerrar todas las sesiones (requiere autenticación)
+    this.router.post(
+      '/logout-all',
+      this.authMiddleware.authenticate.bind(this.authMiddleware),
+      (req: Request, res: Response, next: NextFunction) => {
+        this.authController.logoutAll(req, res).catch(next);
+      },
+    );
+
     // GET /profile - Obtener perfil (requiere autenticación)
     this.router.get(
       '/profile',

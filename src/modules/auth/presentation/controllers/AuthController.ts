@@ -7,6 +7,8 @@ import { GetUserProfile } from '../../application/use-cases/GetUserProfile';
 import { UpdateUserProfile } from '../../application/use-cases/UpdateUserProfile';
 import { ChangeUserPassword } from '../../application/use-cases/ChangeUserPassword';
 import { DeactivateUser } from '../../application/use-cases/DeactivateUser';
+import { LogoutUser } from '../../application/use-cases/LogoutUser';
+import { LogoutAllSessions } from '../../application/use-cases/LogoutAllSessions';
 import { AuthenticatedRequest } from '../middleware/AuthMiddleware';
 import { RegisterDto } from '../../application/dto/request/RegisterDto';
 import { LoginDto } from '../../application/dto/request/LoginDto';
@@ -29,6 +31,8 @@ export class AuthController {
     private updateUserProfile: UpdateUserProfile,
     private changeUserPassword: ChangeUserPassword,
     private deactivateUserUseCase: DeactivateUser,
+    private logoutUseCase: LogoutUser,
+    private logoutAllUseCase: LogoutAllSessions,
   ) {}
 
   /**
@@ -201,6 +205,54 @@ export class AuthController {
       success: true,
       data: result,
       message: 'User deactivated successfully',
+    });
+  }
+
+  /**
+   * Cierra la sesión actual revocando el refresh token recibido
+   * @route POST /auth/logout
+   * @param req - Request autenticado; refreshToken en el body
+   * @param res - Response de Express
+   * @returns Promise<Response>
+   * @description Revoca la sesión del refresh token. Idempotente.
+   * @responseStatus 200 - Sesión cerrada
+   * @throws UnauthorizedError si el request no está autenticado
+   */
+  async logout(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
+    const { refreshToken } = req.body;
+    await this.logoutUseCase.execute(req.user.userId, refreshToken);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Logged out successfully',
+    });
+  }
+
+  /**
+   * Cierra todas las sesiones del usuario (logout de todos los dispositivos)
+   * @route POST /auth/logout-all
+   * @param req - Request autenticado
+   * @param res - Response de Express
+   * @returns Promise<Response>
+   * @description Revoca todas las sesiones activas del usuario
+   * @responseStatus 200 - Sesiones revocadas con su cantidad
+   * @throws UnauthorizedError si el request no está autenticado
+   */
+  async logoutAll(req: AuthenticatedRequest, res: Response): Promise<Response> {
+    if (!req.user?.userId) {
+      throw new UnauthorizedError('Authentication required');
+    }
+
+    const revokedCount = await this.logoutAllUseCase.execute(req.user.userId);
+
+    return res.status(200).json({
+      success: true,
+      data: { revokedCount },
+      message: 'All sessions revoked successfully',
     });
   }
 }
