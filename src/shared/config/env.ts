@@ -39,6 +39,16 @@ const envSchema = z.object({
   // legacy en deprecacion. -- F3/F6
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).default(7),
 
+  // Config de la cookie httpOnly del refresh (y de la cookie CSRF). -- F5b/F6
+  // COOKIE_SECURE: si no se define, se deriva de NODE_ENV (true solo en prod),
+  // para permitir pruebas por HTTP en desarrollo local.
+  COOKIE_SECURE: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === 'true')),
+  COOKIE_SAMESITE: z.enum(['strict', 'lax', 'none']).default('lax'),
+  COOKIE_DOMAIN: z.string().optional(),
+
   FRONTEND_URL: z.url().default('http://localhost:3000'),
 });
 

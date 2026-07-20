@@ -10,6 +10,15 @@ import { DeactivateUser } from '../../application/use-cases/DeactivateUser';
 import { LogoutUser } from '../../application/use-cases/LogoutUser';
 import { LogoutAllSessions } from '../../application/use-cases/LogoutAllSessions';
 import { AuthenticatedRequest } from '../middleware/AuthMiddleware';
+import { generateCsrfToken } from '../middleware/CsrfMiddleware';
+import {
+  REFRESH_COOKIE_NAME,
+  CSRF_COOKIE_NAME,
+  refreshCookieOptions,
+  refreshClearOptions,
+  csrfCookieOptions,
+  csrfClearOptions,
+} from '../utils/cookieOptions';
 import { RegisterDto } from '../../application/dto/request/RegisterDto';
 import { LoginDto } from '../../application/dto/request/LoginDto';
 import { UpdateProfileDto } from '../../application/dto/request/UpdateProfileDto';
@@ -48,11 +57,16 @@ export class AuthController {
    */
   async login(req: Request, res: Response): Promise<Response> {
     const loginDto: LoginDto = req.body;
-    const result = await this.loginUser.execute(loginDto);
+    const result = await this.loginUser.execute(loginDto, this.requestContext(req));
+
+    // El refresh viaja en cookie httpOnly (no en el body). Se emite ademas la
+    // cookie CSRF (legible por JS) para el patron double-submit.
+    this.issueRefreshCookie(res, result.refreshToken);
+    this.issueCsrfCookie(res);
 
     return res.status(200).json({
       success: true,
-      data: result,
+      data: { token: result.token, user: result.user },
       message: 'Login successful',
     });
   }
@@ -92,13 +106,33 @@ export class AuthController {
    * @throws UnauthorizedError si el refresh token es inválido o expirado
    */
   async refreshToken(req: Request, res: Response): Promise<Response> {
-    const { refreshToken } = req.body;
-    const result = await this.refreshTokenUseCase.execute(refreshToken);
+    const refreshToken: string = req.cookies?.[REFRESH_COOKIE_NAME] ?? '';
+    const result = await this.refreshTokenUseCase.execute(refreshToken, this.requestContext(req));
+
+    // Rotacion: se reemplaza la cookie de refresh por el token nuevo.
+    // La cookie CSRF se mantiene (no hace falta rotarla en cada refresh).
+    this.issueRefreshCookie(res, result.refreshToken);
 
     return res.status(200).json({
       success: true,
-      data: result,
+      data: { token: result.token, user: result.user },
       message: 'Token refreshed successfully',
+    });
+  }
+
+  /**
+   * Emite un token CSRF (patron double-submit)
+   * @route GET /auth/csrf
+   * @description Setea la cookie 'csrfToken' (legible por JS) y devuelve el token
+   * en el body para que el cliente lo reenvie en el header X-CSRF-Token.
+   * @responseStatus 200 - Token CSRF emitido
+   */
+  async csrf(req: Request, res: Response): Promise<Response> {
+    const csrfToken = this.issueCsrfCookie(res);
+    return res.status(200).json({
+      success: true,
+      data: { csrfToken },
+      message: 'CSRF token issued',
     });
   }
 
@@ -223,8 +257,9 @@ export class AuthController {
       throw new UnauthorizedError('Authentication required');
     }
 
-    const { refreshToken } = req.body;
+    const refreshToken: string = req.cookies?.[REFRESH_COOKIE_NAME] ?? '';
     await this.logoutUseCase.execute(req.user.userId, refreshToken);
+    this.clearAuthCookies(res);
 
     return res.status(200).json({
       success: true,
@@ -248,11 +283,51 @@ export class AuthController {
     }
 
     const revokedCount = await this.logoutAllUseCase.execute(req.user.userId);
+    this.clearAuthCookies(res);
 
     return res.status(200).json({
       success: true,
       data: { revokedCount },
       message: 'All sessions revoked successfully',
     });
+  }
+
+  /**
+   * Arma el contexto de la request para auditoria de la sesion (RFC 6819)
+   * @private
+   */
+  private requestContext(req: Request) {
+    return {
+      requestId: req.id,
+      userAgent: req.get('user-agent') ?? null,
+      ipAddress: req.ip ?? null,
+    };
+  }
+
+  /**
+   * Setea la cookie httpOnly con el refresh token opaco
+   * @private
+   */
+  private issueRefreshCookie(res: Response, token: string): void {
+    res.cookie(REFRESH_COOKIE_NAME, token, refreshCookieOptions());
+  }
+
+  /**
+   * Genera y setea la cookie CSRF (legible por JS); devuelve el token
+   * @private
+   */
+  private issueCsrfCookie(res: Response): string {
+    const token = generateCsrfToken();
+    res.cookie(CSRF_COOKIE_NAME, token, csrfCookieOptions());
+    return token;
+  }
+
+  /**
+   * Borra las cookies de refresh y CSRF (logout)
+   * @private
+   */
+  private clearAuthCookies(res: Response): void {
+    res.clearCookie(REFRESH_COOKIE_NAME, refreshClearOptions());
+    res.clearCookie(CSRF_COOKIE_NAME, csrfClearOptions());
   }
 }

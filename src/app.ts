@@ -8,6 +8,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import { errorHandler } from './shared/middleware/ErrorHandler';
 import { requestIdMiddleware } from './shared/middleware/RequestIdMiddleware';
 import { prisma } from './shared/config/Prisma';
@@ -69,6 +70,10 @@ class App {
         credentials: true,
       }),
     );
+
+    // Parseo de cookies: habilita req.cookies para el refresh httpOnly y el
+    // token CSRF (double-submit). -- F5b
+    this.app.use(cookieParser());
 
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
