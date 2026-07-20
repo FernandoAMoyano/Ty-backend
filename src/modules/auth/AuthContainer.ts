@@ -102,7 +102,13 @@ export class AuthContainer {
       refreshTokenService,
     );
     this._registerUser = new RegisterUser(userRepository, roleRepository, hashService);
-    this._refreshToken = new RefreshToken(userRepository, roleRepository, jwtService);
+    this._refreshToken = new RefreshToken(
+      userRepository,
+      roleRepository,
+      jwtService,
+      refreshTokenRepository,
+      refreshTokenService,
+    );
     this._getUserProfile = new GetUserProfile(userRepository, roleRepository);
     this._updateUserProfile = new UpdateUserProfile(userRepository, roleRepository);
     this._changeUserPassword = new ChangeUserPassword(userRepository, hashService);
