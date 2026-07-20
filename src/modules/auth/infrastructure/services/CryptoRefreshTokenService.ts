@@ -3,12 +3,13 @@ import {
   RefreshTokenService,
   GeneratedRefreshToken,
 } from '../../application/services/RefreshTokenService';
+import { env } from '../../../../shared/config/env';
 
 /**
  * Implementación de RefreshTokenService usando el módulo `crypto` de Node.
  *
  * El token es aleatorio de 256 bits (32 bytes) codificado en base64url, y se
- * hashea con SHA-256 para persistirlo. SHA-256 alcanza porque el token ya es
+ * hashea con SHA-256 para persistirlo. SHA-256 porque el token ya es
  * de alta entropía; bcrypt/Argon2 (usados para passwords) solo agregarían
  * latencia sin beneficio de seguridad real en este caso.
  */
@@ -22,7 +23,9 @@ export class CryptoRefreshTokenService implements RefreshTokenService {
    */
   generate(): GeneratedRefreshToken {
     const token = randomBytes(this.tokenBytes).toString('base64url');
-    return { token, hash: this.hash(token) };
+    const ttlMs = env.REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000;
+    const expiresAt = new Date(Date.now() + ttlMs);
+    return { token, hash: this.hash(token), expiresAt };
   }
 
   /**

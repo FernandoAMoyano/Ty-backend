@@ -8,6 +8,8 @@ export interface GeneratedRefreshToken {
   token: string;
   /** SHA-256 del token, para persistir y comparar */
   hash: string;
+  /** Momento de expiración calculado a partir del TTL configurado */
+  expiresAt: Date;
 }
 
 /**

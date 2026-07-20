@@ -34,6 +34,11 @@ const envSchema = z.object({
     .regex(/^\d+[smhd]$/, "JWT_REFRESH_EXPIRY debe tener formato como '15m', '1h', '7d'")
     .default('7d'),
 
+  // TTL del refresh token opaco (dias). El refresh ya no es JWT: se persiste
+  // hasheado y este valor define su expiracion. JWT_REFRESH_EXPIRY queda como
+  // legacy en deprecacion. -- F3/F6
+  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).default(7),
+
   FRONTEND_URL: z.url().default('http://localhost:3000'),
 });
 

@@ -23,6 +23,10 @@ import { BcryptHashService } from './infrastructure/services/BcryptHashService';
 import { JwtTokenService } from './infrastructure/services/JwtTokenService';
 import { JwtService } from './application/services/JwtService';
 import { HashService } from './application/services/HashService';
+import { PrismaRefreshTokenRepository } from './infrastructure/persistence/PrismaRefreshTokenRepository';
+import { CryptoRefreshTokenService } from './infrastructure/services/CryptoRefreshTokenService';
+import { IRefreshTokenRepository } from './domain/repositories/IRefreshTokenRepository';
+import { RefreshTokenService } from './application/services/RefreshTokenService';
 
 /**
  * Contenedor de dependencias para el módulo de autenticación
@@ -84,9 +88,19 @@ export class AuthContainer {
     // Services
     const hashService: HashService = new BcryptHashService();
     const jwtService: JwtService = new JwtTokenService();
+    const refreshTokenRepository: IRefreshTokenRepository = new PrismaRefreshTokenRepository(
+      this.prisma,
+    );
+    const refreshTokenService: RefreshTokenService = new CryptoRefreshTokenService();
 
     // Use Cases
-    this._loginUser = new LoginUser(userRepository, hashService, jwtService);
+    this._loginUser = new LoginUser(
+      userRepository,
+      hashService,
+      jwtService,
+      refreshTokenRepository,
+      refreshTokenService,
+    );
     this._registerUser = new RegisterUser(userRepository, roleRepository, hashService);
     this._refreshToken = new RefreshToken(userRepository, roleRepository, jwtService);
     this._getUserProfile = new GetUserProfile(userRepository, roleRepository);
