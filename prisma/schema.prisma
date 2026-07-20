@@ -32,7 +32,30 @@ model User {
   stylistAppointments  Appointment[] @relation("AppointmentStylist")
   notifications  Notification[]
   stylistServices StylistService[]
+  refreshTokens  RefreshToken[]
   role           Role           @relation(fields: [roleId], references: [id])
+}
+
+// Sesiones de refresh token (F3 seguridad). Refresh opaco de alta entropia,
+// persistido SOLO como hash SHA-256 (tokenHash). Soporta rotacion + reuse
+// detection revocando toda la familia (familyId) -- RFC 9700 Sec. 4.14.
+model RefreshToken {
+  id           String    @id @default(uuid()) // = jti de la sesion
+  familyId     String                          // agrupa la cadena de rotacion (reuse detection)
+  userId       String
+  tokenHash    String    @unique               // SHA-256 del refresh opaco (nunca en claro)
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?   @unique               // rotation lineage: apunta al token que lo reemplazo
+  userAgent    String?                         // auditoria (RFC 6819)
+  ipAddress    String?                         // auditoria (RFC 6819)
+  issuedAt     DateTime  @default(now())
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
 }
 
 model Category {
