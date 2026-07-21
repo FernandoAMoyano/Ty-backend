@@ -39,9 +39,10 @@ export interface IRefreshTokenRepository {
    * transacción. Núcleo de la rotación de refresh (RFC 9700 4.14).
    * @param oldId - ID de la sesión a revocar
    * @param newData - Datos de la nueva sesión (misma `familyId`)
-   * @returns La nueva sesión creada
+   * @returns La nueva sesión creada, o `null` si la sesión ya fue rotada por
+   *   otra request concurrente (se perdió la carrera; el llamador debe rechazar)
    */
-  rotate(oldId: string, newData: CreateRefreshTokenData): Promise<RefreshTokenSession>;
+  rotate(oldId: string, newData: CreateRefreshTokenData): Promise<RefreshTokenSession | null>;
 
   /**
    * Revoca una sesión puntual por su ID (idempotente)

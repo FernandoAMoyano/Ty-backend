@@ -97,7 +97,7 @@ export class RefreshToken {
     const newAccessToken = this.jwtService.generateAccessToken(jwtPayload);
     const generated = this.refreshTokenService.generate();
 
-    await this.refreshTokenRepository.rotate(session.id, {
+    const rotated = await this.refreshTokenRepository.rotate(session.id, {
       familyId: session.familyId,
       userId: user.id,
       tokenHash: generated.hash,
@@ -105,6 +105,13 @@ export class RefreshToken {
       userAgent: context?.userAgent ?? null,
       ipAddress: context?.ipAddress ?? null,
     });
+
+    // Carrera: otra request concurrente ya rotó esta sesión entre la
+    // verificación y este punto. Se rechaza sin revocar la familia (el token
+    // era válido al momento del check; no es un reuse malicioso).
+    if (!rotated) {
+      throw new UnauthorizedError('Invalid refresh token');
+    }
 
     return {
       token: newAccessToken,

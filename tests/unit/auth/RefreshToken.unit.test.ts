@@ -196,4 +196,17 @@ describe('RefreshToken Use Case (rotacion + reuse detection)', () => {
     expect(caughtError).not.toBeInstanceOf(UnauthorizedError);
     expect((caughtError as Error).message).toBe('db down');
   });
+
+  // Carrera perdida en rotate (devuelve null) -> UnauthorizedError
+  it('should throw UnauthorizedError when rotate loses a concurrency race', async () => {
+    mockRefreshTokenService.hash.mockReturnValue('hash-1');
+    mockRefreshTokenRepository.findByTokenHash.mockResolvedValue(activeSession());
+    mockUserRepository.findById.mockResolvedValue(activeUser);
+    mockRoleRepository.findById.mockResolvedValue(clientRole);
+    mockJwtService.generateAccessToken.mockReturnValue('acc');
+    mockRefreshTokenService.generate.mockReturnValue({ token: 't', hash: 'h', expiresAt: future });
+    mockRefreshTokenRepository.rotate.mockResolvedValue(null);
+
+    await expect(refreshToken.execute('token')).rejects.toThrow(UnauthorizedError);
+  });
 });

@@ -6,6 +6,12 @@ import {
 } from '../../domain/repositories/IRefreshTokenRepository';
 
 /**
+ * Error interno: la sesión ya fue revocada/rotada concurrentemente entre la
+ * verificación y el intento de rotación. No se propaga: se traduce a `null`.
+ */
+class RotateConflict extends Error {}
+
+/**
  * Implementación de IRefreshTokenRepository con Prisma.
  * La rotación y la revocación de familia se apoyan en índices y en
  * transacciones para garantizar atomicidad frente a reuse concurrente.
@@ -40,21 +46,43 @@ export class PrismaRefreshTokenRepository implements IRefreshTokenRepository {
    * Rota de forma atómica: crea la nueva sesión y revoca la anterior
    * (revokedAt + replacedById) dentro de una única transacción.
    */
-  async rotate(oldId: string, newData: CreateRefreshTokenData): Promise<RefreshTokenSession> {
-    const created = await this.prisma.$transaction(async (tx) => {
-      const newRow = await tx.refreshToken.create({
-        data: this.toCreateData(newData),
+  async rotate(
+    oldId: string,
+    newData: CreateRefreshTokenData,
+  ): Promise<RefreshTokenSession | null> {
+    try {
+      const created = await this.prisma.$transaction(async (tx) => {
+        // Revocación condicional y atómica: solo prospera si la sesión aún
+        // estaba activa. Bajo concurrencia, la segunda transacción ve 0 filas
+        // (ya revocada) y aborta -> se traduce a null (carrera perdida).
+        const revoked = await tx.refreshToken.updateMany({
+          where: { id: oldId, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+
+        if (revoked.count === 0) {
+          throw new RotateConflict();
+        }
+
+        const newRow = await tx.refreshToken.create({
+          data: this.toCreateData(newData),
+        });
+
+        await tx.refreshToken.update({
+          where: { id: oldId },
+          data: { replacedById: newRow.id },
+        });
+
+        return newRow;
       });
 
-      await tx.refreshToken.update({
-        where: { id: oldId },
-        data: { revokedAt: new Date(), replacedById: newRow.id },
-      });
-
-      return newRow;
-    });
-
-    return this.toDomain(created);
+      return this.toDomain(created);
+    } catch (error) {
+      if (error instanceof RotateConflict) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
