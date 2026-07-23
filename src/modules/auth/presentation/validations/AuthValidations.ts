@@ -78,6 +78,18 @@ export class AuthValidations {
   ];
 
   /**
+   * Validación para cerrar la sesión actual (logout).
+   * En F5b el refresh pasará a leerse de cookie y esta validación de body se retira.
+   */
+  static logout = [
+    body('refreshToken')
+      .notEmpty()
+      .withMessage('Refresh token is required')
+      .isString()
+      .withMessage('Refresh token must be a string'),
+  ];
+
+  /**
    * Validación para actualizar el perfil de usuario
    */
   static updateProfile = [

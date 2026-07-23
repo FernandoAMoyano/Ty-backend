@@ -2,6 +2,7 @@ import * as jwt from 'jsonwebtoken';
 import { JwtService, JwtPayload } from '../../application/services/JwtService';
 import { env } from '../../../../shared/config/env';
 import { UnauthorizedError } from '../../../../shared/exceptions/UnauthorizedError';
+import { generateUuid } from '../../../../shared/utils/uuid';
 
 /**
  * Implementación del servicio JWT usando jsonwebtoken
@@ -36,10 +37,15 @@ export class JwtTokenService implements JwtService {
    * @description Crea token con expiración corta, issuer y audience específicos
    */
   generateAccessToken(payload: JwtPayload): string {
+    // subject (sub) y jwtid (jti) siguen el perfil RFC 9068 de access tokens.
+    // Se agregan via SignOptions para no alterar la forma de JwtPayload ni la
+    // verificacion existente (que ignora estos claims estandar).
     return jwt.sign(payload, this.accessTokenSecret, {
       expiresIn: this.accessTokenExpiry,
       issuer: 'turnity-api',
       audience: 'turnity-app',
+      subject: payload.userId,
+      jwtid: generateUuid(),
     } as jwt.SignOptions);
   }
 
